@@ -6,10 +6,14 @@
 #define ENABLE_GxEPD2_GFX 0
 
 // Sterownik dla Twojego ekranu / panelu
-GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(/*CS=5*/ 45, /*DC=*/46, /*RST=*/47, /*BUSY=*/48)); // GDEY0579T93 792x272, SSD1683 (FPC-E004 22.04.13)
+GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT>
+    display(GxEPD2_579_GDEY0579T93(
+        /*CS=5*/ 45, /*DC=*/46, /*RST=*/47,
+        /*BUSY=*/48)); // GDEY0579T93 792x272, SSD1683 (FPC-E004 22.04.13)
 
 #define GxEPD2_DISPLAY_CLASS GxEPD2_BW
-#define GxEPD2_DRIVER_CLASS GxEPD2_579_GDEY0579T93 // GDEY0579T93 792x272, SSD1683 (FPC-E004 22.04.13)
+#define GxEPD2_DRIVER_CLASS                                                    \
+  GxEPD2_579_GDEY0579T93 // GDEY0579T93 792x272, SSD1683 (FPC-E004 22.04.13)
 
 #define SCR_WIDTH 792
 #define SCR_HEIGHT 272
@@ -117,8 +121,8 @@ void setup() {
 
   ui_init();
 
-  lv_obj_set_style_text_color(ui_Screen1, lv_color_make(0x00, 0x00, 0x00),
-                              LV_PART_MAIN | LV_STATE_DEFAULT);
+  // lv_obj_set_style_text_color(ui_Screen1, lv_color_make(0x00, 0x00, 0x00),
+  //                             LV_PART_MAIN | LV_STATE_DEFAULT);
 
   // czekaj na pierwszy flush - debug często blokuje użycie while w setup
   while (!screen) {
@@ -131,8 +135,6 @@ void setup() {
 }
 
 void loop() {
-  // E-ink nie wymaga ciągłego odświeżania
-  delay(5000);
-  // opcjonalnie lv_timer_handler() można tu wywołać, jeśli chcesz wymusić
-  // aktualizację
+  lv_timer_handler();
+  delay(100);
 }
