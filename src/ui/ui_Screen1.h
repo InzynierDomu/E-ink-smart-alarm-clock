@@ -14,7 +14,7 @@ extern "C" {
 extern void ui_Screen1_screen_init(void);
 extern void ui_Screen1_screen_destroy(void);
 extern lv_obj_t * ui_Screen1;
-extern lv_obj_t * ui_Label1;
+extern lv_obj_t * ui_labtime;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

@@ -6,7 +6,7 @@
 #include "ui.h"
 
 lv_obj_t * ui_Screen1 = NULL;
-lv_obj_t * ui_Label1 = NULL;
+lv_obj_t * ui_labtime = NULL;
 // event funtions
 
 // build funtions
@@ -16,13 +16,14 @@ void ui_Screen1_screen_init(void)
     ui_Screen1 = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_Screen1, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_Label1 = lv_label_create(ui_Screen1);
-    lv_obj_set_width(ui_Label1, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_Label1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label1, -161);
-    lv_obj_set_y(ui_Label1, -22);
-    lv_obj_set_align(ui_Label1, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_Label1, "Hello World");
+    ui_labtime = lv_label_create(ui_Screen1);
+    lv_obj_set_width(ui_labtime, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labtime, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labtime, -272);
+    lv_obj_set_y(ui_labtime, -4);
+    lv_obj_set_align(ui_labtime, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labtime, "00:00");
+    lv_obj_set_style_text_font(ui_labtime, &lv_font_montserrat_48, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 }
 
@@ -32,6 +33,6 @@ void ui_Screen1_screen_destroy(void)
 
     // NULL screen variables
     ui_Screen1 = NULL;
-    ui_Label1 = NULL;
+    ui_labtime = NULL;
 
 }
