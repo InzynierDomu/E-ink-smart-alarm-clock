@@ -19,8 +19,8 @@ void ui_Screen1_screen_init(void)
     ui_labtime = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labtime, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labtime, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labtime, -272);
-    lv_obj_set_y(ui_labtime, -4);
+    lv_obj_set_x(ui_labtime, -277);
+    lv_obj_set_y(ui_labtime, -6);
     lv_obj_set_align(ui_labtime, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labtime, "00:00");
     lv_obj_set_style_text_font(ui_labtime, &lv_font_montserrat_48, LV_PART_MAIN | LV_STATE_DEFAULT);

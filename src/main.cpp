@@ -16,39 +16,11 @@ GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT>
 static uint8_t lvBuffer[2][LVBUF];
 
 void my_disp_flush(lv_display_t *disp, const lv_area_t *area,
-                   uint8_t *color_p) {
-  Serial.print("FLUSH x1=");
-  Serial.print(area->x1);
-  Serial.print(" y1=");
-  Serial.print(area->y1);
-  Serial.print(" x2=");
-  Serial.print(area->x2);
-  Serial.print(" y2=");
-  Serial.println(area->y2);
-
-  // konwersja bufora
+                   unsigned char *data) {
   int16_t width = area->x2 - area->x1 + 1;
   int16_t height = area->y2 - area->y1 + 1;
-  int buf_size = width * height;
-  static uint8_t converted_buf[LVBUF] = {0};
-  memset(converted_buf, 0x00, sizeof(converted_buf));
-  int converted_index = 0;
-  uint8_t bit_mask = 0x80;
-  for (int i = 0; i < buf_size; i++) {
-    uint8_t pixel = color_p[i];
-    bool is_black = pixel > 128;
-    if (is_black) {
-      converted_buf[converted_index] |= bit_mask;
-    }
-    bit_mask >>= 1;
-    if (bit_mask == 0) {
-      bit_mask = 0x80;
-      converted_index++;
-      if (converted_index < sizeof(converted_buf))
-        converted_buf[converted_index] = 0;
-    }
-  }
-  display.drawImage(converted_buf, area->x1, area->y1, width, height);
+  display.drawImage((uint8_t *)data + 8, area->x1, area->y1, width, height);
+
   lv_display_flush_ready(disp);
 }
 
