@@ -2,18 +2,35 @@
 #include "lvgl.h"
 #include "ui/ui.h"
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <GxEPD2_BW.h>
+#include <HTTPClient.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <WiFiUdp.h>
+#include <time.h>
+
+// #include <NTPClient.h>
+
+const char *ssid = "ssid";
+const char *password = "pass";
 
 #define SCR_WIDTH 792
 #define SCR_HEIGHT 272
 #define LVBUF ((SCR_WIDTH * SCR_HEIGHT / 8) + 8)
 
 RTC_DS1307 m_rtc; ///< DS1307 RTC
+DateTime now;
+DynamicJsonDocument docs(19508);
 
 GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT>
     display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
 
 static uint8_t lvBuffer[2][LVBUF];
+
+String openWeatherMapApiKey = "apikey";
+float lat = 50.2945;
+float lon = 18.6714;
 
 void my_disp_flush(lv_display_t *disp, const lv_area_t *area,
                    unsigned char *data) {
@@ -37,15 +54,76 @@ void epd_setup() {
   delay(1000);
 }
 
-static void update_clock(lv_timer_t *timer) {
-  DateTime now = m_rtc.now();
+void update_clock() {
+  now = m_rtc.now();
   char buf[4];
   sprintf(buf, "%02d:%02d", now.hour(), now.minute());
   lv_label_set_text(ui_labtime, buf);
 }
 
+String getDateString(DateTime dt) {
+  char dateStr[11];
+  sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), dt.day());
+  return String(dateStr);
+}
+void getWeather() {
+  String dateStr = getDateString(now);
+  String serverPath =
+      "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" +
+      String(lat, 4) + "&lon=" + String(lon, 4) + "&date=" + dateStr +
+      "&appid=" + openWeatherMapApiKey + "&units=metric";
+
+  HTTPClient http;
+  http.begin(serverPath.c_str());
+  int code = http.GET();
+
+  if (code == HTTP_CODE_OK) {
+    String response = http.getString();
+
+    // Parsowanie zakomentowane - odkomentuj, gdy JSON będzie poprawny
+    StaticJsonDocument<4096> docs;
+    DeserializationError error = deserializeJson(docs, response);
+
+    if (error) {
+      Serial.print("Błąd JSON: ");
+      Serial.println(error.c_str());
+      http.end();
+      return;
+    }
+
+    float temp = docs["temperature"]["afternoon"]; // Dostosuj gdy JSON poprawny
+
+    Serial.print("Data: ");
+    Serial.print(dateStr);
+    Serial.print(" | Temp: ");
+    Serial.println(temp);
+
+  } else {
+    Serial.print("Błąd HTTP: ");
+    Serial.println(code);
+  }
+  http.end();
+}
+
+static void update_date(lv_timer_t *timer) {
+  static int weatherCounter = 0;
+  update_clock();
+  Serial.println(weatherCounter);
+  if (weatherCounter >= 10) {
+    getWeather();       // Wywołaj tylko raz na 10 cykli
+    weatherCounter = 0; // Resetuj licznik
+  } else {
+    weatherCounter++; // Zwiększ licznik
+  }
+}
 void setup() {
   Serial.begin(115200);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
   Wire.begin(21, 38);
 
@@ -72,7 +150,7 @@ void setup() {
   lv_obj_set_style_text_color(ui_Screen1, lv_color_make(0x00, 0x00, 0x00),
                               LV_PART_MAIN | LV_STATE_DEFAULT);
 
-  lv_timer_create(update_clock, 60000, NULL);
+  lv_timer_create(update_date, 60000, NULL);
   delay(1000);
 }
 
