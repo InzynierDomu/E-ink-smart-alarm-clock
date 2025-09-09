@@ -15,6 +15,10 @@ extern void ui_Screen1_screen_init(void);
 extern void ui_Screen1_screen_destroy(void);
 extern lv_obj_t * ui_Screen1;
 extern lv_obj_t * ui_labtime;
+extern lv_obj_t * ui_labData;
+extern lv_obj_t * ui_Label2;
+extern lv_obj_t * ui_Container2;
+extern lv_obj_t * ui_labTempMorning;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

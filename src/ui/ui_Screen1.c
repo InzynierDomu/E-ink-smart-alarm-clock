@@ -7,6 +7,10 @@
 
 lv_obj_t * ui_Screen1 = NULL;
 lv_obj_t * ui_labtime = NULL;
+lv_obj_t * ui_labData = NULL;
+lv_obj_t * ui_Label2 = NULL;
+lv_obj_t * ui_Container2 = NULL;
+lv_obj_t * ui_labTempMorning = NULL;
 // event funtions
 
 // build funtions
@@ -19,11 +23,50 @@ void ui_Screen1_screen_init(void)
     ui_labtime = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labtime, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labtime, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labtime, -276);
-    lv_obj_set_y(ui_labtime, -2);
+    lv_obj_set_x(ui_labtime, -273);
+    lv_obj_set_y(ui_labtime, 2);
     lv_obj_set_align(ui_labtime, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labtime, "00:00");
     lv_obj_set_style_text_font(ui_labtime, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_labData = lv_label_create(ui_Screen1);
+    lv_obj_set_width(ui_labData, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labData, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labData, -276);
+    lv_obj_set_y(ui_labData, -80);
+    lv_obj_set_align(ui_labData, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labData, "2025-09-09");
+    lv_obj_set_style_text_font(ui_labData, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_Label2 = lv_label_create(ui_Screen1);
+    lv_obj_set_width(ui_Label2, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_Label2, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_Label2, -49);
+    lv_obj_set_y(ui_Label2, -83);
+    lv_obj_set_align(ui_Label2, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_Label2, "Prognoza");
+    lv_obj_set_style_text_font(ui_Label2, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_Container2 = lv_obj_create(ui_Screen1);
+    lv_obj_remove_style_all(ui_Container2);
+    lv_obj_set_width(ui_Container2, 1);
+    lv_obj_set_height(ui_Container2, 261);
+    lv_obj_set_x(ui_Container2, -136);
+    lv_obj_set_y(ui_Container2, 0);
+    lv_obj_set_align(ui_Container2, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_Container2, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_border_color(ui_Container2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_Container2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_Container2, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_labTempMorning = lv_label_create(ui_Screen1);
+    lv_obj_set_width(ui_labTempMorning, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labTempMorning, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labTempMorning, -49);
+    lv_obj_set_y(ui_labTempMorning, -44);
+    lv_obj_set_align(ui_labTempMorning, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempMorning, "22℃");
+    lv_obj_set_style_text_font(ui_labTempMorning, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 }
 
@@ -34,5 +77,9 @@ void ui_Screen1_screen_destroy(void)
     // NULL screen variables
     ui_Screen1 = NULL;
     ui_labtime = NULL;
+    ui_labData = NULL;
+    ui_Label2 = NULL;
+    ui_Container2 = NULL;
+    ui_labTempMorning = NULL;
 
 }
