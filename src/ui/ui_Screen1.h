@@ -19,6 +19,7 @@ extern lv_obj_t * ui_labData;
 extern lv_obj_t * ui_Label2;
 extern lv_obj_t * ui_Container2;
 extern lv_obj_t * ui_labTempMorning;
+extern lv_obj_t * ui_Label4;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

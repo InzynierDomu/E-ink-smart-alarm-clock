@@ -1,4 +1,5 @@
 #include "RTClib.h"
+#include "config.h"
 #include "lvgl.h"
 #include "ui/ui.h"
 
@@ -7,15 +8,61 @@
 #include <GxEPD2_BW.h>
 #include <HTTPClient.h>
 #include <SD.h>
+#include <SPI.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiUdp.h>
 #include <time.h>
 
-// #include <NTPClient.h>
 
-const char* ssid = "ssid";
-const char* password = "pass";
+struct Wifi_Config
+{
+  String ssid;
+  String pass;
+  long timezone;
+};
+
+struct Open_weather_config
+{
+  String api_key;
+  float lat;
+  float lon;
+};
+
+Open_weather_config weather_config;
+void read_config(Wifi_Config& _config)
+{
+  File file = SD.open(config::config_path, "r");
+  if (!file)
+  {
+    Serial.println("error, no config file");
+    return;
+  }
+
+  String jsonData;
+  while (file.available())
+  {
+    jsonData += (char)file.read();
+  }
+  file.close();
+
+  StaticJsonDocument<256> doc;
+
+  DeserializationError error = deserializeJson(doc, jsonData);
+  if (error)
+  {
+    Serial.print("Błąd parsowania JSON: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  _config.ssid = doc["ssid"] | "";
+  _config.pass = doc["pass"] | "";
+  _config.timezone = doc["timezone"];
+  weather_config.api_key = doc["api_key"] | "";
+  weather_config.lat = doc["lat"];
+  weather_config.lon = doc["lon"];
+}
 
 constexpr uint8_t sd_cs_pin = 10;
 
@@ -30,10 +77,6 @@ DynamicJsonDocument docs(19508);
 GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
 
 static uint8_t lvBuffer[2][LVBUF];
-
-String openWeatherMapApiKey = "apikey";
-float lat = 50.2945;
-float lon = 18.6714;
 
 void my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
 {
@@ -80,11 +123,41 @@ String getDateString(DateTime dt)
   sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), dt.day());
   return String(dateStr);
 }
+
+enum class wheater
+{
+  sunny,
+  claudy,
+  shower,
+  rain
+};
+// todo change to map
+
+char weather_icon_change(int cloud_cover, int precipitation)
+{
+  if (cloud_cover > 30 && precipitation == 0)
+  {
+    return 'ú';
+  }
+
+  if (precipitation < 5 && precipitation != 0)
+  {
+    return 'û';
+  }
+
+  if (precipitation > 5)
+  {
+    return 'ü';
+  }
+
+  return 'ù';
+}
+
 void getWeather()
 {
   String dateStr = getDateString(now);
-  String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(lat, 4) + "&lon=" + String(lon, 4) +
-                      "&date=" + dateStr + "&appid=" + openWeatherMapApiKey + "&units=metric";
+  String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(weather_config.lat, 4) +
+                      "&lon=" + String(weather_config.lon, 4) + "&date=" + dateStr + "&appid=" + weather_config.api_key + "&units=metric";
 
   HTTPClient http;
   http.begin(serverPath.c_str());
@@ -118,6 +191,14 @@ void getWeather()
     sprintf(temp_str, "%d℃", temp_rounded);
 
     lv_label_set_text(ui_labTempMorning, temp_str);
+    int precipitation = docs["precipitation"]["total"];
+    Serial.println(precipitation);
+    int cloud_cover = docs["cloud_cover"]["afternoon"];
+    Serial.println(cloud_cover);
+    char weather_icon = weather_icon_change(cloud_cover, precipitation);
+    char icon[1];
+    icon[0] = weather_icon;
+    lv_label_set_text(ui_Label4, icon);
   }
   else
   {
@@ -142,20 +223,17 @@ static void update_date(lv_timer_t* timer)
     weatherCounter++; // Zwiększ licznik
   }
 }
+
+SPIClass spi = SPIClass(HSPI);
 void setup()
 {
   Serial.begin(115200);
+  pinMode(42, OUTPUT);
+  digitalWrite(42, HIGH);
+  delay(10);
+  spi.begin(39, 13, 40);
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Wire.begin(21, 38);
-
-  if (!SD.begin(sd_cs_pin))
+  if (!SD.begin(sd_cs_pin, spi, 80000000))
   {
     Serial.println("no SD card");
   }
@@ -164,11 +242,43 @@ void setup()
     Serial.println("SD card ok");
   }
 
+  Wifi_Config wifi_config;
+  read_config(wifi_config);
+
+  WiFi.begin(wifi_config.ssid, wifi_config.pass);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  configTime(wifi_config.timezone, 3600, config::time_server);
+
+  tm time_info;
+  if (!getLocalTime(&time_info))
+  {
+    Serial.println("Błąd pobierania czasu!");
+  }
+  else
+  {
+    Serial.println("Czas pobrany z NTP:");
+    Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\n",
+                  time_info.tm_year + 1900,
+                  time_info.tm_mon + 1,
+                  time_info.tm_mday,
+                  time_info.tm_hour,
+                  time_info.tm_min,
+                  time_info.tm_sec);
+  }
+
+  Wire.begin(21, 38);
+
   if (!m_rtc.begin())
   {
     Serial.println("Couldn't find RTC");
   }
-  m_rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  DateTime dt(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, time_info.tm_hour, time_info.tm_min, time_info.tm_sec);
+  m_rtc.adjust(dt);
 
   pinMode(7, OUTPUT);
   digitalWrite(7, HIGH);

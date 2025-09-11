@@ -3,6 +3,7 @@ SET(SOURCES ui_Screen1.c
     ui_comp_hook.c
     ui_helpers.c
     fonts/ui_font_Font1.c
-    fonts/ui_font_Font2.c)
+    fonts/ui_font_Font2.c
+    fonts/ui_font_weathericon.c)
 
 add_library(ui ${SOURCES})

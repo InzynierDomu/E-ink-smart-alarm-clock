@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 24 px
  * Bpp: 4
- * Opts: --bpp 4 --size 24 --font C:/Users/markiszy/SquareLine/assets/Helvetica.ttf -o C:/Users/markiszy/SquareLine/assets\ui_font_Font2.c --format lvgl -r 0x20-0x7f --symbols ℃ --no-compress --no-prefilter
+ * Opts: --bpp 4 --size 24 --font C:/Users/markiszy/SquareLine/assets/helvetica_weather.ttf -o C:/Users/markiszy/SquareLine/assets\ui_font_Font2.c --format lvgl -r 0x20-0x7f --symbols ℃ --no-compress --no-prefilter
  ******************************************************************************/
 
 #include "ui.h"

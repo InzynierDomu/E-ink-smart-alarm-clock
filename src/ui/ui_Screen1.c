@@ -11,6 +11,7 @@ lv_obj_t * ui_labData = NULL;
 lv_obj_t * ui_Label2 = NULL;
 lv_obj_t * ui_Container2 = NULL;
 lv_obj_t * ui_labTempMorning = NULL;
+lv_obj_t * ui_Label4 = NULL;
 // event funtions
 
 // build funtions
@@ -33,7 +34,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_width(ui_labData, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labData, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_x(ui_labData, -276);
-    lv_obj_set_y(ui_labData, -80);
+    lv_obj_set_y(ui_labData, -96);
     lv_obj_set_align(ui_labData, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labData, "2025-09-09");
     lv_obj_set_style_text_font(ui_labData, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -42,7 +43,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_width(ui_Label2, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_Label2, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_x(ui_Label2, -49);
-    lv_obj_set_y(ui_Label2, -83);
+    lv_obj_set_y(ui_Label2, -97);
     lv_obj_set_align(ui_Label2, LV_ALIGN_CENTER);
     lv_label_set_text(ui_Label2, "Prognoza");
     lv_obj_set_style_text_font(ui_Label2, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -62,11 +63,20 @@ void ui_Screen1_screen_init(void)
     ui_labTempMorning = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labTempMorning, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labTempMorning, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labTempMorning, -49);
+    lv_obj_set_x(ui_labTempMorning, -25);
     lv_obj_set_y(ui_labTempMorning, -44);
     lv_obj_set_align(ui_labTempMorning, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labTempMorning, "22℃");
     lv_obj_set_style_text_font(ui_labTempMorning, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_Label4 = lv_label_create(ui_Screen1);
+    lv_obj_set_width(ui_Label4, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_Label4, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_Label4, -71);
+    lv_obj_set_y(ui_Label4, -46);
+    lv_obj_set_align(ui_Label4, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_Label4, "ú");
+    lv_obj_set_style_text_font(ui_Label4, &ui_font_weathericon, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 }
 
@@ -81,5 +91,6 @@ void ui_Screen1_screen_destroy(void)
     ui_Label2 = NULL;
     ui_Container2 = NULL;
     ui_labTempMorning = NULL;
+    ui_Label4 = NULL;
 
 }
