@@ -40,6 +40,7 @@ extern lv_obj_t * ui____initial_actions0;
 LV_FONT_DECLARE(ui_font_Font1);
 LV_FONT_DECLARE(ui_font_Font2);
 LV_FONT_DECLARE(ui_font_weathericon);
+LV_FONT_DECLARE(ui_font_Font3);
 
 // UI INIT
 void ui_init(void);

@@ -1,5 +1,7 @@
 namespace config
 {
+constexpr uint8_t sd_cs_pin = 10;
+
 const String config_path = "/config.json";
 
 constexpr unsigned int local_port = 2390; // local port to listen for UDP packets

@@ -15,11 +15,33 @@ extern void ui_Screen1_screen_init(void);
 extern void ui_Screen1_screen_destroy(void);
 extern lv_obj_t * ui_Screen1;
 extern lv_obj_t * ui_labtime;
-extern lv_obj_t * ui_labData;
-extern lv_obj_t * ui_Label2;
+extern lv_obj_t * ui_labDate;
 extern lv_obj_t * ui_Container2;
 extern lv_obj_t * ui_labTempMorning;
-extern lv_obj_t * ui_Label4;
+extern lv_obj_t * ui_labWeatherIcon;
+extern lv_obj_t * ui_labDateDay1;
+extern lv_obj_t * ui_labDateDay2;
+extern lv_obj_t * ui_labDateDay3;
+extern lv_obj_t * ui_labWeatherIconDay1;
+extern lv_obj_t * ui_labWeatherIconDa2;
+extern lv_obj_t * ui_labWeatherIconDay2;
+extern lv_obj_t * ui_labTempMorningDay1;
+extern lv_obj_t * ui_labTempAfternoonDay1;
+extern lv_obj_t * ui_labTempEveningDay1;
+extern lv_obj_t * ui_Container3;
+extern lv_obj_t * ui_Container1;
+extern lv_obj_t * ui_labTempMorningDay2;
+extern lv_obj_t * ui_labTempAfternoonDay2;
+extern lv_obj_t * ui_labTempEveningDay2;
+extern lv_obj_t * ui_labTempMorningDay3;
+extern lv_obj_t * ui_labTempAfternoonDay3;
+extern lv_obj_t * ui_labTempEveningDay3;
+extern lv_obj_t * ui_Container4;
+extern lv_obj_t * ui_labCalendarEvent1;
+extern lv_obj_t * ui_Label2;
+extern lv_obj_t * ui_Label3;
+extern lv_obj_t * ui_labAlarmEnable;
+extern lv_obj_t * ui_labAlarm;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

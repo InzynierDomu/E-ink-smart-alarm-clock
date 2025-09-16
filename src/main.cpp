@@ -13,14 +13,26 @@
 #include <WiFiMulti.h>
 #include <WiFiUdp.h>
 #include <time.h>
+#include <vector>
 
 struct Simple_time
 {
+  Simple_time(String& time)
+  {
+    hour = time.substring(11, 13).toInt();
+    minutes = time.substring(14, 16).toInt();
+  }
   uint8_t hour;
   uint8_t minutes;
 };
 struct Calendar_event
 {
+  Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
+  : name(_name)
+  , calendar(_calendar)
+  , time_start(_time_start)
+  , time_stop(_time_stop)
+  {}
   String name;
   String calendar;
   Simple_time time_start;
@@ -46,7 +58,7 @@ SPIClass spi = SPIClass(HSPI);
 Open_weather_config weather_config;
 String google_script;
 
-constexpr uint8_t sd_cs_pin = 10;
+std::vector<Calendar_event> calendar;
 
 #define SCR_WIDTH 792
 #define SCR_HEIGHT 272
@@ -59,6 +71,7 @@ DynamicJsonDocument docs(19508);
 GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
 
 static uint8_t lvBuffer[2][LVBUF];
+
 
 void read_config(Wifi_Config& _config)
 {
@@ -132,7 +145,7 @@ void update_clock()
 
   char buf_date[11]; // "rrrr-mm-dd" + null
   sprintf(buf_date, "%04d-%02d-%02d", now.year(), now.month(), now.day());
-  lv_label_set_text(ui_labData, buf_date);
+  lv_label_set_text(ui_labDate, buf_date);
 }
 
 String getDateString(DateTime dt)
@@ -217,7 +230,7 @@ void getWeather()
     char weather_icon = weather_icon_change(cloud_cover, precipitation);
     char icon[1];
     icon[0] = weather_icon;
-    lv_label_set_text(ui_Label4, icon);
+    lv_label_set_text(ui_labWeatherIcon, icon);
   }
   else
   {
@@ -269,18 +282,25 @@ void get_calendar()
   {
     String response = http.getString();
     Serial.println("JSON received:");
-    Serial.println(response);
 
     DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
     DeserializationError error = deserializeJson(doc, response);
 
     if (!error && doc["success"])
     {
+      calendar.clear();
       JsonArray events = doc["events"];
       for (JsonObject event : events)
       {
-        Serial.print("Tytuł: ");
-        Serial.println(event["title"].as<String>());
+        String name = event["title"] | "";
+        String calendar_name = event["calendarName"] | "";
+        String temp_time = event["startTime"] | "";
+        Simple_time start(temp_time);
+        temp_time = event["endTime"] | "";
+        Simple_time end(temp_time);
+        Calendar_event new_event(name, calendar_name, start, end);
+        calendar.push_back(new_event);
+        // Serial.println(event["title"].as<String>());
       }
     }
     else
@@ -324,7 +344,7 @@ void setup()
   delay(10);
   spi.begin(39, 13, 40);
 
-  if (!SD.begin(sd_cs_pin, spi, 80000000))
+  if (!SD.begin(config::sd_cs_pin, spi, 80000000))
   {
     Serial.println("no SD card");
   }
