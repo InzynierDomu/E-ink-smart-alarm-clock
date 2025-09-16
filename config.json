@@ -4,5 +4,6 @@
   "timezone": 0,
   "openweathermap_api_key": "123456789abcdef",
   "lat" : 50.2945,
-  "lon" : 18.6714
+  "lon" : 18.6714,
+  "google_script" : "abcd"
 }

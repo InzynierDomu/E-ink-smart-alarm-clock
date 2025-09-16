@@ -14,6 +14,18 @@
 #include <WiFiUdp.h>
 #include <time.h>
 
+struct Simple_time
+{
+  uint8_t hour;
+  uint8_t minutes;
+};
+struct Calendar_event
+{
+  String name;
+  String calendar;
+  Simple_time time_start;
+  Simple_time time_stop;
+};
 
 struct Wifi_Config
 {
@@ -29,7 +41,25 @@ struct Open_weather_config
   float lon;
 };
 
+SPIClass spi = SPIClass(HSPI);
+
 Open_weather_config weather_config;
+String google_script;
+
+constexpr uint8_t sd_cs_pin = 10;
+
+#define SCR_WIDTH 792
+#define SCR_HEIGHT 272
+#define LVBUF ((SCR_WIDTH * SCR_HEIGHT / 8) + 8)
+
+RTC_DS1307 m_rtc; ///< DS1307 RTC
+DateTime now;
+DynamicJsonDocument docs(19508);
+
+GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
+
+static uint8_t lvBuffer[2][LVBUF];
+
 void read_config(Wifi_Config& _config)
 {
   File file = SD.open(config::config_path, "r");
@@ -46,7 +76,7 @@ void read_config(Wifi_Config& _config)
   }
   file.close();
 
-  StaticJsonDocument<256> doc;
+  StaticJsonDocument<512> doc;
 
   DeserializationError error = deserializeJson(doc, jsonData);
   if (error)
@@ -59,24 +89,12 @@ void read_config(Wifi_Config& _config)
   _config.ssid = doc["ssid"] | "";
   _config.pass = doc["pass"] | "";
   _config.timezone = doc["timezone"];
+  Serial.println(doc["api_key"] | "");
   weather_config.api_key = doc["api_key"] | "";
   weather_config.lat = doc["lat"];
   weather_config.lon = doc["lon"];
+  google_script = doc["google_script"] | "";
 }
-
-constexpr uint8_t sd_cs_pin = 10;
-
-#define SCR_WIDTH 792
-#define SCR_HEIGHT 272
-#define LVBUF ((SCR_WIDTH * SCR_HEIGHT / 8) + 8)
-
-RTC_DS1307 m_rtc; ///< DS1307 RTC
-DateTime now;
-DynamicJsonDocument docs(19508);
-
-GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
-
-static uint8_t lvBuffer[2][LVBUF];
 
 void my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
 {
@@ -156,6 +174,7 @@ char weather_icon_change(int cloud_cover, int precipitation)
 void getWeather()
 {
   String dateStr = getDateString(now);
+  Serial.println(weather_config.api_key);
   String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(weather_config.lat, 4) +
                       "&lon=" + String(weather_config.lon, 4) + "&date=" + dateStr + "&appid=" + weather_config.api_key + "&units=metric";
 
@@ -208,14 +227,87 @@ void getWeather()
   http.end();
 }
 
+bool internetWorks()
+{
+  HTTPClient http;
+  if (http.begin("script.google.com", 443))
+  {
+    http.end();
+    return true;
+  }
+  else
+  {
+    http.end();
+    return false;
+  }
+}
+
+void get_calendar()
+{
+  HTTPClient http;
+  http.setTimeout(20000);
+  String url = "https://script.google.com/macros/s/" + google_script + "/exec";
+  if (!http.begin(url))
+  {
+    Serial.println("Cannot connect to google script");
+  }
+
+  int httpResponseCode = http.GET();
+
+  if (httpResponseCode == 301 || httpResponseCode == 302)
+  {
+    String newUrl = http.getLocation(); // Pobierz nowy URL z nagłówka Location
+    Serial.printf("Przekierowanie: %d -> %s\n", httpResponseCode, newUrl.c_str());
+    http.end();
+
+    // Wywołaj ponownie do nowego URL (uwaga: rekurencja lub pętla, ale ogranicz max ilość przekierowań)
+    http.begin(newUrl);
+    httpResponseCode = http.GET();
+  }
+
+  if (httpResponseCode == 200)
+  {
+    String response = http.getString();
+    Serial.println("JSON received:");
+    Serial.println(response);
+
+    DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
+    DeserializationError error = deserializeJson(doc, response);
+
+    if (!error && doc["success"])
+    {
+      JsonArray events = doc["events"];
+      for (JsonObject event : events)
+      {
+        Serial.print("Tytuł: ");
+        Serial.println(event["title"].as<String>());
+      }
+    }
+    else
+    {
+      Serial.println("JSON parse error lub brak wydarzeń");
+    }
+  }
+  else
+  {
+    Serial.printf("HTTP error: %d\n", httpResponseCode);
+  }
+  http.end();
+}
+
 static void update_date(lv_timer_t* timer)
 {
   static int weatherCounter = 0;
   update_clock();
   Serial.println(weatherCounter);
-  if (weatherCounter >= 10)
+  if (weatherCounter >= 5)
   {
+    if (internetWorks())
+    {
+      Serial.println("wifi ok");
+    }
     getWeather(); // Wywołaj tylko raz na 10 cykli
+    get_calendar();
     weatherCounter = 0; // Resetuj licznik
   }
   else
@@ -224,7 +316,6 @@ static void update_date(lv_timer_t* timer)
   }
 }
 
-SPIClass spi = SPIClass(HSPI);
 void setup()
 {
   Serial.begin(115200);
