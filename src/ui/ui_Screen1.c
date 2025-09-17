@@ -15,8 +15,8 @@ lv_obj_t * ui_labDateDay1 = NULL;
 lv_obj_t * ui_labDateDay2 = NULL;
 lv_obj_t * ui_labDateDay3 = NULL;
 lv_obj_t * ui_labWeatherIconDay1 = NULL;
-lv_obj_t * ui_labWeatherIconDa2 = NULL;
 lv_obj_t * ui_labWeatherIconDay2 = NULL;
+lv_obj_t * ui_labWeatherIconDay3 = NULL;
 lv_obj_t * ui_labTempMorningDay1 = NULL;
 lv_obj_t * ui_labTempAfternoonDay1 = NULL;
 lv_obj_t * ui_labTempEveningDay1 = NULL;
@@ -29,11 +29,12 @@ lv_obj_t * ui_labTempMorningDay3 = NULL;
 lv_obj_t * ui_labTempAfternoonDay3 = NULL;
 lv_obj_t * ui_labTempEveningDay3 = NULL;
 lv_obj_t * ui_Container4 = NULL;
-lv_obj_t * ui_labCalendarEvent1 = NULL;
-lv_obj_t * ui_Label2 = NULL;
-lv_obj_t * ui_Label3 = NULL;
 lv_obj_t * ui_labAlarmEnable = NULL;
 lv_obj_t * ui_labAlarm = NULL;
+lv_obj_t * ui_Container6 = NULL;
+lv_obj_t * ui_labCalendarEvent1 = NULL;
+lv_obj_t * ui_labCalendarEvent2 = NULL;
+lv_obj_t * ui_labCalendarEvent3 = NULL;
 // event funtions
 
 // build funtions
@@ -47,7 +48,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_width(ui_labtime, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labtime, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_x(ui_labtime, -271);
-    lv_obj_set_y(ui_labtime, -31);
+    lv_obj_set_y(ui_labtime, -27);
     lv_obj_set_align(ui_labtime, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labtime, "00:00");
     lv_obj_set_style_text_font(ui_labtime, &ui_font_Font1, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -55,7 +56,7 @@ void ui_Screen1_screen_init(void)
     ui_labDate = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labDate, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labDate, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labDate, -328);
+    lv_obj_set_x(ui_labDate, -326);
     lv_obj_set_y(ui_labDate, -99);
     lv_obj_set_align(ui_labDate, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labDate, "09-09");
@@ -65,7 +66,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container2);
     lv_obj_set_width(ui_Container2, 1);
     lv_obj_set_height(ui_Container2, 261);
-    lv_obj_set_x(ui_Container2, -136);
+    lv_obj_set_x(ui_Container2, -140);
     lv_obj_set_y(ui_Container2, 0);
     lv_obj_set_align(ui_Container2, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_Container2, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -76,7 +77,7 @@ void ui_Screen1_screen_init(void)
     ui_labTempMorning = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labTempMorning, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labTempMorning, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labTempMorning, -212);
+    lv_obj_set_x(ui_labTempMorning, -208);
     lv_obj_set_y(ui_labTempMorning, -99);
     lv_obj_set_align(ui_labTempMorning, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labTempMorning, "22℃");
@@ -85,8 +86,8 @@ void ui_Screen1_screen_init(void)
     ui_labWeatherIcon = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labWeatherIcon, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labWeatherIcon, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labWeatherIcon, -257);
-    lv_obj_set_y(ui_labWeatherIcon, -102);
+    lv_obj_set_x(ui_labWeatherIcon, -254);
+    lv_obj_set_y(ui_labWeatherIcon, -101);
     lv_obj_set_align(ui_labWeatherIcon, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labWeatherIcon, "ú");
     lv_obj_set_style_text_font(ui_labWeatherIcon, &ui_font_weathericon, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -121,26 +122,29 @@ void ui_Screen1_screen_init(void)
     ui_labWeatherIconDay1 = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labWeatherIconDay1, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labWeatherIconDay1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labWeatherIconDay1, -92);
+    lv_obj_set_x(ui_labWeatherIconDay1, -91);
     lv_obj_set_y(ui_labWeatherIconDay1, -76);
     lv_obj_set_align(ui_labWeatherIconDay1, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labWeatherIconDay1, "ú");
     lv_obj_set_style_text_font(ui_labWeatherIconDay1, &ui_font_weathericon, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_labWeatherIconDa2 = lv_label_create(ui_Screen1);
-    lv_obj_set_width(ui_labWeatherIconDa2, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_labWeatherIconDa2, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labWeatherIconDa2, -92);
-    lv_obj_set_y(ui_labWeatherIconDa2, 5);
-    lv_obj_set_align(ui_labWeatherIconDa2, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_font(ui_labWeatherIconDa2, &ui_font_weathericon, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labWeatherIconDay2 = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labWeatherIconDay2, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labWeatherIconDay2, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labWeatherIconDay2, -92);
-    lv_obj_set_y(ui_labWeatherIconDay2, 89);
+    lv_obj_set_x(ui_labWeatherIconDay2, -91);
+    lv_obj_set_y(ui_labWeatherIconDay2, 5);
     lv_obj_set_align(ui_labWeatherIconDay2, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labWeatherIconDay2, "ú");
     lv_obj_set_style_text_font(ui_labWeatherIconDay2, &ui_font_weathericon, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_labWeatherIconDay3 = lv_label_create(ui_Screen1);
+    lv_obj_set_width(ui_labWeatherIconDay3, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labWeatherIconDay3, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labWeatherIconDay3, -91);
+    lv_obj_set_y(ui_labWeatherIconDay3, 89);
+    lv_obj_set_align(ui_labWeatherIconDay3, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labWeatherIconDay3, "ú");
+    lv_obj_set_style_text_font(ui_labWeatherIconDay3, &ui_font_weathericon, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempMorningDay1 = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labTempMorningDay1, LV_SIZE_CONTENT);   /// 1
@@ -148,6 +152,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempMorningDay1, -38);
     lv_obj_set_y(ui_labTempMorningDay1, -106);
     lv_obj_set_align(ui_labTempMorningDay1, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempMorningDay1, "22℃");
     lv_obj_set_style_text_font(ui_labTempMorningDay1, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempAfternoonDay1 = lv_label_create(ui_Screen1);
@@ -156,6 +161,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempAfternoonDay1, -38);
     lv_obj_set_y(ui_labTempAfternoonDay1, -83);
     lv_obj_set_align(ui_labTempAfternoonDay1, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempAfternoonDay1, "22℃");
     lv_obj_set_style_text_font(ui_labTempAfternoonDay1, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempEveningDay1 = lv_label_create(ui_Screen1);
@@ -164,6 +170,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempEveningDay1, -38);
     lv_obj_set_y(ui_labTempEveningDay1, -60);
     lv_obj_set_align(ui_labTempEveningDay1, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempEveningDay1, "22℃");
     lv_obj_set_style_text_font(ui_labTempEveningDay1, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_Container3 = lv_obj_create(ui_Screen1);
@@ -183,7 +190,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container1);
     lv_obj_set_width(ui_Container1, 1);
     lv_obj_set_height(ui_Container1, 261);
-    lv_obj_set_x(ui_Container1, -4);
+    lv_obj_set_x(ui_Container1, -1);
     lv_obj_set_y(ui_Container1, -1);
     lv_obj_set_align(ui_Container1, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_Container1, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -197,6 +204,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempMorningDay2, -38);
     lv_obj_set_y(ui_labTempMorningDay2, -25);
     lv_obj_set_align(ui_labTempMorningDay2, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempMorningDay2, "22℃");
     lv_obj_set_style_text_font(ui_labTempMorningDay2, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempAfternoonDay2 = lv_label_create(ui_Screen1);
@@ -205,6 +213,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempAfternoonDay2, -38);
     lv_obj_set_y(ui_labTempAfternoonDay2, -2);
     lv_obj_set_align(ui_labTempAfternoonDay2, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempAfternoonDay2, "22℃");
     lv_obj_set_style_text_font(ui_labTempAfternoonDay2, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempEveningDay2 = lv_label_create(ui_Screen1);
@@ -213,6 +222,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempEveningDay2, -38);
     lv_obj_set_y(ui_labTempEveningDay2, 21);
     lv_obj_set_align(ui_labTempEveningDay2, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempEveningDay2, "22℃");
     lv_obj_set_style_text_font(ui_labTempEveningDay2, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempMorningDay3 = lv_label_create(ui_Screen1);
@@ -221,6 +231,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempMorningDay3, -38);
     lv_obj_set_y(ui_labTempMorningDay3, 56);
     lv_obj_set_align(ui_labTempMorningDay3, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempMorningDay3, "22℃");
     lv_obj_set_style_text_font(ui_labTempMorningDay3, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempAfternoonDay3 = lv_label_create(ui_Screen1);
@@ -229,6 +240,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempAfternoonDay3, -38);
     lv_obj_set_y(ui_labTempAfternoonDay3, 79);
     lv_obj_set_align(ui_labTempAfternoonDay3, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempAfternoonDay3, "22℃");
     lv_obj_set_style_text_font(ui_labTempAfternoonDay3, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labTempEveningDay3 = lv_label_create(ui_Screen1);
@@ -237,6 +249,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labTempEveningDay3, -38);
     lv_obj_set_y(ui_labTempEveningDay3, 102);
     lv_obj_set_align(ui_labTempEveningDay3, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labTempEveningDay3, "22℃");
     lv_obj_set_style_text_font(ui_labTempEveningDay3, &ui_font_Font3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_Container4 = lv_obj_create(ui_Screen1);
@@ -251,30 +264,6 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_style_border_opa(ui_Container4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(ui_Container4, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_side(ui_Container4, LV_BORDER_SIDE_FULL, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_labCalendarEvent1 = lv_label_create(ui_Screen1);
-    lv_obj_set_width(ui_labCalendarEvent1, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_labCalendarEvent1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labCalendarEvent1, 32);
-    lv_obj_set_y(ui_labCalendarEvent1, -106);
-    lv_obj_set_align(ui_labCalendarEvent1, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_font(ui_labCalendarEvent1, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_Label2 = lv_label_create(ui_Screen1);
-    lv_obj_set_width(ui_Label2, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_Label2, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label2, 32);
-    lv_obj_set_y(ui_Label2, -72);
-    lv_obj_set_align(ui_Label2, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_font(ui_Label2, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_Label3 = lv_label_create(ui_Screen1);
-    lv_obj_set_width(ui_Label3, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_Label3, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label3, 32);
-    lv_obj_set_y(ui_Label3, -38);
-    lv_obj_set_align(ui_Label3, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_font(ui_Label3, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labAlarmEnable = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labAlarmEnable, LV_SIZE_CONTENT);   /// 1
@@ -294,6 +283,41 @@ void ui_Screen1_screen_init(void)
     lv_label_set_text(ui_labAlarm, "00:00");
     lv_obj_set_style_text_font(ui_labAlarm, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    ui_Container6 = lv_obj_create(ui_Screen1);
+    lv_obj_remove_style_all(ui_Container6);
+    lv_obj_set_width(ui_Container6, 347);
+    lv_obj_set_height(ui_Container6, 238);
+    lv_obj_set_x(ui_Container6, 183);
+    lv_obj_set_y(ui_Container6, -5);
+    lv_obj_set_align(ui_Container6, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_Container6, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+
+    ui_labCalendarEvent1 = lv_label_create(ui_Container6);
+    lv_obj_set_width(ui_labCalendarEvent1, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labCalendarEvent1, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labCalendarEvent1, 32);
+    lv_obj_set_y(ui_labCalendarEvent1, -106);
+    lv_obj_set_align(ui_labCalendarEvent1, LV_ALIGN_LEFT_MID);
+    lv_obj_set_style_text_font(ui_labCalendarEvent1, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_labCalendarEvent2 = lv_label_create(ui_Container6);
+    lv_obj_set_width(ui_labCalendarEvent2, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labCalendarEvent2, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labCalendarEvent2, 32);
+    lv_obj_set_y(ui_labCalendarEvent2, -72);
+    lv_obj_set_align(ui_labCalendarEvent2, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(ui_labCalendarEvent2, "calendar");
+    lv_obj_set_style_text_font(ui_labCalendarEvent2, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_labCalendarEvent3 = lv_label_create(ui_Container6);
+    lv_obj_set_width(ui_labCalendarEvent3, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labCalendarEvent3, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labCalendarEvent3, 32);
+    lv_obj_set_y(ui_labCalendarEvent3, -38);
+    lv_obj_set_align(ui_labCalendarEvent3, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(ui_labCalendarEvent3, "calendar");
+    lv_obj_set_style_text_font(ui_labCalendarEvent3, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
 }
 
 void ui_Screen1_screen_destroy(void)
@@ -311,8 +335,8 @@ void ui_Screen1_screen_destroy(void)
     ui_labDateDay2 = NULL;
     ui_labDateDay3 = NULL;
     ui_labWeatherIconDay1 = NULL;
-    ui_labWeatherIconDa2 = NULL;
     ui_labWeatherIconDay2 = NULL;
+    ui_labWeatherIconDay3 = NULL;
     ui_labTempMorningDay1 = NULL;
     ui_labTempAfternoonDay1 = NULL;
     ui_labTempEveningDay1 = NULL;
@@ -325,10 +349,11 @@ void ui_Screen1_screen_destroy(void)
     ui_labTempAfternoonDay3 = NULL;
     ui_labTempEveningDay3 = NULL;
     ui_Container4 = NULL;
-    ui_labCalendarEvent1 = NULL;
-    ui_Label2 = NULL;
-    ui_Label3 = NULL;
     ui_labAlarmEnable = NULL;
     ui_labAlarm = NULL;
+    ui_Container6 = NULL;
+    ui_labCalendarEvent1 = NULL;
+    ui_labCalendarEvent2 = NULL;
+    ui_labCalendarEvent3 = NULL;
 
 }

@@ -24,7 +24,24 @@ struct Simple_time
   }
   uint8_t hour;
   uint8_t minutes;
+
+  String to_string() const
+  {
+    String h = hour < 10 ? "0" + String(hour) : String(hour);
+    String m = minutes < 10 ? "0" + String(minutes) : String(minutes);
+    return h + ":" + m;
+  }
 };
+
+struct Simple_weather
+{
+  uint8_t temperature_morning;
+  uint8_t temperature_afternoon;
+  uint8_t temperature_evening;
+  uint8_t cloud_cover;
+  uint8_t precipitation;
+};
+
 struct Calendar_event
 {
   Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
@@ -59,6 +76,7 @@ Open_weather_config weather_config;
 String google_script;
 
 std::vector<Calendar_event> calendar;
+std::vector<Simple_weather> forecast;
 
 #define SCR_WIDTH 792
 #define SCR_HEIGHT 272
@@ -143,15 +161,21 @@ void update_clock()
   sprintf(buf, "%02d:%02d", now.hour(), now.minute());
   lv_label_set_text(ui_labtime, buf);
 
-  char buf_date[11]; // "rrrr-mm-dd" + null
-  sprintf(buf_date, "%04d-%02d-%02d", now.year(), now.month(), now.day());
+  char buf_date[11]; // "dd-mm" + null
+  sprintf(buf_date, "%02d-%02d", now.day(), now.month());
   lv_label_set_text(ui_labDate, buf_date);
+  sprintf(buf_date, "%02d-%02d", now.day() + 1, now.month());
+  lv_label_set_text(ui_labDateDay1, buf_date);
+  sprintf(buf_date, "%02d-%02d", now.day() + 2, now.month());
+  lv_label_set_text(ui_labDateDay2, buf_date);
+  sprintf(buf_date, "%02d-%02d", now.day() + 3, now.month());
+  lv_label_set_text(ui_labDateDay3, buf_date);
 }
 
-String getDateString(DateTime dt)
+String getDateString(DateTime dt, uint8_t offset = 0)
 {
   char dateStr[11];
-  sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), dt.day());
+  sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), (dt.day() + offset));
   return String(dateStr);
 }
 
@@ -164,80 +188,120 @@ enum class wheater
 };
 // todo change to map
 
-char weather_icon_change(int cloud_cover, int precipitation)
+const char* weather_icon_change(int cloud_cover, int precipitation)
 {
   if (cloud_cover > 30 && precipitation == 0)
-  {
-    return 'ú';
-  }
+    return "ú";
 
   if (precipitation < 5 && precipitation != 0)
-  {
-    return 'û';
-  }
+    return "û";
 
   if (precipitation > 5)
-  {
-    return 'ü';
-  }
+    return "ü";
 
-  return 'ù';
+  return "ù";
+}
+
+void print_weather()
+{
+  char temp_str[10];
+  sprintf(temp_str, "%d℃", forecast[0].temperature_afternoon);
+  lv_label_set_text(ui_labTempMorning, temp_str);
+  const char* icon = weather_icon_change(forecast[0].cloud_cover, forecast[0].precipitation);
+  lv_label_set_text(ui_labWeatherIcon, icon);
+
+  sprintf(temp_str, "%d℃", forecast[1].temperature_morning);
+  lv_label_set_text(ui_labTempMorningDay1, temp_str);
+  sprintf(temp_str, "%d℃", forecast[1].temperature_afternoon);
+  lv_label_set_text(ui_labTempAfternoonDay1, temp_str);
+  sprintf(temp_str, "%d℃", forecast[1].temperature_evening);
+  lv_label_set_text(ui_labTempEveningDay1, temp_str);
+  const char* icon1 = weather_icon_change(forecast[1].cloud_cover, forecast[1].precipitation);
+  lv_label_set_text(ui_labWeatherIconDay1, icon1);
+
+  sprintf(temp_str, "%d℃", forecast[2].temperature_morning);
+  lv_label_set_text(ui_labTempMorningDay2, temp_str);
+  sprintf(temp_str, "%d℃", forecast[2].temperature_afternoon);
+  lv_label_set_text(ui_labTempAfternoonDay2, temp_str);
+  sprintf(temp_str, "%d℃", forecast[2].temperature_evening);
+  lv_label_set_text(ui_labTempEveningDay2, temp_str);
+  const char* icon2 = weather_icon_change(forecast[2].cloud_cover, forecast[2].precipitation);
+  lv_label_set_text(ui_labWeatherIconDay2, icon2);
+
+  sprintf(temp_str, "%d℃", forecast[3].temperature_morning);
+  lv_label_set_text(ui_labTempMorningDay3, temp_str);
+  sprintf(temp_str, "%d℃", forecast[3].temperature_afternoon);
+  lv_label_set_text(ui_labTempAfternoonDay3, temp_str);
+  sprintf(temp_str, "%d℃", forecast[3].temperature_evening);
+  lv_label_set_text(ui_labTempEveningDay3, temp_str);
+  const char* icon3 = weather_icon_change(forecast[3].cloud_cover, forecast[3].precipitation);
+  lv_label_set_text(ui_labWeatherIconDay3, icon3);
 }
 
 void getWeather()
 {
-  String dateStr = getDateString(now);
-  Serial.println(weather_config.api_key);
-  String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(weather_config.lat, 4) +
-                      "&lon=" + String(weather_config.lon, 4) + "&date=" + dateStr + "&appid=" + weather_config.api_key + "&units=metric";
-
-  HTTPClient http;
-  http.begin(serverPath.c_str());
-  int code = http.GET();
-
-  if (code == HTTP_CODE_OK)
+  forecast.clear();
+  for (size_t i = 0; i < 4; i++)
   {
-    String response = http.getString();
+    String dateStr = getDateString(now, i);
+    Serial.println(weather_config.api_key);
+    String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(weather_config.lat, 4) +
+                        "&lon=" + String(weather_config.lon, 4) + "&date=" + dateStr + "&appid=" + weather_config.api_key + "&units=metric";
 
-    // Parsowanie zakomentowane - odkomentuj, gdy JSON będzie poprawny
-    StaticJsonDocument<4096> docs;
-    DeserializationError error = deserializeJson(docs, response);
+    HTTPClient http;
+    http.begin(serverPath.c_str());
+    int code = http.GET();
 
-    if (error)
+    if (code == HTTP_CODE_OK)
     {
-      Serial.print("Błąd JSON: ");
-      Serial.println(error.c_str());
-      http.end();
-      return;
+      String response = http.getString();
+
+      // Parsowanie zakomentowane - odkomentuj, gdy JSON będzie poprawny
+      StaticJsonDocument<4096> docs;
+      DeserializationError error = deserializeJson(docs, response);
+
+      if (error)
+      {
+        Serial.print("Błąd JSON: ");
+        Serial.println(error.c_str());
+        http.end();
+        return;
+      }
+
+      float temp = docs["temperature"]["afternoon"]; // Dostosuj gdy JSON poprawny
+
+      Serial.print("Data: ");
+      Serial.print(dateStr);
+      Serial.print(" | Temp: ");
+      Serial.println(temp);
+
+      Simple_weather forecast_weather;
+
+      forecast_weather.temperature_afternoon = (int)round(temp);
+      temp = docs["temperature"]["morning"];
+      forecast_weather.temperature_morning = (int)round(temp);
+      temp = docs["temperature"]["evening"];
+      forecast_weather.temperature_evening = (int)round(temp);
+      // char temp_str[10];
+      // sprintf(temp_str, "%d℃", temp_rounded);
+
+      // lv_label_set_text(ui_labTempMorning, temp_str);
+      forecast_weather.precipitation = docs["precipitation"]["total"];
+      // Serial.println(precipitation);
+      forecast_weather.cloud_cover = docs["cloud_cover"]["afternoon"];
+      // Serial.println(cloud_cover);
+      // const char* icon = weather_icon_change(cloud_cover, precipitation);
+      // Serial.println(icon);
+      // lv_label_set_text(ui_labWeatherIcon, icon);
+      forecast.push_back(forecast_weather);
     }
-
-    float temp = docs["temperature"]["afternoon"]; // Dostosuj gdy JSON poprawny
-
-    Serial.print("Data: ");
-    Serial.print(dateStr);
-    Serial.print(" | Temp: ");
-    Serial.println(temp);
-
-    int temp_rounded = (int)round(temp);
-    char temp_str[10];
-    sprintf(temp_str, "%d℃", temp_rounded);
-
-    lv_label_set_text(ui_labTempMorning, temp_str);
-    int precipitation = docs["precipitation"]["total"];
-    Serial.println(precipitation);
-    int cloud_cover = docs["cloud_cover"]["afternoon"];
-    Serial.println(cloud_cover);
-    char weather_icon = weather_icon_change(cloud_cover, precipitation);
-    char icon[1];
-    icon[0] = weather_icon;
-    lv_label_set_text(ui_labWeatherIcon, icon);
+    else
+    {
+      Serial.print("Błąd HTTP: ");
+      Serial.println(code);
+    }
+    http.end();
   }
-  else
-  {
-    Serial.print("Błąd HTTP: ");
-    Serial.println(code);
-  }
-  http.end();
 }
 
 bool internetWorks()
@@ -302,6 +366,8 @@ void get_calendar()
         calendar.push_back(new_event);
         // Serial.println(event["title"].as<String>());
       }
+      String label = calendar[0].time_start.to_string() + " - " + calendar[0].name;
+      lv_label_set_text(ui_labCalendarEvent1, label.c_str());
     }
     else
     {
@@ -320,13 +386,14 @@ static void update_date(lv_timer_t* timer)
   static int weatherCounter = 0;
   update_clock();
   Serial.println(weatherCounter);
-  if (weatherCounter >= 5)
+  if (weatherCounter >= 10)
   {
     if (internetWorks())
     {
       Serial.println("wifi ok");
     }
     getWeather(); // Wywołaj tylko raz na 10 cykli
+    print_weather();
     get_calendar();
     weatherCounter = 0; // Resetuj licznik
   }

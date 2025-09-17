@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 14 px
  * Bpp: 4
- * Opts: --bpp 4 --size 14 --font C:/Users/markiszy/SquareLine/assets/Helvetica.ttf -o C:/Users/markiszy/SquareLine/assets\ui_font_Font3.c --format lvgl -r 0x20-0x7f --no-compress --no-prefilter
+ * Opts: --bpp 4 --size 14 --font C:/Users/markiszy/SquareLine/assets/Helvetica.ttf -o C:/Users/markiszy/SquareLine/assets\ui_font_Font3.c --format lvgl -r 0x20-0x7f --symbols ℃ --no-compress --no-prefilter
  ******************************************************************************/
 
 #include "ui.h"
@@ -675,7 +675,21 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
     /* U+007E "~" */
     0x0, 0x0, 0x0, 0x2, 0x2, 0xdf, 0xc7, 0x22,
     0xd0, 0xa8, 0x48, 0xdf, 0xf7, 0x3, 0x0, 0x0,
-    0x22, 0x0
+    0x22, 0x0,
+
+    /* U+2103 "℃" */
+    0x0, 0x0, 0x0, 0x0, 0x1, 0x44, 0x10, 0x0,
+    0x2, 0xaa, 0x20, 0x0, 0x8f, 0xfe, 0xfa, 0x10,
+    0xb, 0x22, 0xc0, 0x8, 0xf5, 0x0, 0x2d, 0xb0,
+    0xc, 0x0, 0xc0, 0x2f, 0x60, 0x0, 0x3, 0xc1,
+    0x6, 0xcc, 0x60, 0x6f, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x8d, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x8e, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x6f, 0x0, 0x0, 0x1, 0xd3,
+    0x0, 0x0, 0x0, 0x1f, 0x60, 0x0, 0x7, 0xf0,
+    0x0, 0x0, 0x0, 0x9, 0xf5, 0x0, 0x5f, 0x60,
+    0x0, 0x0, 0x0, 0x0, 0x8f, 0xff, 0xf7, 0x0,
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x33, 0x0, 0x0
 };
 
 
@@ -779,7 +793,8 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 3299, .adv_w = 75, .box_w = 6, .box_h = 15, .ofs_x = -1, .ofs_y = -4},
     {.bitmap_index = 3344, .adv_w = 58, .box_w = 3, .box_h = 11, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 3361, .adv_w = 75, .box_w = 5, .box_h = 15, .ofs_x = 0, .ofs_y = -4},
-    {.bitmap_index = 3399, .adv_w = 131, .box_w = 9, .box_h = 4, .ofs_x = 0, .ofs_y = 2}
+    {.bitmap_index = 3399, .adv_w = 131, .box_w = 9, .box_h = 4, .ofs_x = 0, .ofs_y = 2},
+    {.bitmap_index = 3417, .adv_w = 251, .box_w = 16, .box_h = 12, .ofs_x = 0, .ofs_y = -1}
 };
 
 /*---------------------
@@ -793,6 +808,10 @@ static const lv_font_fmt_txt_cmap_t cmaps[] =
 {
     {
         .range_start = 32, .range_length = 95, .glyph_id_start = 1,
+        .unicode_list = NULL, .glyph_id_ofs_list = NULL, .list_length = 0, .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY
+    },
+    {
+        .range_start = 8451, .range_length = 1, .glyph_id_start = 96,
         .unicode_list = NULL, .glyph_id_ofs_list = NULL, .list_length = 0, .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY
     }
 };
@@ -949,7 +968,7 @@ static lv_font_fmt_txt_dsc_t font_dsc = {
     .cmaps = cmaps,
     .kern_dsc = &kern_pairs,
     .kern_scale = 16,
-    .cmap_num = 1,
+    .cmap_num = 2,
     .bpp = 4,
     .kern_classes = 0,
     .bitmap_format = 0,

@@ -23,8 +23,8 @@ extern lv_obj_t * ui_labDateDay1;
 extern lv_obj_t * ui_labDateDay2;
 extern lv_obj_t * ui_labDateDay3;
 extern lv_obj_t * ui_labWeatherIconDay1;
-extern lv_obj_t * ui_labWeatherIconDa2;
 extern lv_obj_t * ui_labWeatherIconDay2;
+extern lv_obj_t * ui_labWeatherIconDay3;
 extern lv_obj_t * ui_labTempMorningDay1;
 extern lv_obj_t * ui_labTempAfternoonDay1;
 extern lv_obj_t * ui_labTempEveningDay1;
@@ -37,11 +37,12 @@ extern lv_obj_t * ui_labTempMorningDay3;
 extern lv_obj_t * ui_labTempAfternoonDay3;
 extern lv_obj_t * ui_labTempEveningDay3;
 extern lv_obj_t * ui_Container4;
-extern lv_obj_t * ui_labCalendarEvent1;
-extern lv_obj_t * ui_Label2;
-extern lv_obj_t * ui_Label3;
 extern lv_obj_t * ui_labAlarmEnable;
 extern lv_obj_t * ui_labAlarm;
+extern lv_obj_t * ui_Container6;
+extern lv_obj_t * ui_labCalendarEvent1;
+extern lv_obj_t * ui_labCalendarEvent2;
+extern lv_obj_t * ui_labCalendarEvent3;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus
