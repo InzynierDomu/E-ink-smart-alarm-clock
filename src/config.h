@@ -1,6 +1,9 @@
 namespace config
 {
 constexpr uint8_t sd_cs_pin = 10;
+constexpr uint8_t sd_power_pin = 42;
+constexpr uint8_t screen_power_pin = 7;
+constexpr uint8_t alarm_enable_button_pin = 2;
 
 const String config_path = "/config.json";
 

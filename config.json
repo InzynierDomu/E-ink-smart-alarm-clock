@@ -5,5 +5,7 @@
   "openweathermap_api_key": "123456789abcdef",
   "lat" : 50.2945,
   "lon" : 18.6714,
-  "google_script" : "abcd"
+  "google_script_url" : "abcd",
+  "google_calendar_alarm_id" : "abc",
+  "google_calendar_id" : "abc"
 }

@@ -12,6 +12,7 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiUdp.h>
+#include <driver/i2s.h>
 #include <time.h>
 #include <vector>
 
@@ -22,6 +23,10 @@ struct Simple_time
     hour = time.substring(11, 13).toInt();
     minutes = time.substring(14, 16).toInt();
   }
+  Simple_time(uint8_t _hour, uint8_t _minutes)
+  : hour(_hour)
+  , minutes(_minutes)
+  {}
   uint8_t hour;
   uint8_t minutes;
 
@@ -31,6 +36,16 @@ struct Simple_time
     String m = minutes < 10 ? "0" + String(minutes) : String(minutes);
     return h + ":" + m;
   }
+};
+
+struct Clock_alarm
+{
+  Clock_alarm()
+  : time{Simple_time(0, 0)}
+  , enable(false)
+  {}
+  Simple_time time;
+  bool enable;
 };
 
 struct Simple_weather
@@ -50,6 +65,11 @@ struct Calendar_event
   , time_start(_time_start)
   , time_stop(_time_stop)
   {}
+  String get_calendar_label()
+  {
+    String label = time_start.to_string() + " " + name;
+    return label;
+  }
   String name;
   String calendar;
   Simple_time time_start;
@@ -70,17 +90,34 @@ struct Open_weather_config
   float lon;
 };
 
+struct google_api_config
+{
+  String script_url;
+  String alarm_calendar_id;
+  String google_calendar_id;
+};
+
 SPIClass spi = SPIClass(HSPI);
 
 Open_weather_config weather_config;
-String google_script;
+
+std::vector<lv_obj_t*> calendar_labels;
+
+google_api_config google_config;
 
 std::vector<Calendar_event> calendar;
 std::vector<Simple_weather> forecast;
+Clock_alarm clock_alarm;
 
 #define SCR_WIDTH 792
 #define SCR_HEIGHT 272
 #define LVBUF ((SCR_WIDTH * SCR_HEIGHT / 8) + 8)
+
+constexpr uint8_t speaker_bck_pin = 19;
+constexpr uint8_t speaker_ws_pin = 20;
+constexpr uint8_t speaker_dout_pin = 3;
+const uint16_t buffer_size = 512;
+uint16_t sample_rate = 16000;
 
 RTC_DS1307 m_rtc; ///< DS1307 RTC
 DateTime now;
@@ -90,6 +127,34 @@ GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2
 
 static uint8_t lvBuffer[2][LVBUF];
 
+void playAudio()
+{
+  File audioFile;
+  Serial.println("playing audio...");
+  String file_path = "/ringtone.wav";
+  audioFile = SD.open(file_path, FILE_READ);
+  if (!audioFile)
+  {
+    Serial.println("error with audio file");
+    return;
+  }
+
+  i2s_start(I2S_NUM_1);
+  size_t bytesRead;
+  int16_t buffer[buffer_size];
+
+  while (audioFile.available())
+  {
+    bytesRead = audioFile.read((uint8_t*)buffer, buffer_size * sizeof(int16_t));
+    i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
+  }
+
+  audioFile.close();
+
+  i2s_stop(I2S_NUM_1);
+
+  Serial.println("playing end.");
+}
 
 void read_config(Wifi_Config& _config)
 {
@@ -124,7 +189,9 @@ void read_config(Wifi_Config& _config)
   weather_config.api_key = doc["api_key"] | "";
   weather_config.lat = doc["lat"];
   weather_config.lon = doc["lon"];
-  google_script = doc["google_script"] | "";
+  google_config.script_url = doc["google_script_url"] | "";
+  google_config.alarm_calendar_id = doc["google_calendar_alarm_id"] | "";
+  google_config.google_calendar_id = doc["google_calendar_id"] | "";
 }
 
 void my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
@@ -154,6 +221,18 @@ void epd_setup()
   delay(1000);
 }
 
+void check_alarm(DateTime& now)
+{
+  Serial.print("chek alarm");
+  Serial.println(now.hour());
+  Serial.println(clock_alarm.time.hour);
+  if (now.hour() == clock_alarm.time.hour && now.minute() == clock_alarm.time.minutes)
+  {
+    Serial.println("ALARM!");
+    playAudio();
+  }
+}
+
 void update_clock()
 {
   now = m_rtc.now();
@@ -170,6 +249,11 @@ void update_clock()
   lv_label_set_text(ui_labDateDay2, buf_date);
   sprintf(buf_date, "%02d-%02d", now.day() + 3, now.month());
   lv_label_set_text(ui_labDateDay3, buf_date);
+
+  if (clock_alarm.enable)
+  {
+    check_alarm(now);
+  }
 }
 
 String getDateString(DateTime dt, uint8_t offset = 0)
@@ -256,7 +340,6 @@ void getWeather()
     {
       String response = http.getString();
 
-      // Parsowanie zakomentowane - odkomentuj, gdy JSON będzie poprawny
       StaticJsonDocument<4096> docs;
       DeserializationError error = deserializeJson(docs, response);
 
@@ -282,17 +365,8 @@ void getWeather()
       forecast_weather.temperature_morning = (int)round(temp);
       temp = docs["temperature"]["evening"];
       forecast_weather.temperature_evening = (int)round(temp);
-      // char temp_str[10];
-      // sprintf(temp_str, "%d℃", temp_rounded);
-
-      // lv_label_set_text(ui_labTempMorning, temp_str);
       forecast_weather.precipitation = docs["precipitation"]["total"];
-      // Serial.println(precipitation);
       forecast_weather.cloud_cover = docs["cloud_cover"]["afternoon"];
-      // Serial.println(cloud_cover);
-      // const char* icon = weather_icon_change(cloud_cover, precipitation);
-      // Serial.println(icon);
-      // lv_label_set_text(ui_labWeatherIcon, icon);
       forecast.push_back(forecast_weather);
     }
     else
@@ -319,11 +393,39 @@ bool internetWorks()
   }
 }
 
+void print_calendar()
+{
+  size_t n = calendar_labels.size();
+  size_t m = calendar.size();
+  if (m > n)
+  {
+    m = n;
+  }
+  Serial.print("wektory:");
+  Serial.print(m);
+  Serial.print(",");
+  Serial.println(n);
+
+  for (size_t i = 0; i < n; ++i)
+  {
+    if (i < m)
+    {
+      String label = calendar[i].get_calendar_label();
+      Serial.println(label);
+      lv_label_set_text(calendar_labels[i], label.c_str());
+    }
+    else
+    {
+      lv_label_set_text(calendar_labels[i], "-");
+    }
+  }
+}
+
 void get_calendar()
 {
   HTTPClient http;
   http.setTimeout(20000);
-  String url = "https://script.google.com/macros/s/" + google_script + "/exec";
+  String url = "https://script.google.com/macros/s/" + google_config.script_url + "/exec";
   if (!http.begin(url))
   {
     Serial.println("Cannot connect to google script");
@@ -349,7 +451,7 @@ void get_calendar()
 
     DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
     DeserializationError error = deserializeJson(doc, response);
-
+    bool is_alarm = false;
     if (!error && doc["success"])
     {
       calendar.clear();
@@ -363,11 +465,24 @@ void get_calendar()
         temp_time = event["endTime"] | "";
         Simple_time end(temp_time);
         Calendar_event new_event(name, calendar_name, start, end);
-        calendar.push_back(new_event);
-        // Serial.println(event["title"].as<String>());
+        Serial.println(new_event.name);
+        Serial.println(new_event.calendar);
+        if (calendar_name == google_config.alarm_calendar_id)
+        {
+          clock_alarm.time = new_event.time_start;
+          lv_label_set_text(ui_labAlarm, clock_alarm.time.to_string().c_str());
+          is_alarm = true;
+        }
+        else if (calendar_name == google_config.google_calendar_id)
+        {
+          calendar.push_back(new_event);
+        }
       }
-      String label = calendar[0].time_start.to_string() + " - " + calendar[0].name;
-      lv_label_set_text(ui_labCalendarEvent1, label.c_str());
+      print_calendar();
+      if (!is_alarm)
+      {
+        lv_label_set_text(ui_labAlarmEnable, "OFF");
+      }
     }
     else
     {
@@ -403,11 +518,32 @@ static void update_date(lv_timer_t* timer)
   }
 }
 
+void setupI2SSpeaker()
+{
+  Serial.println("audio cofing start");
+  i2s_config_t i2s_config = {.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+                             .sample_rate = sample_rate,
+                             .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+                             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+                             .communication_format = I2S_COMM_FORMAT_I2S,
+                             .intr_alloc_flags = 0,
+                             .dma_buf_count = 8,
+                             .dma_buf_len = buffer_size,
+                             .use_apll = false};
+  i2s_pin_config_t pin_config = {
+      .bck_io_num = speaker_bck_pin, .ws_io_num = speaker_ws_pin, .data_out_num = speaker_dout_pin, .data_in_num = I2S_PIN_NO_CHANGE};
+  esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
+  Serial.println(esp_err_to_name(err));
+  err = i2s_set_pin(I2S_NUM_1, &pin_config);
+  Serial.println(esp_err_to_name(err));
+  Serial.println("audio cofing end");
+}
+
 void setup()
 {
   Serial.begin(115200);
-  pinMode(42, OUTPUT);
-  digitalWrite(42, HIGH);
+  pinMode(config::sd_power_pin, OUTPUT);
+  digitalWrite(config::sd_power_pin, HIGH);
   delay(10);
   spi.begin(39, 13, 40);
 
@@ -458,8 +594,8 @@ void setup()
   DateTime dt(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, time_info.tm_hour, time_info.tm_min, time_info.tm_sec);
   m_rtc.adjust(dt);
 
-  pinMode(7, OUTPUT);
-  digitalWrite(7, HIGH);
+  pinMode(config::screen_power_pin, OUTPUT);
+  digitalWrite(config::screen_power_pin, HIGH);
 
   epd_setup();
 
@@ -474,12 +610,34 @@ void setup()
 
   lv_obj_set_style_text_color(ui_Screen1, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN | LV_STATE_DEFAULT);
 
+  calendar_labels.push_back(ui_labCalendarEvent1);
+  calendar_labels.push_back(ui_labCalendarEvent2);
+  calendar_labels.push_back(ui_labCalendarEvent3);
+  calendar_labels.push_back(ui_labCalendarEvent4);
+  calendar_labels.push_back(ui_labCalendarEvent5);
+  calendar_labels.push_back(ui_labCalendarEvent6);
+  calendar_labels.push_back(ui_labCalendarEvent7);
+
   lv_timer_create(update_date, 60000, NULL);
   delay(1000);
+
+  pinMode(config::alarm_enable_button_pin, INPUT);
 }
 
 void loop()
 {
   lv_timer_handler(); // powinien być wywoływany bardzo często (np. co 10ms)
   delay(10); // minimalny delay dla stability
+  if (digitalRead(config::alarm_enable_button_pin) == LOW)
+  {
+    clock_alarm.enable = !clock_alarm.enable;
+    if (clock_alarm.enable)
+    {
+      lv_label_set_text(ui_labAlarmEnable, "ON");
+    }
+    else
+    {
+      lv_label_set_text(ui_labAlarmEnable, "OFF");
+    }
+  }
 }

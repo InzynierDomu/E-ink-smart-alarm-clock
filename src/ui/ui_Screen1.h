@@ -43,6 +43,10 @@ extern lv_obj_t * ui_Container6;
 extern lv_obj_t * ui_labCalendarEvent1;
 extern lv_obj_t * ui_labCalendarEvent2;
 extern lv_obj_t * ui_labCalendarEvent3;
+extern lv_obj_t * ui_labCalendarEvent4;
+extern lv_obj_t * ui_labCalendarEvent5;
+extern lv_obj_t * ui_labCalendarEvent6;
+extern lv_obj_t * ui_labCalendarEvent7;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus
