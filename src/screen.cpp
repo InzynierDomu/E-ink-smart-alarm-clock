@@ -17,6 +17,7 @@ void Screen::setup_screen()
 
   lv_display_t* disp = lv_display_create(config::screen_width, config::screen_width);
   lv_display_set_flush_cb(disp, my_disp_flush);
+  lv_display_set_user_data(disp, this);
   lv_display_set_buffers(disp, lvBuffer[0], lvBuffer[1], config::lv_buffer, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
   ui_init();
@@ -25,10 +26,13 @@ void Screen::setup_screen()
 }
 void Screen::my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
 {
-  int16_t width = area->x2 - area->x1 + 1;
-  int16_t height = area->y2 - area->y1 + 1;
-  display.drawImage((uint8_t*)data + 8, area->x1, area->y1, width, height);
-
+  Screen* screen = static_cast<Screen*>(lv_display_get_user_data(disp));
+  if (screen)
+  {
+    int16_t width = area->x2 - area->x1 + 1;
+    int16_t height = area->y2 - area->y1 + 1;
+    screen->display.drawImage((uint8_t*)data + 8, area->x1, area->y1, width, height);
+  }
   lv_display_flush_ready(disp);
 }
 
@@ -47,7 +51,7 @@ void Screen::epd_setup()
 }
 
 
-static uint32_t Screen::my_tick(void)
+uint32_t Screen::my_tick(void)
 {
   return millis();
 }
