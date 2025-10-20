@@ -1,3 +1,5 @@
+#pragma once
+
 #include "config.h"
 #include "lvgl.h"
 #include "ui/ui.h"
@@ -15,6 +17,6 @@ class Screen
   void epd_setup();
   static uint32_t my_tick(void);
 
-  GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
+  GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display;
   static uint8_t lvBuffer[2][config::lv_buffer];
 };

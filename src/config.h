@@ -1,3 +1,7 @@
+#pragma once
+
+#include <Arduino.h>
+
 namespace config
 {
 constexpr uint8_t sd_cs_pin = 10;

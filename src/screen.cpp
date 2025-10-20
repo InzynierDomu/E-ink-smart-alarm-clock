@@ -1,5 +1,10 @@
 #include "screen.h"
 
+uint8_t Screen::lvBuffer[2][config::lv_buffer] = {0};
+
+Screen::Screen()
+: display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48))
+{}
 void Screen::setup_screen()
 {
   pinMode(config::screen_power_pin, OUTPUT);
