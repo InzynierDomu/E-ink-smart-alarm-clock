@@ -7,5 +7,6 @@
   "lon" : 18.6714,
   "google_script_url" : "abcd",
   "google_calendar_alarm_id" : "abc",
-  "google_calendar_id" : "abc"
+  "google_calendar_id" : "abc",
+  "sample_rate" : 16000
 }

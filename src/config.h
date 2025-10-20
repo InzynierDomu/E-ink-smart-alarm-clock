@@ -4,6 +4,15 @@ constexpr uint8_t sd_cs_pin = 10;
 constexpr uint8_t sd_power_pin = 42;
 constexpr uint8_t screen_power_pin = 7;
 constexpr uint8_t alarm_enable_button_pin = 2;
+constexpr uint8_t speaker_bck_pin = 19;
+constexpr uint8_t speaker_ws_pin = 20;
+constexpr uint8_t speaker_dout_pin = 3;
+constexpr uint8_t sda_pin = 21;
+constexpr uint8_t scl_pin = 38;
+
+constexpr uint16_t screen_width = 792;
+constexpr uint16_t screen_height = 272;
+constexpr uint16_t lv_buffer = ((screen_width * screen_height / 8) + 8);
 
 const String config_path = "/config.json";
 

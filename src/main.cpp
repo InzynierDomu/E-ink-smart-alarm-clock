@@ -1,11 +1,11 @@
 #include "RTClib.h"
 #include "config.h"
 #include "lvgl.h"
+#include "screen.h"
 #include "ui/ui.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <GxEPD2_BW.h>
 #include <HTTPClient.h>
 #include <SD.h>
 #include <SPI.h>
@@ -97,6 +97,8 @@ struct google_api_config
   String google_calendar_id;
 };
 
+Screen screen;
+
 SPIClass spi = SPIClass(HSPI);
 
 Open_weather_config weather_config;
@@ -109,23 +111,12 @@ std::vector<Calendar_event> calendar;
 std::vector<Simple_weather> forecast;
 Clock_alarm clock_alarm;
 
-#define SCR_WIDTH 792
-#define SCR_HEIGHT 272
-#define LVBUF ((SCR_WIDTH * SCR_HEIGHT / 8) + 8)
-
-constexpr uint8_t speaker_bck_pin = 19;
-constexpr uint8_t speaker_ws_pin = 20;
-constexpr uint8_t speaker_dout_pin = 3;
-const uint16_t buffer_size = 512;
+const uint16_t audio_buffer_size = 512;
 uint16_t sample_rate = 16000;
 
 RTC_DS1307 m_rtc; ///< DS1307 RTC
 DateTime now;
 DynamicJsonDocument docs(19508);
-
-GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48));
-
-static uint8_t lvBuffer[2][LVBUF];
 
 void playAudio()
 {
@@ -141,11 +132,11 @@ void playAudio()
 
   i2s_start(I2S_NUM_1);
   size_t bytesRead;
-  int16_t buffer[buffer_size];
+  int16_t buffer[audio_buffer_size];
 
   while (audioFile.available())
   {
-    bytesRead = audioFile.read((uint8_t*)buffer, buffer_size * sizeof(int16_t));
+    bytesRead = audioFile.read((uint8_t*)buffer, audio_buffer_size * sizeof(int16_t));
     i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
   }
 
@@ -192,33 +183,7 @@ void read_config(Wifi_Config& _config)
   google_config.script_url = doc["google_script_url"] | "";
   google_config.alarm_calendar_id = doc["google_calendar_alarm_id"] | "";
   google_config.google_calendar_id = doc["google_calendar_id"] | "";
-}
-
-void my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
-{
-  int16_t width = area->x2 - area->x1 + 1;
-  int16_t height = area->y2 - area->y1 + 1;
-  display.drawImage((uint8_t*)data + 8, area->x1, area->y1, width, height);
-
-  lv_display_flush_ready(disp);
-}
-
-static uint32_t my_tick(void)
-{
-  return millis();
-}
-
-void epd_setup()
-{
-  SPI.begin(12, -1, 11, 45);
-  display.init(115200, true, 2, false);
-  display.setFullWindow();
-  display.firstPage();
-  do
-  {
-    display.fillScreen(GxEPD_WHITE);
-  } while (display.nextPage());
-  delay(1000);
+  sample_rate = doc["sample_rate"];
 }
 
 void check_alarm(DateTime& now)
@@ -288,38 +253,31 @@ const char* weather_icon_change(int cloud_cover, int precipitation)
 
 void print_weather()
 {
+  static lv_obj_t* tempLabelsMorning[] = {ui_labTempMorning, ui_labTempMorningDay1, ui_labTempMorningDay2, ui_labTempMorningDay3};
+  static lv_obj_t* tempLabelsAfternoon[] = {nullptr, ui_labTempAfternoonDay1, ui_labTempAfternoonDay2, ui_labTempAfternoonDay3};
+  static lv_obj_t* tempLabelsEvening[] = {nullptr, ui_labTempEveningDay1, ui_labTempEveningDay2, ui_labTempEveningDay3};
+  static lv_obj_t* weatherIcons[] = {ui_labWeatherIcon, ui_labWeatherIconDay1, ui_labWeatherIconDay2, ui_labWeatherIconDay3};
+
   char temp_str[10];
+  for (size_t i = 0; i < 4; ++i)
+  {
+    if (tempLabelsMorning[i])
+    {
+      sprintf(temp_str, "%d℃", forecast[i].temperature_morning);
+      lv_label_set_text(tempLabelsMorning[i], temp_str);
+    }
+    if (i > 0 && tempLabelsAfternoon[i])
+    {
+      sprintf(temp_str, "%d℃", forecast[i].temperature_afternoon);
+      lv_label_set_text(tempLabelsAfternoon[i], temp_str);
+      sprintf(temp_str, "%d℃", forecast[i].temperature_evening);
+      lv_label_set_text(tempLabelsEvening[i], temp_str);
+    }
+    lv_label_set_text(weatherIcons[i], weather_icon_change(forecast[i].cloud_cover, forecast[i].precipitation));
+  }
+
   sprintf(temp_str, "%d℃", forecast[0].temperature_afternoon);
   lv_label_set_text(ui_labTempMorning, temp_str);
-  const char* icon = weather_icon_change(forecast[0].cloud_cover, forecast[0].precipitation);
-  lv_label_set_text(ui_labWeatherIcon, icon);
-
-  sprintf(temp_str, "%d℃", forecast[1].temperature_morning);
-  lv_label_set_text(ui_labTempMorningDay1, temp_str);
-  sprintf(temp_str, "%d℃", forecast[1].temperature_afternoon);
-  lv_label_set_text(ui_labTempAfternoonDay1, temp_str);
-  sprintf(temp_str, "%d℃", forecast[1].temperature_evening);
-  lv_label_set_text(ui_labTempEveningDay1, temp_str);
-  const char* icon1 = weather_icon_change(forecast[1].cloud_cover, forecast[1].precipitation);
-  lv_label_set_text(ui_labWeatherIconDay1, icon1);
-
-  sprintf(temp_str, "%d℃", forecast[2].temperature_morning);
-  lv_label_set_text(ui_labTempMorningDay2, temp_str);
-  sprintf(temp_str, "%d℃", forecast[2].temperature_afternoon);
-  lv_label_set_text(ui_labTempAfternoonDay2, temp_str);
-  sprintf(temp_str, "%d℃", forecast[2].temperature_evening);
-  lv_label_set_text(ui_labTempEveningDay2, temp_str);
-  const char* icon2 = weather_icon_change(forecast[2].cloud_cover, forecast[2].precipitation);
-  lv_label_set_text(ui_labWeatherIconDay2, icon2);
-
-  sprintf(temp_str, "%d℃", forecast[3].temperature_morning);
-  lv_label_set_text(ui_labTempMorningDay3, temp_str);
-  sprintf(temp_str, "%d℃", forecast[3].temperature_afternoon);
-  lv_label_set_text(ui_labTempAfternoonDay3, temp_str);
-  sprintf(temp_str, "%d℃", forecast[3].temperature_evening);
-  lv_label_set_text(ui_labTempEveningDay3, temp_str);
-  const char* icon3 = weather_icon_change(forecast[3].cloud_cover, forecast[3].precipitation);
-  lv_label_set_text(ui_labWeatherIconDay3, icon3);
 }
 
 void getWeather()
@@ -401,10 +359,6 @@ void print_calendar()
   {
     m = n;
   }
-  Serial.print("wektory:");
-  Serial.print(m);
-  Serial.print(",");
-  Serial.println(n);
 
   for (size_t i = 0; i < n; ++i)
   {
@@ -481,6 +435,8 @@ void get_calendar()
       print_calendar();
       if (!is_alarm)
       {
+        clock_alarm.enable = false;
+        lv_label_set_text(ui_labAlarm, "00:00");
         lv_label_set_text(ui_labAlarmEnable, "OFF");
       }
     }
@@ -528,10 +484,12 @@ void setupI2SSpeaker()
                              .communication_format = I2S_COMM_FORMAT_I2S,
                              .intr_alloc_flags = 0,
                              .dma_buf_count = 8,
-                             .dma_buf_len = buffer_size,
+                             .dma_buf_len = audio_buffer_size,
                              .use_apll = false};
-  i2s_pin_config_t pin_config = {
-      .bck_io_num = speaker_bck_pin, .ws_io_num = speaker_ws_pin, .data_out_num = speaker_dout_pin, .data_in_num = I2S_PIN_NO_CHANGE};
+  i2s_pin_config_t pin_config = {.bck_io_num = config::speaker_bck_pin,
+                                 .ws_io_num = config::speaker_ws_pin,
+                                 .data_out_num = config::speaker_dout_pin,
+                                 .data_in_num = I2S_PIN_NO_CHANGE};
   esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
   Serial.println(esp_err_to_name(err));
   err = i2s_set_pin(I2S_NUM_1, &pin_config);
@@ -585,7 +543,7 @@ void setup()
                   time_info.tm_sec);
   }
 
-  Wire.begin(21, 38);
+  Wire.begin(config::sda_pin, config::scl_pin);
 
   if (!m_rtc.begin())
   {
@@ -594,21 +552,7 @@ void setup()
   DateTime dt(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday, time_info.tm_hour, time_info.tm_min, time_info.tm_sec);
   m_rtc.adjust(dt);
 
-  pinMode(config::screen_power_pin, OUTPUT);
-  digitalWrite(config::screen_power_pin, HIGH);
-
-  epd_setup();
-
-  lv_init();
-  lv_tick_set_cb(my_tick);
-
-  lv_display_t* disp = lv_display_create(SCR_WIDTH, SCR_HEIGHT);
-  lv_display_set_flush_cb(disp, my_disp_flush);
-  lv_display_set_buffers(disp, lvBuffer[0], lvBuffer[1], LVBUF, LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-  ui_init();
-
-  lv_obj_set_style_text_color(ui_Screen1, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN | LV_STATE_DEFAULT);
+  screen.setup_screen();
 
   calendar_labels.push_back(ui_labCalendarEvent1);
   calendar_labels.push_back(ui_labCalendarEvent2);
@@ -622,6 +566,8 @@ void setup()
   delay(1000);
 
   pinMode(config::alarm_enable_button_pin, INPUT);
+
+  setupI2SSpeaker();
 }
 
 void loop()
