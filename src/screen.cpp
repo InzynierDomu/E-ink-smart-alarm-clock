@@ -15,7 +15,7 @@ void Screen::setup_screen()
   lv_init();
   lv_tick_set_cb(my_tick);
 
-  lv_display_t* disp = lv_display_create(config::screen_width, config::screen_width);
+  lv_display_t* disp = lv_display_create(config::screen_width, config::screen_height);
   lv_display_set_flush_cb(disp, my_disp_flush);
   lv_display_set_user_data(disp, this);
   lv_display_set_buffers(disp, lvBuffer[0], lvBuffer[1], config::lv_buffer, LV_DISPLAY_RENDER_MODE_PARTIAL);
