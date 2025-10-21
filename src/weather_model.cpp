@@ -29,7 +29,7 @@ void Weather_model::set_open_weather_config(Open_weather_config& _config)
   config = _config;
 }
 
-const void Weather_model::get_open_weather_config(Open_weather_config& _config)
+void Weather_model::get_open_weather_config(Open_weather_config& _config) const
 {
   _config = config;
 }

@@ -24,7 +24,7 @@ class Weather_model
   void update(const JsonDocument& doc);
   void get_forecast(Simple_weather& weather, uint8_t offset_days = 0);
   void set_open_weather_config(Open_weather_config& _config);
-  const void get_open_weather_config(Open_weather_config& _config);
+  void get_open_weather_config(Open_weather_config& _config) const;
 
   private:
   std::vector<Simple_weather> forecast;
