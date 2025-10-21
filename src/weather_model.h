@@ -22,7 +22,7 @@ class Weather_model
 {
   public:
   void update(const JsonDocument& doc);
-  void get_forecast(Simple_weather& weather, uint8_t offset_days = 0);
+  void get_forecast(Simple_weather& weather, uint8_t offset_days = 0) const;
   void set_open_weather_config(Open_weather_config& _config);
   void get_open_weather_config(Open_weather_config& _config) const;
 

@@ -16,7 +16,7 @@ void Weather_model::update(const JsonDocument& doc)
   forecast.push_back(forecast_weather);
 }
 
-void Weather_model::get_forecast(Simple_weather& weather, uint8_t offset_days)
+void Weather_model::get_forecast(Simple_weather& weather, uint8_t offset_days) const
 {
   if (offset_days < 4)
   {
