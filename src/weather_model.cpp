@@ -2,8 +2,6 @@
 
 void Weather_model::update(const JsonDocument& doc)
 {
-  forecast.clear();
-
   Simple_weather forecast_weather;
   float temp = doc["temperature"]["afternoon"];
   forecast_weather.temperature_afternoon = (int)round(temp);
@@ -14,6 +12,11 @@ void Weather_model::update(const JsonDocument& doc)
   forecast_weather.precipitation = doc["precipitation"]["total"];
   forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
   forecast.push_back(forecast_weather);
+}
+
+void Weather_model::clear()
+{
+  forecast.clear();
 }
 
 void Weather_model::get_forecast(Simple_weather& weather, uint8_t offset_days) const

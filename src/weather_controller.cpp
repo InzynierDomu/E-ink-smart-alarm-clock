@@ -11,6 +11,7 @@ Weather_controller::Weather_controller(Weather_model* m, Weather_view* v)
 
 void Weather_controller::fetch_weather(DateTime& now)
 {
+  model->clear();
   for (size_t i = 0; i < 4; i++)
   {
     String dateStr = get_date_string(now, i);
@@ -56,9 +57,7 @@ void Weather_controller::fetch_weather(DateTime& now)
 
 void Weather_controller::update_view()
 {
-  // Weather_model data = model->getData();
-  view->show(model);
-  // poszczegolne funkcje w view i odpowiednie dane z modelu (dni)
+  view->show(*model);
 }
 
 String Weather_controller::get_date_string(DateTime dt, uint8_t offset)

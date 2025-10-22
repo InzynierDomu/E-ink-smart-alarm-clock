@@ -12,5 +12,4 @@ class Weather_view
     const char* weather_icon_change(int cloud_cover, int precipitation);
 
   Screen* screen;
-  // LVGL objects, np. lv_obj_t *tempLabel, *descLabel;
 };
