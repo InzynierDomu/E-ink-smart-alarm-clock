@@ -3,6 +3,9 @@
 #include "lvgl.h"
 #include "screen.h"
 #include "ui/ui.h"
+#include "weather_controller.h"
+#include "weather_model.h"
+#include "weather_view.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -48,14 +51,14 @@ struct Clock_alarm
   bool enable;
 };
 
-struct Simple_weather
-{
-  uint8_t temperature_morning;
-  uint8_t temperature_afternoon;
-  uint8_t temperature_evening;
-  uint8_t cloud_cover;
-  uint8_t precipitation;
-};
+// struct Simple_weather
+// {
+//   uint8_t temperature_morning;
+//   uint8_t temperature_afternoon;
+//   uint8_t temperature_evening;
+//   uint8_t cloud_cover;
+//   uint8_t precipitation;
+// };
 
 struct Calendar_event
 {
@@ -83,12 +86,12 @@ struct Wifi_Config
   long timezone;
 };
 
-struct Open_weather_config
-{
-  String api_key;
-  float lat;
-  float lon;
-};
+// struct Open_weather_config
+// {
+//   String api_key;
+//   float lat;
+//   float lon;
+// };
 
 struct google_api_config
 {
@@ -101,14 +104,12 @@ Screen screen;
 
 SPIClass spi = SPIClass(HSPI);
 
-Open_weather_config weather_config;
-
 std::vector<lv_obj_t*> calendar_labels;
 
 google_api_config google_config;
 
 std::vector<Calendar_event> calendar;
-std::vector<Simple_weather> forecast;
+// std::vector<Simple_weather> forecast;
 Clock_alarm clock_alarm;
 
 const uint16_t audio_buffer_size = 512;
@@ -117,6 +118,10 @@ uint16_t sample_rate = 16000;
 RTC_DS1307 m_rtc; ///< DS1307 RTC
 DateTime now;
 DynamicJsonDocument docs(19508);
+
+Weather_model weather_model;
+Weather_view weather_view(&screen);
+Weather_controller weather_controller(&weather_model, &weather_view);
 
 void playAudio()
 {
@@ -176,10 +181,13 @@ void read_config(Wifi_Config& _config)
   _config.ssid = doc["ssid"] | "";
   _config.pass = doc["pass"] | "";
   _config.timezone = doc["timezone"];
-  Serial.println(doc["api_key"] | "");
+
+  Open_weather_config weather_config;
   weather_config.api_key = doc["api_key"] | "";
   weather_config.lat = doc["lat"];
   weather_config.lon = doc["lon"];
+  weather_model.set_open_weather_config(weather_config);
+
   google_config.script_url = doc["google_script_url"] | "";
   google_config.alarm_calendar_id = doc["google_calendar_alarm_id"] | "";
   google_config.google_calendar_id = doc["google_calendar_id"] | "";
@@ -237,104 +245,104 @@ enum class wheater
 };
 // todo change to map
 
-const char* weather_icon_change(int cloud_cover, int precipitation)
-{
-  if (cloud_cover > 30 && precipitation == 0)
-    return "ú";
+// const char* weather_icon_change(int cloud_cover, int precipitation)
+// {
+//   if (cloud_cover > 30 && precipitation == 0)
+//     return "ú";
 
-  if (precipitation < 5 && precipitation != 0)
-    return "û";
+//   if (precipitation < 5 && precipitation != 0)
+//     return "û";
 
-  if (precipitation > 5)
-    return "ü";
+//   if (precipitation > 5)
+//     return "ü";
 
-  return "ù";
-}
+//   return "ù";
+// }
 
-void print_weather()
-{
-  static lv_obj_t* tempLabelsMorning[] = {ui_labTempMorning, ui_labTempMorningDay1, ui_labTempMorningDay2, ui_labTempMorningDay3};
-  static lv_obj_t* tempLabelsAfternoon[] = {nullptr, ui_labTempAfternoonDay1, ui_labTempAfternoonDay2, ui_labTempAfternoonDay3};
-  static lv_obj_t* tempLabelsEvening[] = {nullptr, ui_labTempEveningDay1, ui_labTempEveningDay2, ui_labTempEveningDay3};
-  static lv_obj_t* weatherIcons[] = {ui_labWeatherIcon, ui_labWeatherIconDay1, ui_labWeatherIconDay2, ui_labWeatherIconDay3};
+// void print_weather()
+// {
+//   static lv_obj_t* tempLabelsMorning[] = {ui_labTempMorning, ui_labTempMorningDay1, ui_labTempMorningDay2, ui_labTempMorningDay3};
+//   static lv_obj_t* tempLabelsAfternoon[] = {nullptr, ui_labTempAfternoonDay1, ui_labTempAfternoonDay2, ui_labTempAfternoonDay3};
+//   static lv_obj_t* tempLabelsEvening[] = {nullptr, ui_labTempEveningDay1, ui_labTempEveningDay2, ui_labTempEveningDay3};
+//   static lv_obj_t* weatherIcons[] = {ui_labWeatherIcon, ui_labWeatherIconDay1, ui_labWeatherIconDay2, ui_labWeatherIconDay3};
 
-  char temp_str[10];
-  for (size_t i = 0; i < 4; ++i)
-  {
-    if (tempLabelsMorning[i])
-    {
-      sprintf(temp_str, "%d℃", forecast[i].temperature_morning);
-      lv_label_set_text(tempLabelsMorning[i], temp_str);
-    }
-    if (i > 0 && tempLabelsAfternoon[i])
-    {
-      sprintf(temp_str, "%d℃", forecast[i].temperature_afternoon);
-      lv_label_set_text(tempLabelsAfternoon[i], temp_str);
-      sprintf(temp_str, "%d℃", forecast[i].temperature_evening);
-      lv_label_set_text(tempLabelsEvening[i], temp_str);
-    }
-    lv_label_set_text(weatherIcons[i], weather_icon_change(forecast[i].cloud_cover, forecast[i].precipitation));
-  }
+//   char temp_str[10];
+//   for (size_t i = 0; i < 4; ++i)
+//   {
+//     if (tempLabelsMorning[i])
+//     {
+//       sprintf(temp_str, "%d℃", forecast[i].temperature_morning);
+//       lv_label_set_text(tempLabelsMorning[i], temp_str);
+//     }
+//     if (i > 0 && tempLabelsAfternoon[i])
+//     {
+//       sprintf(temp_str, "%d℃", forecast[i].temperature_afternoon);
+//       lv_label_set_text(tempLabelsAfternoon[i], temp_str);
+//       sprintf(temp_str, "%d℃", forecast[i].temperature_evening);
+//       lv_label_set_text(tempLabelsEvening[i], temp_str);
+//     }
+//     lv_label_set_text(weatherIcons[i], weather_icon_change(forecast[i].cloud_cover, forecast[i].precipitation));
+//   }
 
-  sprintf(temp_str, "%d℃", forecast[0].temperature_afternoon);
-  lv_label_set_text(ui_labTempMorning, temp_str);
-}
+//   sprintf(temp_str, "%d℃", forecast[0].temperature_afternoon);
+//   lv_label_set_text(ui_labTempMorning, temp_str);
+// }
 
-void getWeather()
-{
-  forecast.clear();
-  for (size_t i = 0; i < 4; i++)
-  {
-    String dateStr = getDateString(now, i);
-    Serial.println(weather_config.api_key);
-    String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(weather_config.lat, 4) +
-                        "&lon=" + String(weather_config.lon, 4) + "&date=" + dateStr + "&appid=" + weather_config.api_key + "&units=metric";
+// void getWeather()
+// {
+//   forecast.clear();
+//   for (size_t i = 0; i < 4; i++)
+//   {
+//     String dateStr = getDateString(now, i);
+//     Serial.println(weather_config.api_key);
+//     String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(weather_config.lat, 4) +
+//                         "&lon=" + String(weather_config.lon, 4) + "&date=" + dateStr + "&appid=" + weather_config.api_key + "&units=metric";
 
-    HTTPClient http;
-    http.begin(serverPath.c_str());
-    int code = http.GET();
+//     HTTPClient http;
+//     http.begin(serverPath.c_str());
+//     int code = http.GET();
 
-    if (code == HTTP_CODE_OK)
-    {
-      String response = http.getString();
+//     if (code == HTTP_CODE_OK)
+//     {
+//       String response = http.getString();
 
-      StaticJsonDocument<4096> docs;
-      DeserializationError error = deserializeJson(docs, response);
+//       StaticJsonDocument<4096> docs;
+//       DeserializationError error = deserializeJson(docs, response);
 
-      if (error)
-      {
-        Serial.print("Błąd JSON: ");
-        Serial.println(error.c_str());
-        http.end();
-        return;
-      }
+//       if (error)
+//       {
+//         Serial.print("Błąd JSON: ");
+//         Serial.println(error.c_str());
+//         http.end();
+//         return;
+//       }
 
-      float temp = docs["temperature"]["afternoon"]; // Dostosuj gdy JSON poprawny
+//       float temp = docs["temperature"]["afternoon"]; // Dostosuj gdy JSON poprawny
 
-      Serial.print("Data: ");
-      Serial.print(dateStr);
-      Serial.print(" | Temp: ");
-      Serial.println(temp);
+//       Serial.print("Data: ");
+//       Serial.print(dateStr);
+//       Serial.print(" | Temp: ");
+//       Serial.println(temp);
 
-      Simple_weather forecast_weather;
+//       Simple_weather forecast_weather;
 
-      forecast_weather.temperature_afternoon = (int)round(temp);
-      temp = docs["temperature"]["morning"];
-      forecast_weather.temperature_morning = (int)round(temp);
-      temp = docs["temperature"]["evening"];
-      forecast_weather.temperature_evening = (int)round(temp);
-      forecast_weather.precipitation = docs["precipitation"]["total"];
-      forecast_weather.cloud_cover = docs["cloud_cover"]["afternoon"];
-      forecast.push_back(forecast_weather);
-    }
-    else
-    {
-      Serial.print("Błąd HTTP: ");
-      Serial.println(code);
-    }
-    http.end();
-  }
-}
+//       forecast_weather.temperature_afternoon = (int)round(temp);
+//       temp = docs["temperature"]["morning"];
+//       forecast_weather.temperature_morning = (int)round(temp);
+//       temp = docs["temperature"]["evening"];
+//       forecast_weather.temperature_evening = (int)round(temp);
+//       forecast_weather.precipitation = docs["precipitation"]["total"];
+//       forecast_weather.cloud_cover = docs["cloud_cover"]["afternoon"];
+//       forecast.push_back(forecast_weather);
+//     }
+//     else
+//     {
+//       Serial.print("Błąd HTTP: ");
+//       Serial.println(code);
+//     }
+//     http.end();
+//   }
+// }
 
 bool internetWorks()
 {
@@ -463,8 +471,10 @@ static void update_date(lv_timer_t* timer)
     {
       Serial.println("wifi ok");
     }
-    getWeather(); // Wywołaj tylko raz na 10 cykli
-    print_weather();
+    // getWeather(); // Wywołaj tylko raz na 10 cykli
+    // print_weather();
+    weather_controller.fetch_weather(now);
+    weather_controller.update_view();
     get_calendar();
     weatherCounter = 0; // Resetuj licznik
   }

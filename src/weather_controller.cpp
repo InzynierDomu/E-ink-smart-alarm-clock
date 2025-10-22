@@ -56,8 +56,8 @@ void Weather_controller::fetch_weather(DateTime& now)
 
 void Weather_controller::update_view()
 {
-  //   Weather_model data = model->getData();
-  //   view->show(model);
+  // Weather_model data = model->getData();
+  view->show(model);
   // poszczegolne funkcje w view i odpowiednie dane z modelu (dni)
 }
 
