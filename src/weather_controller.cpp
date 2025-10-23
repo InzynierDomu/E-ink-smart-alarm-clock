@@ -4,9 +4,9 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-Weather_controller::Weather_controller(Weather_model* m, Weather_view* v)
-: model(m)
-, view(v)
+Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _view)
+: model(_model)
+, view(_view)
 {}
 
 void Weather_controller::fetch_weather(DateTime& now)
@@ -19,7 +19,6 @@ void Weather_controller::fetch_weather(DateTime& now)
     Open_weather_config config;
     model->get_open_weather_config(config);
 
-    Serial.println(config.api_key);
     String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
                         "&lon=" + String(config.lon, 4) + "&date=" + dateStr + "&appid=" + config.api_key + "&units=metric";
 
@@ -36,7 +35,7 @@ void Weather_controller::fetch_weather(DateTime& now)
 
       if (error)
       {
-        Serial.print("Błąd JSON: ");
+        Serial.print("JSON error: ");
         Serial.println(error.c_str());
         http.end();
         return;
@@ -48,7 +47,7 @@ void Weather_controller::fetch_weather(DateTime& now)
     }
     else
     {
-      Serial.print("Błąd HTTP: ");
+      Serial.print("HTTP error: ");
       Serial.println(code);
     }
     http.end();

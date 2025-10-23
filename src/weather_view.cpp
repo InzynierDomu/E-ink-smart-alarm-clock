@@ -1,12 +1,8 @@
 #include "weather_view.h"
-// Dodać #include <lvgl.h> jeśli używasz LVGL
 
 Weather_view::Weather_view(Screen* scr)
 : screen(scr)
-{
-  // Tworzenie LVGL obiektów na screen
-  // tempLabel = lv_label_create(screen->getLvObj());
-}
+{}
 
 void Weather_view::show(const Weather_model& data)
 {

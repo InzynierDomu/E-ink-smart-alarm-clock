@@ -1,4 +1,6 @@
 #include "RTClib.h"
+#include "calendar_model.h"
+#include "clock_model.h"
 #include "config.h"
 #include "lvgl.h"
 #include "screen.h"
@@ -19,27 +21,28 @@
 #include <time.h>
 #include <vector>
 
-struct Simple_time
-{
-  Simple_time(String& time)
-  {
-    hour = time.substring(11, 13).toInt();
-    minutes = time.substring(14, 16).toInt();
-  }
-  Simple_time(uint8_t _hour, uint8_t _minutes)
-  : hour(_hour)
-  , minutes(_minutes)
-  {}
-  uint8_t hour;
-  uint8_t minutes;
 
-  String to_string() const
-  {
-    String h = hour < 10 ? "0" + String(hour) : String(hour);
-    String m = minutes < 10 ? "0" + String(minutes) : String(minutes);
-    return h + ":" + m;
-  }
-};
+// struct Simple_time
+// {
+//   Simple_time(String& time)
+//   {
+//     hour = time.substring(11, 13).toInt();
+//     minutes = time.substring(14, 16).toInt();
+//   }
+//   Simple_time(uint8_t _hour, uint8_t _minutes)
+//   : hour(_hour)
+//   , minutes(_minutes)
+//   {}
+//   uint8_t hour;
+//   uint8_t minutes;
+
+//   String to_string() const
+//   {
+//     String h = hour < 10 ? "0" + String(hour) : String(hour);
+//     String m = minutes < 10 ? "0" + String(minutes) : String(minutes);
+//     return h + ":" + m;
+//   }
+// };
 
 struct Clock_alarm
 {
@@ -60,24 +63,24 @@ struct Clock_alarm
 //   uint8_t precipitation;
 // };
 
-struct Calendar_event
-{
-  Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
-  : name(_name)
-  , calendar(_calendar)
-  , time_start(_time_start)
-  , time_stop(_time_stop)
-  {}
-  String get_calendar_label()
-  {
-    String label = time_start.to_string() + " " + name;
-    return label;
-  }
-  String name;
-  String calendar;
-  Simple_time time_start;
-  Simple_time time_stop;
-};
+// struct Calendar_event
+// {
+//   Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
+//   : name(_name)
+//   , calendar(_calendar)
+//   , time_start(_time_start)
+//   , time_stop(_time_stop)
+//   {}
+//   String get_calendar_label()
+//   {
+//     String label = time_start.to_string() + " " + name;
+//     return label;
+//   }
+//   String name;
+//   String calendar;
+//   Simple_time time_start;
+//   Simple_time time_stop;
+// };
 
 struct Wifi_Config
 {
@@ -93,12 +96,12 @@ struct Wifi_Config
 //   float lon;
 // };
 
-struct google_api_config
-{
-  String script_url;
-  String alarm_calendar_id;
-  String google_calendar_id;
-};
+// struct google_api_config
+// {
+//   String script_url;
+//   String alarm_calendar_id;
+//   String google_calendar_id;
+// };
 
 Screen screen;
 
@@ -201,7 +204,6 @@ void check_alarm(DateTime& now)
   Serial.println(clock_alarm.time.hour);
   if (now.hour() == clock_alarm.time.hour && now.minute() == clock_alarm.time.minutes)
   {
-    Serial.println("ALARM!");
     playAudio();
   }
 }
@@ -236,13 +238,13 @@ String getDateString(DateTime dt, uint8_t offset = 0)
   return String(dateStr);
 }
 
-enum class wheater
-{
-  sunny,
-  claudy,
-  shower,
-  rain
-};
+// enum class wheater
+// {
+//   sunny,
+//   claudy,
+//   shower,
+//   rain
+// };
 // todo change to map
 
 // const char* weather_icon_change(int cloud_cover, int precipitation)
