@@ -4,6 +4,7 @@
 
 struct Simple_time
 {
+  Simple_time() {}
   Simple_time(String& time)
   {
     hour = time.substring(11, 13).toInt();

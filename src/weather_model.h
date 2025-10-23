@@ -21,11 +21,11 @@ struct Simple_weather
 class Weather_model
 {
   public:
-  void update(const JsonDocument& doc);
+  void update(const Simple_weather& forecast_weather);
   void clear();
   void get_forecast(Simple_weather& weather, uint8_t offset_days = 0) const;
-  void set_open_weather_config(Open_weather_config& _config);
-  void get_open_weather_config(Open_weather_config& _config) const;
+  void set_config(Open_weather_config& _config);
+  void get_config(Open_weather_config& _config) const;
 
   private:
   std::vector<Simple_weather> forecast;

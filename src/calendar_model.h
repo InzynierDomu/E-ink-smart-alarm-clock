@@ -3,6 +3,7 @@
 #include "clock_model.h"
 
 #include <Arduino.h>
+#include <vector>
 
 struct google_api_config
 {
@@ -13,6 +14,7 @@ struct google_api_config
 
 struct Calendar_event
 {
+  Calendar_event() {}
   Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
   : name(_name)
   , calendar(_calendar)
@@ -30,5 +32,17 @@ struct Calendar_event
   Simple_time time_stop;
 };
 
-class calendar_controller
-{};
+class Calendar_model
+{
+  public:
+  void clear();
+  void update(const Calendar_event& calendar_event);
+  uint8_t get_event_count() const;
+  void get_event(Calendar_event& calendar_event, uint8_t event_number) const;
+  void set_config(google_api_config& _config);
+  void get_config(google_api_config& _config) const;
+
+  private:
+  google_api_config config;
+  std::vector<Calendar_event> calendar_events;
+};

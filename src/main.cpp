@@ -1,5 +1,8 @@
 #include "RTClib.h"
+#include "alarm_model.h"
+#include "calendar_controller.h"
 #include "calendar_model.h"
+#include "calendar_view.h"
 #include "clock_model.h"
 #include "config.h"
 #include "lvgl.h"
@@ -44,15 +47,15 @@
 //   }
 // };
 
-struct Clock_alarm
-{
-  Clock_alarm()
-  : time{Simple_time(0, 0)}
-  , enable(false)
-  {}
-  Simple_time time;
-  bool enable;
-};
+// struct Clock_alarm
+// {
+//   Clock_alarm()
+//   : time{Simple_time(0, 0)}
+//   , enable(false)
+//   {}
+//   Simple_time time;
+//   bool enable;
+// };
 
 // struct Simple_weather
 // {
@@ -107,11 +110,11 @@ Screen screen;
 
 SPIClass spi = SPIClass(HSPI);
 
-std::vector<lv_obj_t*> calendar_labels;
+// std::vector<lv_obj_t*> calendar_labels;
 
-google_api_config google_config;
+// google_api_config google_config;
 
-std::vector<Calendar_event> calendar;
+// std::vector<Calendar_event> calendar;
 // std::vector<Simple_weather> forecast;
 Clock_alarm clock_alarm;
 
@@ -125,6 +128,10 @@ DynamicJsonDocument docs(19508);
 Weather_model weather_model;
 Weather_view weather_view(&screen);
 Weather_controller weather_controller(&weather_model, &weather_view);
+
+Calendar_model calendar_model;
+Calendar_view calendar_view(&screen);
+Calendar_controller calendar_controller(&calendar_model, &calendar_view);
 
 void playAudio()
 {
@@ -189,12 +196,14 @@ void read_config(Wifi_Config& _config)
   weather_config.api_key = doc["api_key"] | "";
   weather_config.lat = doc["lat"];
   weather_config.lon = doc["lon"];
-  weather_model.set_open_weather_config(weather_config);
+  weather_model.set_config(weather_config);
 
+  google_api_config google_config;
   google_config.script_url = doc["google_script_url"] | "";
   google_config.alarm_calendar_id = doc["google_calendar_alarm_id"] | "";
   google_config.google_calendar_id = doc["google_calendar_id"] | "";
   sample_rate = doc["sample_rate"];
+  calendar_model.set_config(google_config);
 }
 
 void check_alarm(DateTime& now)
@@ -361,128 +370,127 @@ bool internetWorks()
   }
 }
 
-void print_calendar()
-{
-  size_t n = calendar_labels.size();
-  size_t m = calendar.size();
-  if (m > n)
-  {
-    m = n;
-  }
+// void print_calendar()
+// {
+//   size_t n = calendar_labels.size();
+//   size_t m = calendar.size();
+//   if (m > n)
+//   {
+//     m = n;
+//   }
 
-  for (size_t i = 0; i < n; ++i)
-  {
-    if (i < m)
-    {
-      String label = calendar[i].get_calendar_label();
-      Serial.println(label);
-      lv_label_set_text(calendar_labels[i], label.c_str());
-    }
-    else
-    {
-      lv_label_set_text(calendar_labels[i], "-");
-    }
-  }
-}
+//   for (size_t i = 0; i < n; ++i)
+//   {
+//     if (i < m)
+//     {
+//       String label = calendar[i].get_calendar_label();
+//       Serial.println(label);
+//       lv_label_set_text(calendar_labels[i], label.c_str());
+//     }
+//     else
+//     {
+//       lv_label_set_text(calendar_labels[i], "-");
+//     }
+//   }
+// }
 
-void get_calendar()
-{
-  HTTPClient http;
-  http.setTimeout(20000);
-  String url = "https://script.google.com/macros/s/" + google_config.script_url + "/exec";
-  if (!http.begin(url))
-  {
-    Serial.println("Cannot connect to google script");
-  }
+// void get_calendar()
+// {
+//   HTTPClient http;
+//   http.setTimeout(20000);
+//   String url = "https://script.google.com/macros/s/" + google_config.script_url + "/exec";
+//   if (!http.begin(url))
+//   {
+//     Serial.println("Cannot connect to google script");
+//   }
 
-  int httpResponseCode = http.GET();
+//   int httpResponseCode = http.GET();
 
-  if (httpResponseCode == 301 || httpResponseCode == 302)
-  {
-    String newUrl = http.getLocation(); // Pobierz nowy URL z nagłówka Location
-    Serial.printf("Przekierowanie: %d -> %s\n", httpResponseCode, newUrl.c_str());
-    http.end();
+//   if (httpResponseCode == 301 || httpResponseCode == 302)
+//   {
+//     String newUrl = http.getLocation(); // Pobierz nowy URL z nagłówka Location
+//     Serial.printf("Przekierowanie: %d -> %s\n", httpResponseCode, newUrl.c_str());
+//     http.end();
 
-    // Wywołaj ponownie do nowego URL (uwaga: rekurencja lub pętla, ale ogranicz max ilość przekierowań)
-    http.begin(newUrl);
-    httpResponseCode = http.GET();
-  }
+//     // Wywołaj ponownie do nowego URL (uwaga: rekurencja lub pętla, ale ogranicz max ilość przekierowań)
+//     http.begin(newUrl);
+//     httpResponseCode = http.GET();
+//   }
 
-  if (httpResponseCode == 200)
-  {
-    String response = http.getString();
-    Serial.println("JSON received:");
+//   if (httpResponseCode == 200)
+//   {
+//     String response = http.getString();
+//     Serial.println("JSON received:");
 
-    DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
-    DeserializationError error = deserializeJson(doc, response);
-    bool is_alarm = false;
-    if (!error && doc["success"])
-    {
-      calendar.clear();
-      JsonArray events = doc["events"];
-      for (JsonObject event : events)
-      {
-        String name = event["title"] | "";
-        String calendar_name = event["calendarName"] | "";
-        String temp_time = event["startTime"] | "";
-        Simple_time start(temp_time);
-        temp_time = event["endTime"] | "";
-        Simple_time end(temp_time);
-        Calendar_event new_event(name, calendar_name, start, end);
-        Serial.println(new_event.name);
-        Serial.println(new_event.calendar);
-        if (calendar_name == google_config.alarm_calendar_id)
-        {
-          clock_alarm.time = new_event.time_start;
-          lv_label_set_text(ui_labAlarm, clock_alarm.time.to_string().c_str());
-          is_alarm = true;
-        }
-        else if (calendar_name == google_config.google_calendar_id)
-        {
-          calendar.push_back(new_event);
-        }
-      }
-      print_calendar();
-      if (!is_alarm)
-      {
-        clock_alarm.enable = false;
-        lv_label_set_text(ui_labAlarm, "00:00");
-        lv_label_set_text(ui_labAlarmEnable, "OFF");
-      }
-    }
-    else
-    {
-      Serial.println("JSON parse error lub brak wydarzeń");
-    }
-  }
-  else
-  {
-    Serial.printf("HTTP error: %d\n", httpResponseCode);
-  }
-  http.end();
-}
+//     DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
+//     DeserializationError error = deserializeJson(doc, response);
+//     bool is_alarm = false;
+//     if (!error && doc["success"])
+//     {
+//       calendar.clear();
+//       JsonArray events = doc["events"];
+//       for (JsonObject event : events)
+//       {
+//         String name = event["title"] | "";
+//         String calendar_name = event["calendarName"] | "";
+//         String temp_time = event["startTime"] | "";
+//         Simple_time start(temp_time);
+//         temp_time = event["endTime"] | "";
+//         Simple_time end(temp_time);
+//         Calendar_event new_event(name, calendar_name, start, end);
+//         Serial.println(new_event.name);
+//         Serial.println(new_event.calendar);
+//         if (calendar_name == google_config.alarm_calendar_id)
+//         {
+//           clock_alarm.time = new_event.time_start;
+//           lv_label_set_text(ui_labAlarm, clock_alarm.time.to_string().c_str());
+//           is_alarm = true;
+//         }
+//         else if (calendar_name == google_config.google_calendar_id)
+//         {
+//           calendar.push_back(new_event);
+//         }
+//       }
+//       print_calendar();
+//       if (!is_alarm)
+//       {
+//         clock_alarm.enable = false;
+//         lv_label_set_text(ui_labAlarm, "00:00");
+//         lv_label_set_text(ui_labAlarmEnable, "OFF");
+//       }
+//     }
+//     else
+//     {
+//       Serial.println("JSON parse error lub brak wydarzeń");
+//     }
+//   }
+//   else
+//   {
+//     Serial.printf("HTTP error: %d\n", httpResponseCode);
+//   }
+//   http.end();
+// }
 
 static void update_date(lv_timer_t* timer)
 {
-  static int weatherCounter = 0;
+  static int update_counter = 0;
   update_clock();
-  Serial.println(weatherCounter);
-  if (weatherCounter >= 10)
+  Serial.println(update_counter);
+  if (update_counter >= 10)
   {
     if (internetWorks())
     {
       Serial.println("wifi ok");
     }
-    // getWeather(); // Wywołaj tylko raz na 10 cykli
-    // print_weather();
     weather_controller.fetch_weather(now);
     weather_controller.update_view();
-    get_calendar();
-    weatherCounter = 0; // Resetuj licznik
+    calendar_controller.fetch_calendar();
+    calendar_controller.update_view();
+    update_counter = 0; 
   }
   else
   {
-    weatherCounter++; // Zwiększ licznik
+    update_counter++; 
   }
 }
 
@@ -566,13 +574,13 @@ void setup()
 
   screen.setup_screen();
 
-  calendar_labels.push_back(ui_labCalendarEvent1);
-  calendar_labels.push_back(ui_labCalendarEvent2);
-  calendar_labels.push_back(ui_labCalendarEvent3);
-  calendar_labels.push_back(ui_labCalendarEvent4);
-  calendar_labels.push_back(ui_labCalendarEvent5);
-  calendar_labels.push_back(ui_labCalendarEvent6);
-  calendar_labels.push_back(ui_labCalendarEvent7);
+  // calendar_labels.push_back(ui_labCalendarEvent1);
+  // calendar_labels.push_back(ui_labCalendarEvent2);
+  // calendar_labels.push_back(ui_labCalendarEvent3);
+  // calendar_labels.push_back(ui_labCalendarEvent4);
+  // calendar_labels.push_back(ui_labCalendarEvent5);
+  // calendar_labels.push_back(ui_labCalendarEvent6);
+  // calendar_labels.push_back(ui_labCalendarEvent7);
 
   lv_timer_create(update_date, 60000, NULL);
   delay(1000);

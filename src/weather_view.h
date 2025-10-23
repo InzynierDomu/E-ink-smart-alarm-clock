@@ -9,7 +9,7 @@ class Weather_view
   void show(const Weather_model& data);
 
   private:
-    const char* weather_icon_change(int cloud_cover, int precipitation);
+  const char* weather_icon_change(int cloud_cover, int precipitation);
 
   Screen* screen;
 };

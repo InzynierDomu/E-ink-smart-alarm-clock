@@ -17,7 +17,7 @@ void Weather_controller::fetch_weather(DateTime& now)
     String dateStr = get_date_string(now, i);
 
     Open_weather_config config;
-    model->get_open_weather_config(config);
+    model->get_config(config);
 
     String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
                         "&lon=" + String(config.lon, 4) + "&date=" + dateStr + "&appid=" + config.api_key + "&units=metric";
@@ -30,8 +30,8 @@ void Weather_controller::fetch_weather(DateTime& now)
     {
       String response = http.getString();
 
-      StaticJsonDocument<4096> docs;
-      DeserializationError error = deserializeJson(docs, response);
+      StaticJsonDocument<4096> doc;
+      DeserializationError error = deserializeJson(doc, response);
 
       if (error)
       {
@@ -42,7 +42,16 @@ void Weather_controller::fetch_weather(DateTime& now)
       }
       else
       {
-        model->update(docs);
+        Simple_weather forecast_weather;
+        float temp = doc["temperature"]["afternoon"];
+        forecast_weather.temperature_afternoon = (int)round(temp);
+        temp = doc["temperature"]["morning"];
+        forecast_weather.temperature_morning = (int)round(temp);
+        temp = doc["temperature"]["evening"];
+        forecast_weather.temperature_evening = (int)round(temp);
+        forecast_weather.precipitation = doc["precipitation"]["total"];
+        forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
+        model->update(forecast_weather);
       }
     }
     else
