@@ -19,9 +19,9 @@ class Alarm_model
   public:
   Alarm_model();
   void set_alarm(Clock_alarm& alarm, bool is_alarm);
-  void get_alarm(Clock_alarm& alarm);
+  void get_alarm(Clock_alarm& alarm) const;
   void set_no_alarm();
-  bool get_is_alarm();
+  bool get_is_alarm() const;
 
   private:
   Clock_alarm alarm;
