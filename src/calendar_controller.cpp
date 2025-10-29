@@ -4,9 +4,11 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view)
+Calendar_controller::Calendar_controller(Calendar_model* _model, Alarm_model* _alarm_model, Calendar_view* _view, Alarm_view* _alarm_view)
 : model(_model)
+, alarm_model(_alarm_model)
 , view(_view)
+, alarm_view(_alarm_view)
 {}
 
 void Calendar_controller::fetch_calendar()
@@ -41,11 +43,11 @@ void Calendar_controller::fetch_calendar()
 
     DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
     DeserializationError error = deserializeJson(doc, response);
-    bool is_alarm = false;
     if (!error && doc["success"])
     {
       model->clear();
       JsonArray events = doc["events"];
+      bool is_alarm = false;
       for (JsonObject event : events)
       {
         String name = event["title"] | "";
@@ -59,8 +61,9 @@ void Calendar_controller::fetch_calendar()
         Serial.println(new_event.calendar);
         if (calendar_name == config.alarm_calendar_id)
         {
-          //   clock_alarm.time = new_event.time_start;
-          //   lv_label_set_text(ui_labAlarm, clock_alarm.time.to_string().c_str());
+          Clock_alarm alarm;
+          alarm.time = new_event.time_start;
+          alarm_model->set_alarm(alarm, true);
           is_alarm = true;
         }
         else if (calendar_name == config.google_calendar_id)
@@ -70,7 +73,8 @@ void Calendar_controller::fetch_calendar()
       }
       if (!is_alarm)
       {
-        // clock_alarm.enable = false;
+        alarm_model->set_no_alarm();
+        Clock_alarm alarm;
         // lv_label_set_text(ui_labAlarm, "00:00");
         // lv_label_set_text(ui_labAlarmEnable, "OFF");
       }

@@ -1,5 +1,6 @@
 #include "RTClib.h"
 #include "alarm_model.h"
+#include "alarm_view.h"
 #include "calendar_controller.h"
 #include "calendar_model.h"
 #include "calendar_view.h"
@@ -130,8 +131,10 @@ Weather_view weather_view(&screen);
 Weather_controller weather_controller(&weather_model, &weather_view);
 
 Calendar_model calendar_model;
+Alarm_model alarm_model;
+Alarm_view alarm_view(&screen);
 Calendar_view calendar_view(&screen);
-Calendar_controller calendar_controller(&calendar_model, &calendar_view);
+Calendar_controller calendar_controller(&calendar_model, &alarm_model, &calendar_view, &alarm_view);
 
 void playAudio()
 {
@@ -486,11 +489,11 @@ static void update_date(lv_timer_t* timer)
     weather_controller.update_view();
     calendar_controller.fetch_calendar();
     calendar_controller.update_view();
-    update_counter = 0; 
+    update_counter = 0;
   }
   else
   {
-    update_counter++; 
+    update_counter++;
   }
 }
 
