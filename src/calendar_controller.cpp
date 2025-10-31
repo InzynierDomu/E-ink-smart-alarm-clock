@@ -3,12 +3,10 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-
-Calendar_controller::Calendar_controller(Calendar_model* _model, Alarm_model* _alarm_model, Calendar_view* _view, Alarm_view* _alarm_view)
+Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller)
 : model(_model)
-, alarm_model(_alarm_model)
 , view(_view)
-, alarm_view(_alarm_view)
+, alarm_controller(_alarm_controller)
 {}
 
 void Calendar_controller::fetch_calendar()
@@ -61,9 +59,7 @@ void Calendar_controller::fetch_calendar()
         Serial.println(new_event.calendar);
         if (calendar_name == config.alarm_calendar_id)
         {
-          Clock_alarm alarm;
-          alarm.time = new_event.time_start;
-          alarm_model->set_alarm(alarm, true);
+          alarm_controller->set_alarm(new_event.time_start);
           is_alarm = true;
         }
         else if (calendar_name == config.google_calendar_id)
@@ -73,10 +69,7 @@ void Calendar_controller::fetch_calendar()
       }
       if (!is_alarm)
       {
-        alarm_model->set_no_alarm();
-        Clock_alarm alarm;
-        // lv_label_set_text(ui_labAlarm, "00:00");
-        // lv_label_set_text(ui_labAlarmEnable, "OFF");
+        alarm_controller->set_no_alarm();
       }
     }
     else

@@ -70,7 +70,8 @@ void Weather_controller::update_view()
 
 String Weather_controller::get_date_string(DateTime dt, uint8_t offset)
 {
+  DateTime dt_sum = dt + TimeSpan(offset, 0, 0, 0);
   char dateStr[11];
-  sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), (dt.day() + offset));
+  sprintf(dateStr, "%04d-%02d-%02d", dt_sum.year(), dt_sum.month(), dt_sum.day());
   return String(dateStr);
 }

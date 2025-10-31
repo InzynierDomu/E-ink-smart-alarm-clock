@@ -1,6 +1,7 @@
 #include "RTClib.h"
 #include "alarm_model.h"
 #include "alarm_view.h"
+#include "audio.h"
 #include "calendar_controller.h"
 #include "calendar_model.h"
 #include "calendar_view.h"
@@ -21,7 +22,6 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiUdp.h>
-#include <driver/i2s.h>
 #include <time.h>
 #include <vector>
 
@@ -117,53 +117,58 @@ SPIClass spi = SPIClass(HSPI);
 
 // std::vector<Calendar_event> calendar;
 // std::vector<Simple_weather> forecast;
-Clock_alarm clock_alarm;
+// Clock_alarm clock_alarm;
 
-const uint16_t audio_buffer_size = 512;
-uint16_t sample_rate = 16000;
+// const uint16_t audio_buffer_size = 512;
+// uint16_t sample_rate = 16000;
 
 RTC_DS1307 m_rtc; ///< DS1307 RTC
 DateTime now;
+
+Audio audio;
+
 DynamicJsonDocument docs(19508);
 
 Weather_model weather_model;
 Weather_view weather_view(&screen);
 Weather_controller weather_controller(&weather_model, &weather_view);
 
-Calendar_model calendar_model;
 Alarm_model alarm_model;
 Alarm_view alarm_view(&screen);
+Alarm_controller alarm_controller(&alarm_model, &alarm_view);
+
+Calendar_model calendar_model;
 Calendar_view calendar_view(&screen);
-Calendar_controller calendar_controller(&calendar_model, &alarm_model, &calendar_view, &alarm_view);
+Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_controller);
 
-void playAudio()
-{
-  File audioFile;
-  Serial.println("playing audio...");
-  String file_path = "/ringtone.wav";
-  audioFile = SD.open(file_path, FILE_READ);
-  if (!audioFile)
-  {
-    Serial.println("error with audio file");
-    return;
-  }
+// void playAudio()
+// {
+//   File audioFile;
+//   Serial.println("playing audio...");
+//   String file_path = "/ringtone.wav";
+//   audioFile = SD.open(file_path, FILE_READ);
+//   if (!audioFile)
+//   {
+//     Serial.println("error with audio file");
+//     return;
+//   }
 
-  i2s_start(I2S_NUM_1);
-  size_t bytesRead;
-  int16_t buffer[audio_buffer_size];
+//   i2s_start(I2S_NUM_1);
+//   size_t bytesRead;
+//   int16_t buffer[audio_buffer_size];
 
-  while (audioFile.available())
-  {
-    bytesRead = audioFile.read((uint8_t*)buffer, audio_buffer_size * sizeof(int16_t));
-    i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
-  }
+//   while (audioFile.available())
+//   {
+//     bytesRead = audioFile.read((uint8_t*)buffer, audio_buffer_size * sizeof(int16_t));
+//     i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
+//   }
 
-  audioFile.close();
+//   audioFile.close();
 
-  i2s_stop(I2S_NUM_1);
+//   i2s_stop(I2S_NUM_1);
 
-  Serial.println("playing end.");
-}
+//   Serial.println("playing end.");
+// }
 
 void read_config(Wifi_Config& _config)
 {
@@ -205,19 +210,37 @@ void read_config(Wifi_Config& _config)
   google_config.script_url = doc["google_script_url"] | "";
   google_config.alarm_calendar_id = doc["google_calendar_alarm_id"] | "";
   google_config.google_calendar_id = doc["google_calendar_id"] | "";
-  sample_rate = doc["sample_rate"];
   calendar_model.set_config(google_config);
+
+  uint16_t sample_rate = doc["sample_rate"];
+  audio.set_sample_rate(sample_rate);
 }
 
-void check_alarm(DateTime& now)
+// void check_alarm(DateTime& now)
+// {
+//   Clock_alarm alarm;
+//   alarm_model.get_alarm(alarm);
+//   Serial.println(alarm.time.hour);
+//   if (now.hour() == alarm.time.hour && now.minute() == alarm.time.minutes)
+//   {
+//     audio.play_audio();
+//   }
+// }
+
+// String get_date_string(DateTime dt, uint8_t offset)
+// {
+//   DateTime dt_sum = dt + TimeSpan(offset, 0, 0, 0);
+//   char dateStr[11];
+//   sprintf(dateStr, "%02d-%02d", dt_sum.day() , dt_sum.month());
+//   return String(dateStr);
+// }
+
+const char* get_date_string(DateTime dt, uint8_t offset)
 {
-  Serial.print("chek alarm");
-  Serial.println(now.hour());
-  Serial.println(clock_alarm.time.hour);
-  if (now.hour() == clock_alarm.time.hour && now.minute() == clock_alarm.time.minutes)
-  {
-    playAudio();
-  }
+  static char dateStr[11];
+  DateTime dt_sum = dt + TimeSpan(offset, 0, 0, 0);
+  snprintf(dateStr, sizeof(dateStr), "%02d-%02d", dt_sum.day(), dt_sum.month());
+  return dateStr;
 }
 
 void update_clock()
@@ -227,28 +250,31 @@ void update_clock()
   sprintf(buf, "%02d:%02d", now.hour(), now.minute());
   lv_label_set_text(ui_labtime, buf);
 
-  char buf_date[11]; // "dd-mm" + null
-  sprintf(buf_date, "%02d-%02d", now.day(), now.month());
-  lv_label_set_text(ui_labDate, buf_date);
-  sprintf(buf_date, "%02d-%02d", now.day() + 1, now.month());
-  lv_label_set_text(ui_labDateDay1, buf_date);
-  sprintf(buf_date, "%02d-%02d", now.day() + 2, now.month());
-  lv_label_set_text(ui_labDateDay2, buf_date);
-  sprintf(buf_date, "%02d-%02d", now.day() + 3, now.month());
-  lv_label_set_text(ui_labDateDay3, buf_date);
+  const char* dateStr = get_date_string(now, 0);
+  lv_label_set_text(ui_labDate, dateStr);
+  dateStr = get_date_string(now, 1);
+  lv_label_set_text(ui_labDateDay1, dateStr);
+  dateStr = get_date_string(now, 2);
+  lv_label_set_text(ui_labDateDay2, dateStr);
+  dateStr = get_date_string(now, 3);
+  lv_label_set_text(ui_labDateDay3, dateStr);
 
-  if (clock_alarm.enable)
+  if (alarm_controller.check_alarm(now))
   {
-    check_alarm(now);
+    audio.play_audio();
   }
+  // if (alarm_model.get_is_alarm())
+  // {
+  //   check_alarm(now);
+  // }
 }
 
-String getDateString(DateTime dt, uint8_t offset = 0)
-{
-  char dateStr[11];
-  sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), (dt.day() + offset));
-  return String(dateStr);
-}
+// String getDateString(DateTime dt, uint8_t offset = 0)
+// {
+//   char dateStr[11];
+//   sprintf(dateStr, "%04d-%02d-%02d", dt.year(), dt.month(), (dt.day() + offset));
+//   return String(dateStr);
+// }
 
 // enum class wheater
 // {
@@ -489,6 +515,7 @@ static void update_date(lv_timer_t* timer)
     weather_controller.update_view();
     calendar_controller.fetch_calendar();
     calendar_controller.update_view();
+    alarm_controller.update_view();
     update_counter = 0;
   }
   else
@@ -497,28 +524,28 @@ static void update_date(lv_timer_t* timer)
   }
 }
 
-void setupI2SSpeaker()
-{
-  Serial.println("audio cofing start");
-  i2s_config_t i2s_config = {.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
-                             .sample_rate = sample_rate,
-                             .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-                             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-                             .communication_format = I2S_COMM_FORMAT_I2S,
-                             .intr_alloc_flags = 0,
-                             .dma_buf_count = 8,
-                             .dma_buf_len = audio_buffer_size,
-                             .use_apll = false};
-  i2s_pin_config_t pin_config = {.bck_io_num = config::speaker_bck_pin,
-                                 .ws_io_num = config::speaker_ws_pin,
-                                 .data_out_num = config::speaker_dout_pin,
-                                 .data_in_num = I2S_PIN_NO_CHANGE};
-  esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
-  Serial.println(esp_err_to_name(err));
-  err = i2s_set_pin(I2S_NUM_1, &pin_config);
-  Serial.println(esp_err_to_name(err));
-  Serial.println("audio cofing end");
-}
+// void setupI2SSpeaker()
+// {
+//   Serial.println("audio cofing start");
+//   i2s_config_t i2s_config = {.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+//                              .sample_rate = sample_rate,
+//                              .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+//                              .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+//                              .communication_format = I2S_COMM_FORMAT_I2S,
+//                              .intr_alloc_flags = 0,
+//                              .dma_buf_count = 8,
+//                              .dma_buf_len = audio_buffer_size,
+//                              .use_apll = false};
+//   i2s_pin_config_t pin_config = {.bck_io_num = config::speaker_bck_pin,
+//                                  .ws_io_num = config::speaker_ws_pin,
+//                                  .data_out_num = config::speaker_dout_pin,
+//                                  .data_in_num = I2S_PIN_NO_CHANGE};
+//   esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
+//   Serial.println(esp_err_to_name(err));
+//   err = i2s_set_pin(I2S_NUM_1, &pin_config);
+//   Serial.println(esp_err_to_name(err));
+//   Serial.println("audio cofing end");
+// }
 
 void setup()
 {
@@ -577,20 +604,14 @@ void setup()
 
   screen.setup_screen();
 
-  // calendar_labels.push_back(ui_labCalendarEvent1);
-  // calendar_labels.push_back(ui_labCalendarEvent2);
-  // calendar_labels.push_back(ui_labCalendarEvent3);
-  // calendar_labels.push_back(ui_labCalendarEvent4);
-  // calendar_labels.push_back(ui_labCalendarEvent5);
-  // calendar_labels.push_back(ui_labCalendarEvent6);
-  // calendar_labels.push_back(ui_labCalendarEvent7);
+  calendar_view.setup_calendar_list();
 
   lv_timer_create(update_date, 60000, NULL);
   delay(1000);
 
   pinMode(config::alarm_enable_button_pin, INPUT);
 
-  setupI2SSpeaker();
+  audio.setup();
 }
 
 void loop()
@@ -599,14 +620,8 @@ void loop()
   delay(10); // minimalny delay dla stability
   if (digitalRead(config::alarm_enable_button_pin) == LOW)
   {
-    clock_alarm.enable = !clock_alarm.enable;
-    if (clock_alarm.enable)
-    {
-      lv_label_set_text(ui_labAlarmEnable, "ON");
-    }
-    else
-    {
-      lv_label_set_text(ui_labAlarmEnable, "OFF");
-    }
+    // dodac if alarm
+    alarm_controller.toggle_alarm();
+    alarm_controller.update_view();
   }
 }
