@@ -14,6 +14,7 @@ class Screen
 
   private:
   static void my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data);
+  static void rotate_bitmap_180(uint8_t* buffer, int16_t width, int16_t height);
   void epd_setup();
   static uint32_t my_tick(void);
 
