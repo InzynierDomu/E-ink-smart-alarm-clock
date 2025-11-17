@@ -66,6 +66,7 @@ void Weather_controller::fetch_weather(DateTime& now)
 void Weather_controller::update_view()
 {
   view->show(*model);
+  
 }
 
 String Weather_controller::get_date_string(DateTime dt, uint8_t offset)

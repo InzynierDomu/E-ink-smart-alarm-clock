@@ -13,6 +13,8 @@ constexpr uint8_t speaker_ws_pin = 20;
 constexpr uint8_t speaker_dout_pin = 3;
 constexpr uint8_t sda_pin = 21;
 constexpr uint8_t scl_pin = 38;
+constexpr uint8_t btn_pin = 8;
+constexpr uint8_t led_pin = 14;
 
 constexpr uint16_t screen_width = 792;
 constexpr uint16_t screen_height = 272;

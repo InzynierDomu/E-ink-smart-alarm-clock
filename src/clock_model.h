@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Arduino.h>
+#include <time.h>
+
 
 struct Simple_time
 {
@@ -23,4 +25,22 @@ struct Simple_time
     String m = minutes < 10 ? "0" + String(minutes) : String(minutes);
     return h + ":" + m;
   }
+};
+
+struct Wifi_Config
+{
+  String ssid;
+  String pass;
+  long timezone;
+};
+
+
+class Clock_model
+{
+  public:
+  void set_wifi_config(Wifi_Config& _config);
+  void get_wifi_config(Wifi_Config& _config) const;
+
+  private:
+  Wifi_Config wifi_config;
 };

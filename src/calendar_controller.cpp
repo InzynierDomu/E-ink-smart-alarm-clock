@@ -25,11 +25,10 @@ void Calendar_controller::fetch_calendar()
 
   if (httpResponseCode == 301 || httpResponseCode == 302)
   {
-    String newUrl = http.getLocation(); // Pobierz nowy URL z nagłówka Location
+    String newUrl = http.getLocation(); 
     Serial.printf("Przekierowanie: %d -> %s\n", httpResponseCode, newUrl.c_str());
     http.end();
-
-    // Wywołaj ponownie do nowego URL (uwaga: rekurencja lub pętla, ale ogranicz max ilość przekierowań)
+    
     http.begin(newUrl);
     httpResponseCode = http.GET();
   }
