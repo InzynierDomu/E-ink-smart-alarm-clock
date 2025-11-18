@@ -1,5 +1,4 @@
 #pragma once
-
 #include "clock_model.h"
 
 #include <Arduino.h>

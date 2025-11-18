@@ -1,7 +1,6 @@
 #pragma once
-
 #include "RTClib.h"
-#include "Screen.h"
+#include "screen.h"
 
 #include <vector>
 

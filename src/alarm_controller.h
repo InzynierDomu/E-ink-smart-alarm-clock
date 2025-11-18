@@ -1,9 +1,8 @@
 #pragma once
 
+#include "RTClib.h"
 #include "alarm_model.h"
 #include "alarm_view.h"
-
-#include "RTClib.h"
 
 class Alarm_controller
 {

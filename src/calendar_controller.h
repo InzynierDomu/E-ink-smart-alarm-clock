@@ -3,7 +3,6 @@
 #include "calendar_model.h"
 #include "calendar_view.h"
 
-
 class Calendar_controller
 {
   public:

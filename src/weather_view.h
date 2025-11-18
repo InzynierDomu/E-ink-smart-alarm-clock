@@ -1,5 +1,5 @@
 #pragma once
-#include "Screen.h"
+#include "screen.h"
 #include "weather_model.h"
 
 class Weather_view

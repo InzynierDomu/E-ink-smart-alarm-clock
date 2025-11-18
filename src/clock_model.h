@@ -1,8 +1,6 @@
 #pragma once
-
 #include <Arduino.h>
 #include <time.h>
-
 
 struct Simple_time
 {

@@ -3,7 +3,6 @@
 #include "weather_model.h"
 #include "weather_view.h"
 
-
 class Weather_controller
 {
   public:

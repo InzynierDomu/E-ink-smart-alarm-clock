@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+
 Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller)
 : model(_model)
 , view(_view)
@@ -25,10 +26,10 @@ void Calendar_controller::fetch_calendar()
 
   if (httpResponseCode == 301 || httpResponseCode == 302)
   {
-    String newUrl = http.getLocation(); 
+    String newUrl = http.getLocation();
     Serial.printf("Przekierowanie: %d -> %s\n", httpResponseCode, newUrl.c_str());
     http.end();
-    
+
     http.begin(newUrl);
     httpResponseCode = http.GET();
   }

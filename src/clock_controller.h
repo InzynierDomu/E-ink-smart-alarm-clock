@@ -1,5 +1,4 @@
 #pragma once
-
 #include "RTClib.h"
 #include "clock_model.h"
 #include "clock_view.h"
