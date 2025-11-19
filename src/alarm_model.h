@@ -22,6 +22,7 @@ class Alarm_model
   void set_no_alarm();
   bool get_is_alarm() const;
   void toggle_alarm();
+  void enable_alarm();
 
   private:
   Clock_alarm alarm;

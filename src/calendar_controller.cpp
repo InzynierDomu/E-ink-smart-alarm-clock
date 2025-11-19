@@ -60,6 +60,7 @@ void Calendar_controller::fetch_calendar()
         if (calendar_name == config.alarm_calendar_id)
         {
           alarm_controller->set_alarm(new_event.time_start);
+          alarm_controller->enable_alarm();
           is_alarm = true;
         }
         else if (calendar_name == config.google_calendar_id)

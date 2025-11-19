@@ -11,9 +11,9 @@ struct Open_weather_config
 
 struct Simple_weather
 {
-  uint8_t temperature_morning;
-  uint8_t temperature_afternoon;
-  uint8_t temperature_evening;
+  int8_t temperature_morning;
+  int8_t temperature_afternoon;
+  int8_t temperature_evening;
   uint8_t cloud_cover;
   uint8_t precipitation;
 };

@@ -15,6 +15,7 @@ void Alarm_model::get_alarm(Clock_alarm& _alarm) const
 
 void Alarm_model::set_no_alarm()
 {
+  alarm.enable = false;
   is_alarm = false;
 }
 
@@ -26,4 +27,8 @@ bool Alarm_model::get_is_alarm() const
 void Alarm_model::toggle_alarm()
 {
   alarm.enable = !alarm.enable;
+}
+void Alarm_model::enable_alarm()
+{
+  alarm.enable = true;
 }

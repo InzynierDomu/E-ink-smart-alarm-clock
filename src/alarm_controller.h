@@ -12,6 +12,7 @@ class Alarm_controller
   bool check_alarm(DateTime& now);
   void set_no_alarm();
   void toggle_alarm();
+  void enable_alarm();
   void update_view();
 
   private:

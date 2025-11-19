@@ -40,6 +40,11 @@ void Alarm_controller::toggle_alarm()
   }
 }
 
+void Alarm_controller::enable_alarm()
+{
+  model->enable_alarm();
+}
+
 void Alarm_controller::update_view()
 {
   view->show(*model);
