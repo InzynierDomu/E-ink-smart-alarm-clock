@@ -16,7 +16,7 @@ A minimalist clock and alarm that displays the daily weather forecast and calend
 - weather forecast
 - Google calendar events list
 
-![photo](https://www.inzynierdomu.pl/wp-content/uploads/2019/12/stary-telefon-scaled.jpg)
+![photo](https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/main/photo.JPG)
 
 <div align="center">
 <h2>Support</h2>
@@ -42,7 +42,7 @@ A minimalist clock and alarm that displays the daily weather forecast and calend
 
 ### Schem
 
-TBD
+![schem](https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/main/schem.png)
 
 ### SD Card Setup
 
