@@ -70,3 +70,9 @@ A minimalist clock and alarm that displays the daily weather forecast and calend
 1. To add an alarm, set an event in Google Calendar in the appropriate calendar provided during configuration.
 2. to change the alarm ON/OFF press the button
 3. To turn off the alarm, press the button while it is ringing
+
+## Thanks
+
+Repositories I used:
+- https://github.com/kristiantm/eink-family-calendar-esp32
+- https://github.com/MakersFunDuck/5.79-inch-E-ink-dashboard-with-LVGL-9
