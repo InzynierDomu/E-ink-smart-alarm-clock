@@ -26,7 +26,7 @@ A minimalist clock and alarm that displays the daily weather forecast and calend
 
 ## Required environment
 
-- **Board**: [CrowPanel ESP32 5.79inch E-paper](https://www.elecrow.com/crowpanel-esp32-5-79-e-paper-hmi-display-with-272-792-resolution-black-white-color-driven-by-spi-interface.html)
+- **Board**: [CrowPanel ESP32 5.79inch E-paper](https://www.elecrow.com/crowpanel-esp32-5-79-e-paper-hmi-display-with-272-792-resolution-black-white-color-driven-by-spi-interface.html?idd=6)
 - **Platform**: PlatformIO [video](https://platformio.org/) 
 - **Framework**: Arduino 
 
