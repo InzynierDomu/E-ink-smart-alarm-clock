@@ -11,6 +11,8 @@ A minimalist clock and alarm that displays the daily weather forecast and calend
 
 ## Features
 
+Video about device [video](https://youtu.be/p92zGk0prb8) 
+
 - Clock and calendar
 - Alarm
 - weather forecast
