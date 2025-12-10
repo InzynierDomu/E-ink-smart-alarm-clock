@@ -112,16 +112,20 @@ void read_config()
 
 String getPage()
 {
-  return "<!DOCTYPE html>\
-    <html>\
-    <head>\
-    <meta charset='UTF-8'>\
-    <title>test</title>\
-    </head>\
-    <body>\
-    <h1>tekst</h1>\
-    </body>\
-    </html>";
+  String page = "<!DOCTYPE html>"
+                "<html><head><meta charset='UTF-8'><title>Konfiguracja</title>"
+                "<style>body{font-family:sans-serif;}.row{margin:4px 0;}"
+                ".name{display:inline-block;width:220px;}input{width:260px;}</style>"
+                "</head><body><h1>Konfiguracja</h1>";
+  Wifi_Config wifi_config;
+  clock_model.get_wifi_config(wifi_config);
+
+  page += "<div class='row'><span class='name'>ssid</span>"
+          "<input type='text' name='ssid' value='" +
+          wifi_config.ssid + "'></div>";
+
+  page += "</body></html>";
+  return page;
 }
 void handleRoot()
 {
@@ -252,4 +256,6 @@ void loop()
       digitalWrite(config::led_pin, LOW);
     }
   }
+
+  server.handleClient();
 }
