@@ -21,11 +21,13 @@
 #include <HTTPClient.h>
 #include <SD.h>
 #include <SPI.h>
+#include <WebServer.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiUdp.h>
 #include <time.h>
 #include <vector>
+
 
 enum class State
 {
@@ -56,6 +58,8 @@ Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_
 Clock_model clock_model;
 Clock_view clock_view(&screen);
 Clock_controller clock_controller(&clock_view, &clock_model);
+
+WebServer server(80);
 
 State state;
 void read_config()
@@ -104,6 +108,24 @@ void read_config()
 
   uint16_t sample_rate = doc["sample_rate"];
   audio.set_sample_rate(sample_rate);
+}
+
+String getPage()
+{
+  return "<!DOCTYPE html>\
+    <html>\
+    <head>\
+    <meta charset='UTF-8'>\
+    <title>test</title>\
+    </head>\
+    <body>\
+    <h1>tekst</h1>\
+    </body>\
+    </html>";
+}
+void handleRoot()
+{
+  server.send(200, "text/html", getPage());
 }
 
 void update_clock()
@@ -186,6 +208,9 @@ void setup()
   audio.setup();
 
   state = State::normal;
+
+  server.on("/", handleRoot);
+  server.begin();
 }
 
 bool check_button()
