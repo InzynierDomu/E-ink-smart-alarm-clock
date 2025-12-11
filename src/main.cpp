@@ -32,7 +32,8 @@
 enum class State
 {
   alarm,
-  normal
+  normal,
+  AP
 };
 
 Screen screen;
@@ -117,19 +118,89 @@ String getPage()
                 "<style>body{font-family:sans-serif;}.row{margin:4px 0;}"
                 ".name{display:inline-block;width:220px;}input{width:260px;}</style>"
                 "</head><body><h1>Konfiguracja</h1>";
+
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
 
+  Open_weather_config weather_config;
+  weather_model.get_config(weather_config); // jeśli nie masz, dorób getter
+
+  page += "<form method='POST' action='/save'>";
+
   page += "<div class='row'><span class='name'>ssid</span>"
           "<input type='text' name='ssid' value='" +
-          wifi_config.ssid + "'></div>";
+          String(wifi_config.ssid) + "'></div>";
 
-  page += "</body></html>";
+  page += "<div class='row'><span class='name'>lat</span>"
+          "<input type='text' name='lat' value='" +
+          String(weather_config.lat) + "'></div>";
+
+  page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div>";
+
+  page += "</form></body></html>";
+
   return page;
 }
 void handleRoot()
 {
   server.send(200, "text/html", getPage());
+}
+
+void handleSave()
+{
+  if (!server.hasArg("ssid") || !server.hasArg("lat"))
+  {
+    server.send(400, "text/plain", "Brak pola ssid lub lat");
+    return;
+  }
+
+  String new_ssid = server.arg("ssid");
+  String new_lat_str = server.arg("lat");
+  float new_lat = new_lat_str.toFloat(); // konwersja na float
+
+  File file = SD.open(config::config_path, "r");
+  if (!file)
+  {
+    server.send(500, "text/plain", "Brak pliku config");
+    return;
+  }
+
+  String jsonData;
+  while (file.available())
+  {
+    jsonData += (char)file.read();
+  }
+  file.close();
+
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, jsonData);
+  if (error)
+  {
+    server.send(500, "text/plain", "Blad parsowania JSON");
+    return;
+  }
+
+  // aktualizacja w JSON
+  doc["ssid"] = new_ssid;
+  doc["lat"] = new_lat; // w pliku będzie liczba
+
+  file = SD.open(config::config_path, "w");
+  if (!file)
+  {
+    server.send(500, "text/plain", "Nie moge otworzyc config do zapisu");
+    return;
+  }
+  if (serializeJson(doc, file) == 0)
+  {
+    file.close();
+    server.send(500, "text/plain", "Blad zapisu JSON");
+    return;
+  }
+  file.close();
+
+  server.send(200, "text/plain", "Zapisano, restartuje...");
+  delay(500);
+  ESP.restart();
 }
 
 void update_clock()
@@ -187,11 +258,26 @@ void setup()
 
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
-  WiFi.begin(wifi_config.ssid, wifi_config.pass);
-  while (WiFi.status() != WL_CONNECTED)
+
+  if (wifi_config.ssid.length() == 0)
   {
-    delay(500);
-    Serial.print(".");
+    Serial.println("Brak SSID, uruchamiam AP");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("EInkClock-AP", "12345678");
+    state = State::AP;
+  }
+  else
+  {
+    Serial.println("SSID ustawione, lacze jako STA");
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("\nWiFi connected");
+    state = State::normal;
   }
 
   clock_controller.setup_clock();
@@ -211,9 +297,8 @@ void setup()
 
   audio.setup();
 
-  state = State::normal;
-
   server.on("/", handleRoot);
+  server.on("/save", HTTP_POST, handleSave);
   server.begin();
 }
 
@@ -234,7 +319,10 @@ bool check_button()
 
 void loop()
 {
-  lv_timer_handler();
+  if (state != State::AP)
+  {
+    lv_timer_handler();
+  }
   delay(10);
 
   if (state == State::alarm)
@@ -246,7 +334,7 @@ void loop()
       digitalWrite(config::led_pin, LOW);
     }
   }
-  else
+  else if(state == State::normal)
   {
     if (check_button())
     {
