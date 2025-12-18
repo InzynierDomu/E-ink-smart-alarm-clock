@@ -179,7 +179,7 @@ void handleSave()
   }
   file.close();
 
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<1024> doc;
   DeserializationError error = deserializeJson(doc, jsonData);
   if (error)
   {
