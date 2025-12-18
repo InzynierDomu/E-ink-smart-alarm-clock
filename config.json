@@ -8,5 +8,6 @@
   "google_script_url" : "abcd",
   "google_calendar_alarm_id" : "abc",
   "google_calendar_id" : "abc",
-  "sample_rate" : 16000
+  "sample_rate" : 16000,
+  "volume" : 100
 }

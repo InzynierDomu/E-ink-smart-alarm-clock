@@ -43,9 +43,21 @@ void Audio::play_audio()
   size_t bytesRead;
   int16_t buffer[audio_buffer_size];
 
+  float volFactor = volume / 100.0f;
+
   while (audioFile.available())
   {
     bytesRead = audioFile.read((uint8_t*)buffer, audio_buffer_size * sizeof(int16_t));
+
+    size_t samples = bytesRead / sizeof(int16_t);
+    for (size_t i = 0; i < samples; i++)
+    {
+      int32_t sample = buffer[i];
+      sample = (int32_t)(sample * volFactor);
+
+      buffer[i] = (int16_t)sample;
+    }
+
     i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
   }
 
@@ -59,4 +71,16 @@ void Audio::play_audio()
 void Audio::set_sample_rate(uint16_t _sample_rate)
 {
   sample_rate = _sample_rate;
+}
+
+void Audio::set_volume(uint8_t _volume)
+{
+  if (_volume > 100)
+  {
+    volume = 100;
+  }
+  else
+  {
+    volume = _volume;
+  }
 }

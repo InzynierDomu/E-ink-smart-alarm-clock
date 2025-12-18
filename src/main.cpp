@@ -79,7 +79,7 @@ void read_config()
   }
   file.close();
 
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<1024> doc;
 
   DeserializationError error = deserializeJson(doc, jsonData);
   if (error)
@@ -109,6 +109,8 @@ void read_config()
 
   uint16_t sample_rate = doc["sample_rate"];
   audio.set_sample_rate(sample_rate);
+  uint8_t volume = doc["volume"];
+  audio.set_volume(volume);
 }
 
 String getPage()
@@ -334,7 +336,7 @@ void loop()
       digitalWrite(config::led_pin, LOW);
     }
   }
-  else if(state == State::normal)
+  else if (state == State::normal)
   {
     if (check_button())
     {
