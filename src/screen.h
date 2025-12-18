@@ -1,6 +1,6 @@
 #pragma once
 #include "config.h"
-// #include "ui/ui.h"
+#include "ui/ui.h"
 
 #include <GxEPD2_BW.h>
 
