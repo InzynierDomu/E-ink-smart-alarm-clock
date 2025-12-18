@@ -9,6 +9,8 @@ class Audio
   void play_audio();
   void set_sample_rate(uint16_t sample_rate);
   void set_volume(uint8_t volume);
+  uint16_t get_sample_rate();
+  uint8_t get_volume();
 
   private:
   const uint16_t audio_buffer_size = 512;

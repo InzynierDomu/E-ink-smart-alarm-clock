@@ -84,3 +84,13 @@ void Audio::set_volume(uint8_t _volume)
     volume = _volume;
   }
 }
+
+uint16_t Audio::get_sample_rate()
+{
+  return sample_rate;
+}
+
+uint8_t Audio::get_volume()
+{
+  return volume;
+}

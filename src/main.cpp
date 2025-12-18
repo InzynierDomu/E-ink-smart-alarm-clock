@@ -137,6 +137,10 @@ String getPage()
           "<input type='text' name='lat' value='" +
           String(weather_config.lat) + "'></div>";
 
+  page += "<div class='row'><span class='name'>volume</span>"
+          "<input type='text' name='volume' value='" +
+          String(audio.get_volume()) + "'></div>";
+
   page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div>";
 
   page += "</form></body></html>";
@@ -158,6 +162,7 @@ void handleSave()
 
   String new_ssid = server.arg("ssid");
   String new_lat_str = server.arg("lat");
+  uint8_t new_volume = server.arg("volume").toInt();
   float new_lat = new_lat_str.toFloat(); // konwersja na float
 
   File file = SD.open(config::config_path, "r");
@@ -185,6 +190,7 @@ void handleSave()
   // aktualizacja w JSON
   doc["ssid"] = new_ssid;
   doc["lat"] = new_lat; // w pliku będzie liczba
+  doc["volume"] = new_volume;
 
   file = SD.open(config::config_path, "w");
   if (!file)
