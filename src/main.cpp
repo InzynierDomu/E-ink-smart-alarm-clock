@@ -117,36 +117,77 @@ String getPage()
 {
   String page = "<!DOCTYPE html>"
                 "<html><head><meta charset='UTF-8'><title>Konfiguracja</title>"
-                "<style>body{font-family:sans-serif;}.row{margin:4px 0;}"
-                ".name{display:inline-block;width:220px;}input{width:260px;}</style>"
+                "<style>"
+                "body{font-family:sans-serif;}"
+                ".row{margin:4px 0;}"
+                ".name{display:inline-block;width:220px;}"
+                "input,select{width:260px;}"
+                "h2{margin-top:16px;}"
+                "</style>"
                 "</head><body><h1>Konfiguracja</h1>";
 
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
 
   Open_weather_config weather_config;
-  weather_model.get_config(weather_config); // jeśli nie masz, dorób getter
+  weather_model.get_config(weather_config);
 
   page += "<form method='POST' action='/save'>";
 
-  page += "<div class='row'><span class='name'>ssid</span>"
+  // WiFi
+  page += "<h2>WiFi</h2>";
+  page += "<div class='row'><span class='name'>SSID</span>"
           "<input type='text' name='ssid' value='" +
           String(wifi_config.ssid) + "'></div>";
+  page += "<div class='row'><span class='name'>Hasło</span>"
+          "<input type='password' name='pass' value='" +
+          String(wifi_config.pass) + "'></div>";
 
-  page += "<div class='row'><span class='name'>lat</span>"
+  // Strefa czasowa (godziny względem GMT/UTC)
+  int timezone_hours = wifi_config.timezone / 3600;
+  page += "<h2>Strefa czasowa</h2>";
+  page += "<div class='row'><span class='name'>UTC offset [h]</span>"
+          "<input type='number' step='1' name='timezone_hours' value='" +
+          String(timezone_hours) + "'></div>";
+
+  // OpenWeather
+  page += "<h2>OpenWeather API</h2>";
+  page += "<div class='row'><span class='name'>API key</span>"
+          "<input type='text' name='api_key' value='" +
+          String(weather_config.api_key) + "'></div>";
+  page += "<div class='row'><span class='name'>Szerokość (lat)</span>"
           "<input type='text' name='lat' value='" +
           String(weather_config.lat) + "'></div>";
+  page += "<div class='row'><span class='name'>Długość (lon)</span>"
+          "<input type='text' name='lon' value='" +
+          String(weather_config.lon) + "'></div>";
 
-  page += "<div class='row'><span class='name'>volume</span>"
-          "<input type='text' name='volume' value='" +
+  // Dźwięk
+  page += "<h2>Dźwięk</h2>";
+
+  page += "<div class='row'><span class='name'>Sample rate</span>"
+          "<select name='sample_rate'>";
+
+  uint16_t current_sr = audio.get_sample_rate();
+  const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
+  for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
+  {
+    page += "<option value='" + String(sr_list[i]) + "'";
+    if (sr_list[i] == current_sr)
+      page += " selected";
+    page += ">" + String(sr_list[i]) + " Hz</option>";
+  }
+  page += "</select></div>";
+
+  page += "<div class='row'><span class='name'>Głośność</span>"
+          "<input type='range' name='volume' min='0' max='100' value='" +
           String(audio.get_volume()) + "'></div>";
 
   page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div>";
-
   page += "</form></body></html>";
-
   return page;
 }
+
 void handleRoot()
 {
   server.send(200, "text/html", getPage());
@@ -154,16 +195,17 @@ void handleRoot()
 
 void handleSave()
 {
-  if (!server.hasArg("ssid") || !server.hasArg("lat"))
-  {
-    server.send(400, "text/plain", "Brak pola ssid lub lat");
-    return;
-  }
-
   String new_ssid = server.arg("ssid");
-  String new_lat_str = server.arg("lat");
+  String new_pass = server.arg("pass");
+  int tz_hours = server.arg("timezone_hours").toInt();
+  int tz_seconds = tz_hours * 3600;
+
+  String new_api_key = server.arg("api_key");
+  float new_lat = server.arg("lat").toFloat();
+  float new_lon = server.arg("lon").toFloat();
+
+  uint16_t new_sample_rate = server.arg("sample_rate").toInt();
   uint8_t new_volume = server.arg("volume").toInt();
-  float new_lat = new_lat_str.toFloat(); // konwersja na float
 
   File file = SD.open(config::config_path, "r");
   if (!file)
@@ -174,9 +216,7 @@ void handleSave()
 
   String jsonData;
   while (file.available())
-  {
     jsonData += (char)file.read();
-  }
   file.close();
 
   StaticJsonDocument<1024> doc;
@@ -187,9 +227,15 @@ void handleSave()
     return;
   }
 
-  // aktualizacja w JSON
   doc["ssid"] = new_ssid;
-  doc["lat"] = new_lat; // w pliku będzie liczba
+  doc["pass"] = new_pass;
+  doc["timezone"] = tz_seconds;
+
+  doc["api_key"] = new_api_key;
+  doc["lat"] = new_lat;
+  doc["lon"] = new_lon;
+
+  doc["sample_rate"] = new_sample_rate;
   doc["volume"] = new_volume;
 
   file = SD.open(config::config_path, "w");
@@ -198,14 +244,15 @@ void handleSave()
     server.send(500, "text/plain", "Nie moge otworzyc config do zapisu");
     return;
   }
+
   if (serializeJson(doc, file) == 0)
   {
     file.close();
     server.send(500, "text/plain", "Blad zapisu JSON");
     return;
   }
-  file.close();
 
+  file.close();
   server.send(200, "text/plain", "Zapisano, restartuje...");
   delay(500);
   ESP.restart();
