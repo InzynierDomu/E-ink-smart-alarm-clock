@@ -9,6 +9,7 @@
 #include "clock_model.h"
 #include "clock_view.h"
 #include "config.h"
+#include "http_server.h"
 #include "lvgl.h"
 #include "screen.h"
 #include "ui/ui.h"
@@ -27,7 +28,6 @@
 #include <WiFiUdp.h>
 #include <time.h>
 #include <vector>
-
 
 enum class State
 {
@@ -61,6 +61,7 @@ Clock_view clock_view(&screen);
 Clock_controller clock_controller(&clock_view, &clock_model);
 
 WebServer server(80);
+HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);
 
 State state;
 void read_config()
@@ -113,150 +114,150 @@ void read_config()
   audio.set_volume(volume);
 }
 
-String getPage()
-{
-  String page = "<!DOCTYPE html>"
-                "<html><head><meta charset='UTF-8'><title>Konfiguracja</title>"
-                "<style>"
-                "body{font-family:sans-serif;}"
-                ".row{margin:4px 0;}"
-                ".name{display:inline-block;width:220px;}"
-                "input,select{width:260px;}"
-                "h2{margin-top:16px;}"
-                "</style>"
-                "</head><body><h1>Konfiguracja</h1>";
+// String getPage()
+// {
+//   String page = "<!DOCTYPE html>"
+//                 "<html><head><meta charset='UTF-8'><title>Konfiguracja</title>"
+//                 "<style>"
+//                 "body{font-family:sans-serif;}"
+//                 ".row{margin:4px 0;}"
+//                 ".name{display:inline-block;width:220px;}"
+//                 "input,select{width:260px;}"
+//                 "h2{margin-top:16px;}"
+//                 "</style>"
+//                 "</head><body><h1>Konfiguracja</h1>";
 
-  Wifi_Config wifi_config;
-  clock_model.get_wifi_config(wifi_config);
+//   Wifi_Config wifi_config;
+//   clock_model.get_wifi_config(wifi_config);
 
-  Open_weather_config weather_config;
-  weather_model.get_config(weather_config);
+//   Open_weather_config weather_config;
+//   weather_model.get_config(weather_config);
 
-  page += "<form method='POST' action='/save'>";
+//   page += "<form method='POST' action='/save'>";
 
-  // WiFi
-  page += "<h2>WiFi</h2>";
-  page += "<div class='row'><span class='name'>SSID</span>"
-          "<input type='text' name='ssid' value='" +
-          String(wifi_config.ssid) + "'></div>";
-  page += "<div class='row'><span class='name'>Hasło</span>"
-          "<input type='password' name='pass' value='" +
-          String(wifi_config.pass) + "'></div>";
+//   // WiFi
+//   page += "<h2>WiFi</h2>";
+//   page += "<div class='row'><span class='name'>SSID</span>"
+//           "<input type='text' name='ssid' value='" +
+//           String(wifi_config.ssid) + "'></div>";
+//   page += "<div class='row'><span class='name'>Hasło</span>"
+//           "<input type='password' name='pass' value='" +
+//           String(wifi_config.pass) + "'></div>";
 
-  // Strefa czasowa (godziny względem GMT/UTC)
-  int timezone_hours = wifi_config.timezone / 3600;
-  page += "<h2>Strefa czasowa</h2>";
-  page += "<div class='row'><span class='name'>UTC offset [h]</span>"
-          "<input type='number' step='1' name='timezone_hours' value='" +
-          String(timezone_hours) + "'></div>";
+//   // Strefa czasowa (godziny względem GMT/UTC)
+//   int timezone_hours = wifi_config.timezone / 3600;
+//   page += "<h2>Strefa czasowa</h2>";
+//   page += "<div class='row'><span class='name'>UTC offset [h]</span>"
+//           "<input type='number' step='1' name='timezone_hours' value='" +
+//           String(timezone_hours) + "'></div>";
 
-  // OpenWeather
-  page += "<h2>OpenWeather API</h2>";
-  page += "<div class='row'><span class='name'>API key</span>"
-          "<input type='text' name='api_key' value='" +
-          String(weather_config.api_key) + "'></div>";
-  page += "<div class='row'><span class='name'>Szerokość (lat)</span>"
-          "<input type='text' name='lat' value='" +
-          String(weather_config.lat) + "'></div>";
-  page += "<div class='row'><span class='name'>Długość (lon)</span>"
-          "<input type='text' name='lon' value='" +
-          String(weather_config.lon) + "'></div>";
+//   // OpenWeather
+//   page += "<h2>OpenWeather API</h2>";
+//   page += "<div class='row'><span class='name'>API key</span>"
+//           "<input type='text' name='api_key' value='" +
+//           String(weather_config.api_key) + "'></div>";
+//   page += "<div class='row'><span class='name'>Szerokość (lat)</span>"
+//           "<input type='text' name='lat' value='" +
+//           String(weather_config.lat) + "'></div>";
+//   page += "<div class='row'><span class='name'>Długość (lon)</span>"
+//           "<input type='text' name='lon' value='" +
+//           String(weather_config.lon) + "'></div>";
 
-  // Dźwięk
-  page += "<h2>Dźwięk</h2>";
+//   // Dźwięk
+//   page += "<h2>Dźwięk</h2>";
 
-  page += "<div class='row'><span class='name'>Sample rate</span>"
-          "<select name='sample_rate'>";
+//   page += "<div class='row'><span class='name'>Sample rate</span>"
+//           "<select name='sample_rate'>";
 
-  uint16_t current_sr = audio.get_sample_rate();
-  const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
-  for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
-  {
-    page += "<option value='" + String(sr_list[i]) + "'";
-    if (sr_list[i] == current_sr)
-      page += " selected";
-    page += ">" + String(sr_list[i]) + " Hz</option>";
-  }
-  page += "</select></div>";
+//   uint16_t current_sr = audio.get_sample_rate();
+//   const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
+//   for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
+//   {
+//     page += "<option value='" + String(sr_list[i]) + "'";
+//     if (sr_list[i] == current_sr)
+//       page += " selected";
+//     page += ">" + String(sr_list[i]) + " Hz</option>";
+//   }
+//   page += "</select></div>";
 
-  page += "<div class='row'><span class='name'>Głośność</span>"
-          "<input type='range' name='volume' min='0' max='100' value='" +
-          String(audio.get_volume()) + "'></div>";
+//   page += "<div class='row'><span class='name'>Głośność</span>"
+//           "<input type='range' name='volume' min='0' max='100' value='" +
+//           String(audio.get_volume()) + "'></div>";
 
-  page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div>";
-  page += "</form></body></html>";
-  return page;
-}
+//   page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div>";
+//   page += "</form></body></html>";
+//   return page;
+// }
 
-void handleRoot()
-{
-  server.send(200, "text/html", getPage());
-}
+// void handleRoot()
+// {
+//   server.send(200, "text/html", getPage());
+// }
 
-void handleSave()
-{
-  String new_ssid = server.arg("ssid");
-  String new_pass = server.arg("pass");
-  int tz_hours = server.arg("timezone_hours").toInt();
-  int tz_seconds = tz_hours * 3600;
+// void handleSave()
+// {
+//   String new_ssid = server.arg("ssid");
+//   String new_pass = server.arg("pass");
+//   int tz_hours = server.arg("timezone_hours").toInt();
+//   int tz_seconds = tz_hours * 3600;
 
-  String new_api_key = server.arg("api_key");
-  float new_lat = server.arg("lat").toFloat();
-  float new_lon = server.arg("lon").toFloat();
+//   String new_api_key = server.arg("api_key");
+//   float new_lat = server.arg("lat").toFloat();
+//   float new_lon = server.arg("lon").toFloat();
 
-  uint16_t new_sample_rate = server.arg("sample_rate").toInt();
-  uint8_t new_volume = server.arg("volume").toInt();
+//   uint16_t new_sample_rate = server.arg("sample_rate").toInt();
+//   uint8_t new_volume = server.arg("volume").toInt();
 
-  File file = SD.open(config::config_path, "r");
-  if (!file)
-  {
-    server.send(500, "text/plain", "Brak pliku config");
-    return;
-  }
+//   File file = SD.open(config::config_path, "r");
+//   if (!file)
+//   {
+//     server.send(500, "text/plain", "Brak pliku config");
+//     return;
+//   }
 
-  String jsonData;
-  while (file.available())
-    jsonData += (char)file.read();
-  file.close();
+//   String jsonData;
+//   while (file.available())
+//     jsonData += (char)file.read();
+//   file.close();
 
-  StaticJsonDocument<1024> doc;
-  DeserializationError error = deserializeJson(doc, jsonData);
-  if (error)
-  {
-    server.send(500, "text/plain", "Blad parsowania JSON");
-    return;
-  }
+//   StaticJsonDocument<1024> doc;
+//   DeserializationError error = deserializeJson(doc, jsonData);
+//   if (error)
+//   {
+//     server.send(500, "text/plain", "Blad parsowania JSON");
+//     return;
+//   }
 
-  doc["ssid"] = new_ssid;
-  doc["pass"] = new_pass;
-  doc["timezone"] = tz_seconds;
+//   doc["ssid"] = new_ssid;
+//   doc["pass"] = new_pass;
+//   doc["timezone"] = tz_seconds;
 
-  doc["api_key"] = new_api_key;
-  doc["lat"] = new_lat;
-  doc["lon"] = new_lon;
+//   doc["api_key"] = new_api_key;
+//   doc["lat"] = new_lat;
+//   doc["lon"] = new_lon;
 
-  doc["sample_rate"] = new_sample_rate;
-  doc["volume"] = new_volume;
+//   doc["sample_rate"] = new_sample_rate;
+//   doc["volume"] = new_volume;
 
-  file = SD.open(config::config_path, "w");
-  if (!file)
-  {
-    server.send(500, "text/plain", "Nie moge otworzyc config do zapisu");
-    return;
-  }
+//   file = SD.open(config::config_path, "w");
+//   if (!file)
+//   {
+//     server.send(500, "text/plain", "Nie moge otworzyc config do zapisu");
+//     return;
+//   }
 
-  if (serializeJson(doc, file) == 0)
-  {
-    file.close();
-    server.send(500, "text/plain", "Blad zapisu JSON");
-    return;
-  }
+//   if (serializeJson(doc, file) == 0)
+//   {
+//     file.close();
+//     server.send(500, "text/plain", "Blad zapisu JSON");
+//     return;
+//   }
 
-  file.close();
-  server.send(200, "text/plain", "Zapisano, restartuje...");
-  delay(500);
-  ESP.restart();
-}
+//   file.close();
+//   server.send(200, "text/plain", "Zapisano, restartuje...");
+//   delay(500);
+//   ESP.restart();
+// }
 
 void update_clock()
 {
@@ -318,7 +319,7 @@ void setup()
   {
     Serial.println("Brak SSID, uruchamiam AP");
     WiFi.mode(WIFI_AP);
-    WiFi.softAP("EInkClock-AP", "12345678");
+    WiFi.softAP("EInkClock-AP", "inzynier_domu");
     state = State::AP;
   }
   else
@@ -352,9 +353,10 @@ void setup()
 
   audio.setup();
 
-  server.on("/", handleRoot);
-  server.on("/save", HTTP_POST, handleSave);
-  server.begin();
+  // server.on("/", handleRoot);
+  // server.on("/save", HTTP_POST, handleSave);
+  // server.begin();
+  httpServer.begin();
 }
 
 bool check_button()
