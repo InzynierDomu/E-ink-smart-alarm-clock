@@ -4,9 +4,10 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _view)
+Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _view, HttpServer* _http_server)
 : model(_model)
 , view(_view)
+, http_server(_http_server)
 {}
 
 void Weather_controller::fetch_weather(DateTime& now)
@@ -14,6 +15,14 @@ void Weather_controller::fetch_weather(DateTime& now)
   model->clear();
   for (size_t i = 0; i < 4; i++)
   {
+    if (http_server->is_weather_from_ha() && i == 0)
+    {
+      Simple_weather forecast_weather;
+      forecast_weather.temperature_afternoon = http_server->get_ha_weather();
+      model->update(forecast_weather);
+      i++;
+    }
+
     String dateStr = get_date_string(now, i);
 
     Open_weather_config config;
