@@ -14,6 +14,7 @@ struct HA_config
   uint16_t ha_port;
   String ha_token;
   String ha_enitty_weather_name;
+  bool weather_from_ha;
 };
 
 class HttpServer

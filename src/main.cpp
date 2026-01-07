@@ -113,12 +113,13 @@ void read_config()
   ha_config.ha_port = doc["HA_port"];
   ha_config.ha_token = doc["HA_token"] | "";
   ha_config.ha_enitty_weather_name = doc["HA_weather_entity_name"] | "";
+  ha_config.weather_from_ha = doc["weather_from_HA"];
   httpServer.ha_set_config(ha_config);
 
-  uint16_t sample_rate = doc["sample_rate"];
-  audio.set_sample_rate(sample_rate);
-  uint8_t volume = doc["volume"];
-  audio.set_volume(volume);
+  Audio_config audio_config;
+  audio_config.sample_rate = doc["sample_rate"];
+  audio_config.volume = doc["volume"];
+  audio.set_config(audio_config);
 }
 
 void update_clock()

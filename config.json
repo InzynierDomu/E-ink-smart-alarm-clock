@@ -13,5 +13,6 @@
   "HA_host" : "192.168.0.100",
   "HA_port" : 8123,
   "HA_token" : "HA_TOKEN",
-  "HA_weather_entity_name" : "sensor.temperatura"
+  "HA_weather_entity_name" : "sensor.temperatura",
+  "weather_from_HA" : 0
 }

@@ -162,8 +162,8 @@ String HttpServer::buildWeatherSection()
 
 String HttpServer::buildAudioSection()
 {
-  uint16_t current_sr = audio_.get_sample_rate();
-  uint8_t current_vol = audio_.get_volume();
+  Audio_config config;
+  audio_.get_config(config);
 
   const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
 
@@ -176,7 +176,7 @@ String HttpServer::buildAudioSection()
   for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
   {
     html += "<option value='" + String(sr_list[i]) + "'";
-    if (sr_list[i] == current_sr)
+    if (sr_list[i] == config.sample_rate)
       html += " selected";
     html += ">" + String(sr_list[i]) + " Hz</option>";
   }
@@ -185,7 +185,7 @@ String HttpServer::buildAudioSection()
   // Volume – slider 0–255
   html += "<div class='row'><span class='name'>Głośność</span>"
           "<input type='range' name='volume' min='0' max='255' value='" +
-          String(current_vol) + "'></div>";
+          String(config.volume) + "'></div>";
 
   return html;
 }
