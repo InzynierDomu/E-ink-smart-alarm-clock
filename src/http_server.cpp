@@ -552,7 +552,7 @@ String HttpServer::buildPage()
         <!-- Header -->
         <div class="header">
             <div class="header-logo">
-                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/web-server/external_res/ID_logo.svg">
                     <rect width="100" height="100" rx="20" fill="url(#grad)"/>
                     <defs>
                         <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -585,7 +585,7 @@ String HttpServer::buildPage()
 
         <!-- Footer -->
         <div class="footer">
-            <p>&copy; 2024 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
+            <p>&copy; 2026 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
             <div class="footer-icons">
                 <a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock" target="_blank" title="GitHub" rel="noopener">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
