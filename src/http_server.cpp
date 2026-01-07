@@ -113,15 +113,24 @@ String HttpServer::buildWifiSection()
 {
   Wifi_Config wifi;
   clock_model_.get_wifi_config(wifi);
-
   String html;
-  html += "<h2>WiFi</h2>";
-  html += "<div class='row'><span class='name'>SSID</span>"
-          "<input type='text' name='ssid' value='" +
-          String(wifi.ssid) + "'></div>";
-  html += "<div class='row'><span class='name'>Hasło</span>"
-          "<input type='password' name='pass' value='" +
-          String(wifi.pass) + "'></div>";
+  html += R"rawHTML(
+        <div class="section">
+            <div class="section-title">📡 WiFi</div>
+            <div class="form-row">
+                <label class="form-label">SSID</label>
+                <input type="text" name="ssid" value=")rawHTML";
+  html += String(wifi.ssid);
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Hasło</label>
+                <input type="password" name="pass" value=")rawHTML";
+  html += String(wifi.pass);
+  html += R"rawHTML(">
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
@@ -129,15 +138,19 @@ String HttpServer::buildTimezoneSection()
 {
   Wifi_Config wifi;
   clock_model_.get_wifi_config(wifi);
-
-  // zakładamy, że w configu jest w sekundach
   int timezone_hours = wifi.timezone / 3600;
-
   String html;
-  html += "<h2>Strefa czasowa</h2>";
-  html += "<div class='row'><span class='name'>UTC offset [h]</span>"
-          "<input type='number' step='1' name='timezone_hours' value='" +
-          String(timezone_hours) + "'></div>";
+  html += R"rawHTML(
+        <div class="section">
+            <div class="section-title">🕐 Strefa czasowa</div>
+            <div class="form-row">
+                <label class="form-label">UTC offset [h]</label>
+                <input type="number" step="1" name="timezone_hours" value=")rawHTML";
+  html += String(timezone_hours);
+  html += R"rawHTML(">
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
@@ -145,18 +158,30 @@ String HttpServer::buildWeatherSection()
 {
   Open_weather_config weather;
   weather_model_.get_config(weather);
-
   String html;
-  html += "<h2>OpenWeather API</h2>";
-  html += "<div class='row'><span class='name'>API key</span>"
-          "<input type='text' name='api_key' value='" +
-          String(weather.api_key) + "'></div>";
-  html += "<div class='row'><span class='name'>Szerokość (lat)</span>"
-          "<input type='text' name='lat' value='" +
-          String(weather.lat) + "'></div>";
-  html += "<div class='row'><span class='name'>Długość (lon)</span>"
-          "<input type='text' name='lon' value='" +
-          String(weather.lon) + "'></div>";
+  html += R"rawHTML(
+        <div class="section">
+            <div class="section-title">🌤️ Pogoda (OpenWeather)</div>
+            <div class="form-row">
+                <label class="form-label">API key</label>
+                <input type="password" name="api_key" value=")rawHTML";
+  html += String(weather.api_key);
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Szerokość (lat)</label>
+                <input type="text" name="lat" value=")rawHTML";
+  html += String(weather.lat);
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Długość (lon)</label>
+                <input type="text" name="lon" value=")rawHTML";
+  html += String(weather.lon);
+  html += R"rawHTML(">
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
@@ -164,119 +189,434 @@ String HttpServer::buildAudioSection()
 {
   Audio_config config;
   audio_.get_config(config);
-
   const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
-
   String html;
-  html += "<h2>Dźwięk</h2>";
-
-  // Sample rate – select z typowymi wartościami
-  html += "<div class='row'><span class='name'>Sample rate</span>"
-          "<select name='sample_rate'>";
+  html += R"rawHTML(
+        <div class="section">
+            <div class="section-title">🔊 Audio</div>
+            <div class="form-row">
+                <label class="form-label">Sample rate</label>
+                <select name="sample_rate">
+)rawHTML";
   for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
   {
-    html += "<option value='" + String(sr_list[i]) + "'";
+    html += "<option value=\"" + String(sr_list[i]) + "\"";
     if (sr_list[i] == config.sample_rate)
       html += " selected";
     html += ">" + String(sr_list[i]) + " Hz</option>";
   }
-  html += "</select></div>";
-
-  // Volume – slider 0–255
-  html += "<div class='row'><span class='name'>Głośność</span>"
-          "<input type='range' name='volume' min='0' max='255' value='" +
-          String(config.volume) + "'></div>";
-
+  html += R"rawHTML(
+                </select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">Głośność (0-255)</label>
+                <input type="range" name="volume" min="0" max="255" value=")rawHTML";
+  html += String(config.volume);
+  html += R"rawHTML(" style="width: 100%;">
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
 String HttpServer::buildHaSection()
 {
   String html;
-  html += "\n\nHome Assistant\n--------------\n\n";
-
-  html += "\n<div class=\"row\">"
-          "<span class=\"name\">HA host</span>"
-          "<input type=\"text\" name=\"ha_host\" value=\"" +
-          ha_config.ha_host +
-          "\">"
-          "</div>\n";
-
-  html += "\n<div class=\"row\">"
-          "<span class=\"name\">HA port</span>"
-          "<input type=\"number\" name=\"ha_port\" value=\"" +
-          String(ha_config.ha_port) +
-          "\">"
-          "</div>\n";
-
-  html += "\n<div class=\"row\">"
-          "<span class=\"name\">HA token</span>"
-          "<input type=\"password\" name=\"ha_token\" value=\"" +
-          ha_config.ha_token +
-          "\">"
-          "</div>\n";
-
-  html += "\n<div class=\"row\">"
-          "<span class=\"name\">Encja pogody</span>"
-          "<input type=\"text\" name=\"ha_entity_weather\" value=\"" +
-          ha_config.ha_enitty_weather_name +
-          "\">"
-          "</div>\n";
-
-  html += "\n<div class=\"row\">"
-          "<span class=\"name\">Pogoda z HA</span>"
-          "<input type=\"checkbox\" name=\"weather_from_ha\" value=\"1\" " +
-          String(ha_config.weather_from_ha ? "checked" : "") +
-          ">"
-          "</div>\n";
-
+  html += R"rawHTML(
+        <div class="section">
+            <div class="section-title">🏠 Home Assistant</div>
+            <div class="form-row">
+                <label class="form-label">Host</label>
+                <input type="text" name="ha_host" value=")rawHTML";
+  html += ha_config.ha_host;
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Port</label>
+                <input type="number" name="ha_port" value=")rawHTML";
+  html += String(ha_config.ha_port);
+  html += R"rawHTML(" min="1" max="65535">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Token</label>
+                <input type="password" name="ha_token" value=")rawHTML";
+  html += ha_config.ha_token;
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Encja pogody</label>
+                <input type="text" name="ha_entity_weather" value=")rawHTML";
+  html += ha_config.ha_enitty_weather_name;
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Pogoda z HA</label>
+                <input type="checkbox" name="weather_from_ha" value="1" )rawHTML";
+  if (ha_config.weather_from_ha)
+    html += "checked";
+  html += R"rawHTML(>
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
 String HttpServer::buildFooter()
 {
   String html;
-
-  html += "\n<hr>\n";
-  html += "<div class=\"footer\">\n";
-  html += "  <p>Projekt: "
-          "<a href=\"https://github.com/InzynierDomu/E-ink-smart-alarm-clock\" target=\"_blank\">GitHub</a>"
-          " &middot; "
-          "<a href=\"https://buycoffee.to/inzynier-domu\" target=\"_blank\">Postaw kawę</a>"
-          " &middot; "
-          "<a href=\"https://www.inzynierdomu.pl/\" target=\"_blank\">Blog</a>"
-          " &middot; "
-          "<a href=\"https://www.youtube.com/c/InzynierDomu?sub_confirmation=1\" target=\"_blank\">YouTube</a>"
-          "</p>\n";
-  html += "</div>\n";
-
+  html += R"rawHTML(
+        <div class="footer">
+            <p>&copy; 2024 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
+            <div class="footer-icons">
+                <a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock" target="_blank" title="GitHub" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+                <a href="https://buycoffee.to/inzynier-domu" target="_blank" title="Postaw kawę" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
+                    </svg>
+                </a>
+                <a href="https://www.inzynierdomu.pl/" target="_blank" title="Blog" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                </a>
+                <a href="https://www.youtube.com/c/InzynierDomu?sub_confirmation=1" target="_blank" title="YouTube" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
 String HttpServer::buildPage()
 {
-  String page = "<!DOCTYPE html>"
-                "<html><head><meta charset='UTF-8'><title>Konfiguracja</title>"
-                "<style>"
-                "body{font-family:sans-serif;}"
-                ".row{margin:4px 0;}"
-                ".name{display:inline-block;width:220px;}"
-                "input,select{width:260px;}"
-                "h2{margin-top:16px;}"
-                "</style>"
-                "</head><body><h1>Konfiguracja</h1>";
+  String page = R"rawHTML(
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfiguracja - Inteligentny alarm na e-ink</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  page += "<form method='POST' action='/save'>";
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .header-logo svg {
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.5));
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 0.95em;
+        }
+
+        .section {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: #475569;
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 15px;
+            margin-bottom: 18px;
+            align-items: center;
+        }
+
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #cbd5e1;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="number"],
+        input[type="url"],
+        select,
+        textarea {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e2e8f0;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus,
+        input[type="url"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+            background: rgba(15, 23, 42, 0.95);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #60a5fa;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(96, 165, 250, 0.3);
+            font-family: inherit;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button[type="reset"] {
+            background: linear-gradient(135deg, #64748b, #475569);
+            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.2);
+        }
+
+        button[type="reset"]:hover {
+            box-shadow: 0 6px 20px rgba(100, 116, 139, 0.3);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #334155;
+            color: #94a3b8;
+        }
+
+        .footer p {
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            color: #a78bfa;
+            text-decoration: underline;
+        }
+
+        .footer-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .footer-icons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(96, 165, 250, 0.1);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            color: #60a5fa;
+        }
+
+        .footer-icons a:hover {
+            background: rgba(96, 165, 250, 0.2);
+            transform: scale(1.1);
+            color: #a78bfa;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-logo">
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="100" height="100" rx="20" fill="url(#grad)"/>
+                    <defs>
+                        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <text x="50" y="65" font-size="50" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">⚙</text>
+                </svg>
+                <span style="font-size: 1.2em; font-weight: 600;">Inżynier Domu</span>
+            </div>
+            <h1>Konfiguracja urządzenia</h1>
+        </div>
+
+        <!-- Formularz -->
+        <form method="POST" action="/save">
+)rawHTML";
+
   page += buildWifiSection();
   page += buildTimezoneSection();
   page += buildWeatherSection();
-  page += buildAudioSection();
   page += buildHaSection();
-  page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div></form>";
-  page += buildFooter(); 
-  page += "</body></html>";
+  page += buildAudioSection();
+
+  page += R"rawHTML(
+            <div class="button-group">
+                <button type="submit">Zapisz konfigurację</button>
+            </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2024 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
+            <div class="footer-icons">
+                <a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock" target="_blank" title="GitHub" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+                <a href="https://buycoffee.to/inzynier-domu" target="_blank" title="Postaw kawę" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
+                    </svg>
+                </a>
+                <a href="https://www.inzynierdomu.pl/" target="_blank" title="Blog" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                </a>
+                <a href="https://www.youtube.com/c/InzynierDomu?sub_confirmation=1" target="_blank" title="YouTube" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+)rawHTML";
+
   return page;
 }
+
 
 void HttpServer::handleRoot()
 {
