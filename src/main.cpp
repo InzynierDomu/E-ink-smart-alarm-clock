@@ -44,10 +44,6 @@ Audio audio;
 
 DynamicJsonDocument docs(19508);
 
-Weather_model weather_model;
-Weather_view weather_view(&screen);
-Weather_controller weather_controller(&weather_model, &weather_view);
-
 Alarm_model alarm_model;
 Alarm_view alarm_view(&screen);
 Alarm_controller alarm_controller(&alarm_model, &alarm_view);
@@ -60,8 +56,13 @@ Clock_model clock_model;
 Clock_view clock_view(&screen);
 Clock_controller clock_controller(&clock_view, &clock_model);
 
+Weather_model weather_model;
+
 WebServer server(80);
 HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);
+
+Weather_view weather_view(&screen);
+Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);
 
 State state;
 void read_config()

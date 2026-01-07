@@ -4,11 +4,10 @@
 #include "weather_model.h"
 #include "weather_view.h"
 
-
 class Weather_controller
 {
   public:
-  Weather_controller(Weather_model* model, Weather_view* view, Http_server* _http_server);
+  Weather_controller(Weather_model* model, Weather_view* view, HttpServer* _http_server);
   void fetch_weather(DateTime& now);
   void update_view();
 
@@ -17,5 +16,5 @@ class Weather_controller
 
   Weather_model* model;
   Weather_view* view;
-  Http_server* http_server;
+  HttpServer* http_server;
 };

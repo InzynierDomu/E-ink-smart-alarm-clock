@@ -27,7 +27,7 @@ void HttpServer::ha_set_config(HA_config& config)
   ha_config = config;
 }
 
-void HttpServer::get_ha_weather()
+int8_t HttpServer::get_ha_weather()
 {
   String haTemperature = "--";
   Serial.println("=== updateHaMeasurement ===");
@@ -35,7 +35,7 @@ void HttpServer::get_ha_weather()
   if (WiFi.status() != WL_CONNECTED)
   {
     Serial.println("[HA] WiFi not connected");
-    return;
+    return 0;
   }
 
   WiFiClient client;
@@ -43,7 +43,7 @@ void HttpServer::get_ha_weather()
   if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
   {
     Serial.println("[HA] Connection failed");
-    return;
+    return 0;
   }
   Serial.println("[HA] Connected, sending request");
 
@@ -74,7 +74,7 @@ void HttpServer::get_ha_weather()
   if (!headers.startsWith("HTTP/1.1 200"))
   {
     Serial.println("[HA] Non-200 response");
-    return;
+    return 0;
   }
 
   // Odbiór body
@@ -93,7 +93,7 @@ void HttpServer::get_ha_weather()
   if (idx < 0)
   {
     Serial.println("[HA] 'state' not found in JSON");
-    return;
+    return 0;
   }
 
   int start = body.indexOf("\"", idx + 8);
@@ -101,12 +101,19 @@ void HttpServer::get_ha_weather()
   if (start < 0 || end < 0 || end <= start)
   {
     Serial.println("[HA] Failed to parse state string");
-    return;
+    return 0;
   }
 
   haTemperature = body.substring(start + 1, end);
   Serial.print("[HA] Parsed state: ");
   Serial.println(haTemperature);
+
+  return haTemperature.toInt();
+}
+
+bool HttpServer::is_weather_from_ha()
+{
+  return ha_config.weather_from_ha;
 }
 
 String HttpServer::buildWifiSection()

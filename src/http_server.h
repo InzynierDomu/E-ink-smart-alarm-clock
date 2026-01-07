@@ -24,7 +24,8 @@ class HttpServer
 
   void begin();
   void ha_set_config(HA_config& config);
-  void get_ha_weather();
+  int8_t get_ha_weather();
+  bool is_weather_from_ha();
 
   private:
   WebServer& server_;
