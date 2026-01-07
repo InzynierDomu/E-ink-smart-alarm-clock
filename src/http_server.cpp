@@ -22,6 +22,93 @@ void HttpServer::begin()
   server_.begin();
 }
 
+void HttpServer::ha_set_config(HA_config& config)
+{
+  ha_config = config;
+}
+
+void HttpServer::get_ha_weather()
+{
+  String haTemperature = "--";
+  Serial.println("=== updateHaMeasurement ===");
+
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println("[HA] WiFi not connected");
+    return;
+  }
+
+  WiFiClient client;
+  Serial.printf("[HA] Connecting to %s:%u\n", ha_config.ha_host, ha_config.ha_port);
+  if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
+  {
+    Serial.println("[HA] Connection failed");
+    return;
+  }
+  Serial.println("[HA] Connected, sending request");
+
+  String url = "/api/states/" + String(ha_config.ha_enitty_weather_name);
+  String request = String("GET ") + url + " HTTP/1.1\r\n" + "Host: " + String(ha_config.ha_host) + "\r\n" + "Authorization: Bearer " +
+                   String(ha_config.ha_token) + "\r\n" + "Connection: close\r\n\r\n";
+
+  Serial.println("[HA] Request:");
+  Serial.println(request);
+
+  client.print(request);
+
+  // Odbiór nagłówków
+  String headers;
+  while (client.connected())
+  {
+    String line = client.readStringUntil('\n');
+    if (line == "\r")
+    {
+      break; // koniec nagłówków
+    }
+    headers += line + "\n";
+  }
+  Serial.println("[HA] Headers:");
+  Serial.println(headers);
+
+  // Prosta walidacja kodu odpowiedzi
+  if (!headers.startsWith("HTTP/1.1 200"))
+  {
+    Serial.println("[HA] Non-200 response");
+    return;
+  }
+
+  // Odbiór body
+  String body;
+  while (client.available())
+  {
+    body += client.readString();
+  }
+  client.stop();
+
+  Serial.println("[HA] Body:");
+  Serial.println(body);
+
+  // Parsowanie JSON
+  int idx = body.indexOf("\"state\":");
+  if (idx < 0)
+  {
+    Serial.println("[HA] 'state' not found in JSON");
+    return;
+  }
+
+  int start = body.indexOf("\"", idx + 8);
+  int end = body.indexOf("\"", start + 1);
+  if (start < 0 || end < 0 || end <= start)
+  {
+    Serial.println("[HA] Failed to parse state string");
+    return;
+  }
+
+  haTemperature = body.substring(start + 1, end);
+  Serial.print("[HA] Parsed state: ");
+  Serial.println(haTemperature);
+}
+
 String HttpServer::buildWifiSection()
 {
   Wifi_Config wifi;

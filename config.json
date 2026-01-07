@@ -9,5 +9,9 @@
   "google_calendar_alarm_id" : "abc",
   "google_calendar_id" : "abc",
   "sample_rate" : 16000,
-  "volume" : 100
+  "volume" : 100,
+  "HA_host" : "192.168.0.100",
+  "HA_port" : 8123,
+  "HA_token" : "HA_TOKEN",
+  "HA_weather_entity_name" : "sensor.temperatura"
 }
