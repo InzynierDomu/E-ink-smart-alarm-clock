@@ -39,6 +39,8 @@ class HttpServer
   String buildTimezoneSection();
   String buildWeatherSection();
   String buildAudioSection();
+  String buildHaSection();
+  String buildFooter();
 
   void handleRoot();
   void handleSave();

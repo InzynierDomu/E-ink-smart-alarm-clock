@@ -190,6 +190,69 @@ String HttpServer::buildAudioSection()
   return html;
 }
 
+String HttpServer::buildHaSection()
+{
+  String html;
+  html += "\n\nHome Assistant\n--------------\n\n";
+
+  html += "\n<div class=\"row\">"
+          "<span class=\"name\">HA host</span>"
+          "<input type=\"text\" name=\"ha_host\" value=\"" +
+          ha_config.ha_host +
+          "\">"
+          "</div>\n";
+
+  html += "\n<div class=\"row\">"
+          "<span class=\"name\">HA port</span>"
+          "<input type=\"number\" name=\"ha_port\" value=\"" +
+          String(ha_config.ha_port) +
+          "\">"
+          "</div>\n";
+
+  html += "\n<div class=\"row\">"
+          "<span class=\"name\">HA token</span>"
+          "<input type=\"password\" name=\"ha_token\" value=\"" +
+          ha_config.ha_token +
+          "\">"
+          "</div>\n";
+
+  html += "\n<div class=\"row\">"
+          "<span class=\"name\">Encja pogody</span>"
+          "<input type=\"text\" name=\"ha_entity_weather\" value=\"" +
+          ha_config.ha_enitty_weather_name +
+          "\">"
+          "</div>\n";
+
+  html += "\n<div class=\"row\">"
+          "<span class=\"name\">Pogoda z HA</span>"
+          "<input type=\"checkbox\" name=\"weather_from_ha\" value=\"1\" " +
+          String(ha_config.weather_from_ha ? "checked" : "") +
+          ">"
+          "</div>\n";
+
+  return html;
+}
+
+String HttpServer::buildFooter()
+{
+  String html;
+
+  html += "\n<hr>\n";
+  html += "<div class=\"footer\">\n";
+  html += "  <p>Projekt: "
+          "<a href=\"https://github.com/InzynierDomu/E-ink-smart-alarm-clock\" target=\"_blank\">GitHub</a>"
+          " &middot; "
+          "<a href=\"https://buycoffee.to/inzynier-domu\" target=\"_blank\">Postaw kawę</a>"
+          " &middot; "
+          "<a href=\"https://www.inzynierdomu.pl/\" target=\"_blank\">Blog</a>"
+          " &middot; "
+          "<a href=\"https://www.youtube.com/c/InzynierDomu?sub_confirmation=1\" target=\"_blank\">YouTube</a>"
+          "</p>\n";
+  html += "</div>\n";
+
+  return html;
+}
+
 String HttpServer::buildPage()
 {
   String page = "<!DOCTYPE html>"
@@ -208,8 +271,10 @@ String HttpServer::buildPage()
   page += buildTimezoneSection();
   page += buildWeatherSection();
   page += buildAudioSection();
-  page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div>";
-  page += "</form></body></html>";
+  page += buildHaSection();
+  page += "<div class='row'><button type='submit'>Zapisz i zrestartuj</button></div></form>";
+  page += buildFooter(); 
+  page += "</body></html>";
   return page;
 }
 
@@ -280,6 +345,12 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   uint16_t new_sr = server_.arg("sample_rate").toInt();
   uint8_t new_vol = server_.arg("volume").toInt();
 
+  String new_ha_host = server_.arg("ha_host");
+  uint16_t new_ha_port = server_.arg("ha_port").toInt();
+  String new_ha_token = server_.arg("ha_token");
+  String new_ha_entity = server_.arg("ha_entity_weather");
+  bool new_weather_from_ha = server_.hasArg("weather_from_ha");
+
   // Pola zgodne z tym, co parsujesz w read_config()
   doc["ssid"] = new_ssid;
   doc["pass"] = new_pass;
@@ -291,4 +362,10 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
 
   doc["sample_rate"] = new_sr;
   doc["volume"] = new_vol;
+
+  doc["ha_host"] = new_ha_host;
+  doc["ha_port"] = new_ha_port;
+  doc["ha_token"] = new_ha_token;
+  doc["ha_entity_weather"] = new_ha_entity;
+  doc["weather_from_ha"] = new_weather_from_ha;
 }
