@@ -196,24 +196,28 @@ String HttpServer::buildGoogleCalendarSection()
 {
   google_api_config config;
   calendar_model_.get_config(config);
+
   String html;
   html += R"rawHTML(
         <div class="section">
             <div class="section-title">📅 Google Calendar / Skrypt</div>
             <div class="form-row">
-                <label class="form-label">URL skryptu Apps</label>
-                <input type="url" name="google_script_url" value=")rawHTML";
+                <label class="form-label">API skryptu Apps</label>
+                <input type="password" name="google_script_url" value=")rawHTML";
+  html += config.script_url;
   html += R"rawHTML(" placeholder="https://script.google.com/macros/d/...">
             </div>
             <div class="form-row">
                 <label class="form-label">ID kalendarza (wszystkie)</label>
                 <input type="text" name="google_calendar_id" value=")rawHTML";
+  html += config.google_calendar_id;
   html += R"rawHTML(" placeholder="abc123@group.calendar.google.com">
             </div>
             <div class="form-row">
                 <label class="form-label">ID kalendarza (alarmy)</label>
                 <input type="text" name="google_calendar_alarm_id" value=")rawHTML";
-  html += R"rawHTML(" min="5" max="1440" placeholder="10">
+  html += config.alarm_calendar_id;
+  html += R"rawHTML(" placeholder="abc@group.calendar.google.com">
             </div>
         </div>
 )rawHTML";
