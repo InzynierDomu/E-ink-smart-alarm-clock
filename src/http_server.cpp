@@ -240,7 +240,7 @@ String HttpServer::buildHaSection()
             </div>
             <div class="form-row">
                 <label class="form-label">Port</label>
-                <input type="number" name="ha_port" value=")rawHTML";
+                <input type="text" name="ha_port" value=")rawHTML";
   html += String(ha_config.ha_port);
   html += R"rawHTML(" min="1" max="65535">
             </div>
@@ -592,7 +592,6 @@ String HttpServer::buildPage()
   page += R"rawHTML(
             <div class="button-group">
                 <button type="submit">Zapisz konfigurację</button>
-                <button type="reset">Wyczyść formularz</button>
             </div>
         </form>
 )rawHTML";
@@ -679,23 +678,23 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   uint16_t new_ha_port = server_.arg("ha_port").toInt();
   String new_ha_token = server_.arg("ha_token");
   String new_ha_entity = server_.arg("ha_entity_weather");
-  bool new_weather_from_ha = server_.hasArg("weather_from_ha");
+  bool new_weather_from_ha = server_.arg("weather_from_ha").toInt();
 
   // Pola zgodne z tym, co parsujesz w read_config()
   doc["ssid"] = new_ssid;
   doc["pass"] = new_pass;
   doc["timezone"] = tz_seconds;
 
-  doc["api_key"] = new_api_key;
+  doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
 
   doc["sample_rate"] = new_sr;
   doc["volume"] = new_vol;
 
-  doc["ha_host"] = new_ha_host;
-  doc["ha_port"] = new_ha_port;
-  doc["ha_token"] = new_ha_token;
-  doc["ha_entity_weather"] = new_ha_entity;
-  doc["weather_from_ha"] = new_weather_from_ha;
+  doc["HA_host"] = new_ha_host;
+  doc["HA_port"] = new_ha_port;
+  doc["HA_token"] = new_ha_token;
+  doc["HA_weather_entity_name"] = new_ha_entity;
+  doc["weather_from_HA"] = new_weather_from_ha;
 }
