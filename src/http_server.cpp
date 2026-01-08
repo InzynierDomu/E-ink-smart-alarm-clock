@@ -192,6 +192,35 @@ String HttpServer::buildWeatherSection()
   return html;
 }
 
+String HttpServer::buildGoogleCalendarSection()
+{
+  google_api_config config;
+  calendar_model_.get_config(config);
+  String html;
+  html += R"rawHTML(
+        <div class="section">
+            <div class="section-title">📅 Google Calendar / Skrypt</div>
+            <div class="form-row">
+                <label class="form-label">URL skryptu Apps</label>
+                <input type="url" name="google_script_url" value=")rawHTML";
+  html += R"rawHTML(" placeholder="https://script.google.com/macros/d/...">
+            </div>
+            <div class="form-row">
+                <label class="form-label">ID kalendarza (wszystkie)</label>
+                <input type="text" name="google_calendar_id" value=")rawHTML";
+  html += R"rawHTML(" placeholder="abc123@group.calendar.google.com">
+            </div>
+            <div class="form-row">
+                <label class="form-label">ID kalendarza (alarmy)</label>
+                <input type="text" name="google_calendar_alarm_id" value=")rawHTML";
+  html += R"rawHTML(" min="5" max="1440" placeholder="10">
+            </div>
+        </div>
+)rawHTML";
+  return html;
+}
+
+
 String HttpServer::buildAudioSection()
 {
   Audio_config config;
@@ -586,6 +615,7 @@ String HttpServer::buildPage()
   page += buildWifiSection();
   page += buildTimezoneSection();
   page += buildWeatherSection();
+  page += buildGoogleCalendarSection();
   page += buildHaSection();
   page += buildAudioSection();
 
@@ -671,6 +701,10 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   float new_lat = server_.arg("lat").toFloat();
   float new_lon = server_.arg("lon").toFloat();
 
+  String new_google_script_uri = server_.arg("google_script_uri");
+  String new_google_calendar_id = server_.arg("google_calendar_id");
+  String new_google_calendar_alarm_id = server_.arg("google_calendar_alarm_id");
+
   uint16_t new_sr = server_.arg("sample_rate").toInt();
   uint8_t new_vol = server_.arg("volume").toInt();
 
@@ -688,6 +722,10 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
+
+  doc["google_script_url"] = new_google_script_uri;
+  doc["google_calendar_id"] = new_google_calendar_id;
+  doc["google_calendar_alarm_id"] = new_google_calendar_alarm_id;
 
   doc["sample_rate"] = new_sr;
   doc["volume"] = new_vol;

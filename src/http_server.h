@@ -39,6 +39,7 @@ class HttpServer
   String buildWifiSection();
   String buildTimezoneSection();
   String buildWeatherSection();
+  String buildGoogleCalendarSection();
   String buildAudioSection();
   String buildHaSection();
   String buildFooter();
