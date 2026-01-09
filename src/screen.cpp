@@ -99,3 +99,12 @@ uint32_t Screen::my_tick(void)
 {
   return millis();
 }
+
+void Screen::full_clear()
+{
+  display.setFullWindow();
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+  } while (display.nextPage());
+}
