@@ -107,4 +107,6 @@ void Screen::full_clear()
   do {
     display.fillScreen(GxEPD_WHITE);
   } while (display.nextPage());
+  // Force LVGL to redraw all objects after full clear
+  lv_obj_invalidate(lv_screen_active());
 }
