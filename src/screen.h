@@ -9,6 +9,7 @@ class Screen
   public:
   Screen();
   void setup_screen();
+  void full_clear();
 
   private:
   static void my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data);

@@ -10,6 +10,7 @@ class Clock_controller
   void setup_clock();
   void get_time(DateTime& dt);
   void update_view();
+  bool is_it_now(DateTime& dt);
 
   private:
   const char* get_date_string(DateTime dt, uint8_t offset);

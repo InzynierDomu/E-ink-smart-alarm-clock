@@ -59,6 +59,16 @@ void Clock_controller::update_view()
   }
 }
 
+bool Clock_controller::is_it_now(DateTime& dt)
+{
+  DateTime now = rtc.now();
+  if (now.hour() == dt.hour() && now.minute() == dt.minute())
+  {
+    return true;
+  }
+  return false;
+}
+
 const char* Clock_controller::get_date_string(DateTime dt, uint8_t offset)
 {
   static char dateStr[11];

@@ -37,6 +37,7 @@ enum class State
 };
 
 Screen screen;
+DateTime screen_reffresh_time(2000, 1, 1, 3, 0);
 
 SPIClass spi = SPIClass(HSPI);
 
@@ -263,6 +264,11 @@ void loop()
       alarm_controller.update_view();
       digitalWrite(config::led_pin, LOW);
     }
+  }
+
+  if (clock_controller.is_it_now(screen_reffresh_time))
+  {
+    screen.full_clear();
   }
 
   server.handleClient();
