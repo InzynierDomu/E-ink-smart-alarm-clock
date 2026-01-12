@@ -107,4 +107,5 @@ void Screen::full_clear()
   do {
     display.fillScreen(GxEPD_WHITE);
   } while (display.nextPage());
+  lv_obj_invalidate(lv_screen_active());
 }

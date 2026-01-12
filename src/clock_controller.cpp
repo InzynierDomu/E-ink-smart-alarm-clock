@@ -51,9 +51,10 @@ void Clock_controller::update_view()
   view->show_time(now);
   if (last_day != now.day())
   {
-    for (size_t i = 0; i < 4; ++i)
+    view->show_date(get_date_string(now, 0), 0);
+    for (size_t i = 0; i < 3; ++i)
     {
-      view->show_date(get_date_string(now, i), i);
+      view->show_date(get_date_string(now, i), i + 1);
     }
     last_day = now.day();
   }

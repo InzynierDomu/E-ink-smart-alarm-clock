@@ -13,6 +13,7 @@ class Weather_controller
 
   private:
   String get_date_string(DateTime dt, uint8_t offset = 0);
+  void check_day_part(DateTime& now);
 
   Weather_model* model;
   Weather_view* view;

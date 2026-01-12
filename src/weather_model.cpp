@@ -27,3 +27,13 @@ void Weather_model::get_config(Open_weather_config& _config) const
 {
   _config = config;
 }
+
+void Weather_model::set_day_part(Day_part part)
+{
+  day_part = part;
+}
+
+Day_part Weather_model::get_day_part() const
+{
+  return day_part;
+}
