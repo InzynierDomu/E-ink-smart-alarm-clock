@@ -16,9 +16,9 @@ void Weather_view::show(const Weather_model& data)
   for (size_t i = 0; i < 4; ++i)
   {
     data.get_forecast(forecast, i);
+    lv_label_set_text(weatherIcons[i], weather_icon_change(forecast.cloud_cover, forecast.precipitation));
     if (i == 0)
-    {
-      lv_label_set_text(weatherIcons[i], weather_icon_change(forecast.cloud_cover, forecast.precipitation));
+    { 
       Day_part part = data.get_day_part();
       switch (part)
       {

@@ -58,7 +58,6 @@ void Weather_controller::fetch_weather(DateTime& now)
           forecast_weather.temperature_morning = http_server->get_ha_weather();
           forecast_weather.temperature_afternoon = http_server->get_ha_weather();
           forecast_weather.temperature_evening = http_server->get_ha_weather();
-          model->update(forecast_weather);
         }
         else
         {
@@ -68,10 +67,10 @@ void Weather_controller::fetch_weather(DateTime& now)
           forecast_weather.temperature_morning = (int)round(temp);
           temp = doc["temperature"]["evening"];
           forecast_weather.temperature_evening = (int)round(temp);
-          forecast_weather.precipitation = doc["precipitation"]["total"];
-          forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
-          model->update(forecast_weather);
         }
+        forecast_weather.precipitation = doc["precipitation"]["total"];
+        forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
+        model->update(forecast_weather);
       }
     }
 
