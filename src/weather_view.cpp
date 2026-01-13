@@ -16,7 +16,28 @@ void Weather_view::show(const Weather_model& data)
   for (size_t i = 0; i < 4; ++i)
   {
     data.get_forecast(forecast, i);
-    if (i > 0)
+    lv_label_set_text(weatherIcons[i], weather_icon_change(forecast.cloud_cover, forecast.precipitation));
+    if (i == 0)
+    { 
+      Day_part part = data.get_day_part();
+      switch (part)
+      {
+        case Day_part::morning:
+          sprintf(temp_str, "%d℃", forecast.temperature_morning);
+          break;
+        case Day_part::afternoon:
+          sprintf(temp_str, "%d℃", forecast.temperature_afternoon);
+          break;
+        case Day_part::evening:
+          sprintf(temp_str, "%d℃", forecast.temperature_evening);
+          break;
+        default:
+          sprintf(temp_str, "%d℃", forecast.temperature_afternoon);
+          break;
+      }
+      lv_label_set_text(ui_labTempMorning, temp_str);
+    }
+    else
     {
       sprintf(temp_str, "%d℃", forecast.temperature_morning);
       lv_label_set_text(tempLabelsMorning[i], temp_str);
@@ -24,12 +45,6 @@ void Weather_view::show(const Weather_model& data)
       lv_label_set_text(tempLabelsAfternoon[i], temp_str);
       sprintf(temp_str, "%d℃", forecast.temperature_evening);
       lv_label_set_text(tempLabelsEvening[i], temp_str);
-    }
-    else
-    {
-      lv_label_set_text(weatherIcons[i], weather_icon_change(forecast.cloud_cover, forecast.precipitation));
-      sprintf(temp_str, "%d℃", forecast.temperature_afternoon);
-      lv_label_set_text(ui_labTempMorning, temp_str);
     }
   }
 }

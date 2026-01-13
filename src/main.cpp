@@ -9,6 +9,7 @@
 #include "clock_model.h"
 #include "clock_view.h"
 #include "config.h"
+#include "http_server.h"
 #include "lvgl.h"
 #include "screen.h"
 #include "ui/ui.h"
@@ -21,6 +22,7 @@
 #include <HTTPClient.h>
 #include <SD.h>
 #include <SPI.h>
+#include <WebServer.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiUdp.h>
@@ -30,20 +32,18 @@
 enum class State
 {
   alarm,
-  normal
+  normal,
+  AP
 };
 
 Screen screen;
+DateTime screen_reffresh_time(2000, 1, 1, 3, 0);
 
 SPIClass spi = SPIClass(HSPI);
 
 Audio audio;
 
 DynamicJsonDocument docs(19508);
-
-Weather_model weather_model;
-Weather_view weather_view(&screen);
-Weather_controller weather_controller(&weather_model, &weather_view);
 
 Alarm_model alarm_model;
 Alarm_view alarm_view(&screen);
@@ -56,6 +56,14 @@ Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_
 Clock_model clock_model;
 Clock_view clock_view(&screen);
 Clock_controller clock_controller(&clock_view, &clock_model);
+
+Weather_model weather_model;
+
+WebServer server(80);
+HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);
+
+Weather_view weather_view(&screen);
+Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);
 
 State state;
 void read_config()
@@ -74,7 +82,7 @@ void read_config()
   }
   file.close();
 
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<1024> doc;
 
   DeserializationError error = deserializeJson(doc, jsonData);
   if (error)
@@ -91,7 +99,7 @@ void read_config()
   clock_model.set_wifi_config(wifi_config);
 
   Open_weather_config weather_config;
-  weather_config.api_key = doc["api_key"] | "";
+  weather_config.api_key = doc["openweathermap_api_key"] | "";
   weather_config.lat = doc["lat"];
   weather_config.lon = doc["lon"];
   weather_model.set_config(weather_config);
@@ -102,8 +110,18 @@ void read_config()
   google_config.google_calendar_id = doc["google_calendar_id"] | "";
   calendar_model.set_config(google_config);
 
-  uint16_t sample_rate = doc["sample_rate"];
-  audio.set_sample_rate(sample_rate);
+  HA_config ha_config;
+  ha_config.ha_host = doc["HA_host"] | "";
+  ha_config.ha_port = doc["HA_port"];
+  ha_config.ha_token = doc["HA_token"] | "";
+  ha_config.ha_enitty_weather_name = doc["HA_weather_entity_name"] | "";
+  ha_config.weather_from_ha = doc["weather_from_HA"];
+  httpServer.ha_set_config(ha_config);
+
+  Audio_config audio_config;
+  audio_config.sample_rate = doc["sample_rate"];
+  audio_config.volume = doc["volume"];
+  audio.set_config(audio_config);
 }
 
 void update_clock()
@@ -132,6 +150,7 @@ static void update_date(lv_timer_t* timer)
     calendar_controller.fetch_calendar();
     calendar_controller.update_view();
     alarm_controller.update_view();
+    httpServer.get_ha_weather();
     update_counter = 0;
   }
   else
@@ -161,11 +180,26 @@ void setup()
 
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
-  WiFi.begin(wifi_config.ssid, wifi_config.pass);
-  while (WiFi.status() != WL_CONNECTED)
+
+  if (wifi_config.ssid.length() == 0)
   {
-    delay(500);
-    Serial.print(".");
+    Serial.println("Brak SSID, uruchamiam AP");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("EInkClock-AP", "inzynier_domu");
+    state = State::AP;
+  }
+  else
+  {
+    Serial.println("SSID ustawione, lacze jako STA");
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("\nWiFi connected");
+    state = State::normal;
   }
 
   clock_controller.setup_clock();
@@ -185,7 +219,7 @@ void setup()
 
   audio.setup();
 
-  state = State::normal;
+  httpServer.begin();
 }
 
 bool check_button()
@@ -203,9 +237,13 @@ bool check_button()
   }
 }
 
+unsigned long lastHaUpdate = 0;
 void loop()
 {
-  lv_timer_handler();
+  if (state != State::AP)
+  {
+    lv_timer_handler();
+  }
   delay(10);
 
   if (state == State::alarm)
@@ -217,7 +255,7 @@ void loop()
       digitalWrite(config::led_pin, LOW);
     }
   }
-  else
+  else if (state == State::normal)
   {
     if (check_button())
     {
@@ -227,4 +265,11 @@ void loop()
       digitalWrite(config::led_pin, LOW);
     }
   }
+
+  if (clock_controller.is_it_now(screen_reffresh_time))
+  {
+    screen.full_clear();
+  }
+
+  server.handleClient();
 }

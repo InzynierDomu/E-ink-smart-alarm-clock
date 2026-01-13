@@ -51,12 +51,23 @@ void Clock_controller::update_view()
   view->show_time(now);
   if (last_day != now.day())
   {
-    for (size_t i = 0; i < 4; ++i)
+    view->show_date(get_date_string(now, 0), 0);
+    for (size_t i = 0; i < 3; ++i)
     {
-      view->show_date(get_date_string(now, i), i);
+      view->show_date(get_date_string(now, i), i + 1);
     }
     last_day = now.day();
   }
+}
+
+bool Clock_controller::is_it_now(DateTime& dt)
+{
+  DateTime now = rtc.now();
+  if (now.hour() == dt.hour() && now.minute() == dt.minute())
+  {
+    return true;
+  }
+  return false;
 }
 
 const char* Clock_controller::get_date_string(DateTime dt, uint8_t offset)

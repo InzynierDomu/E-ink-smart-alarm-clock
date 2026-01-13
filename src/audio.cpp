@@ -9,7 +9,7 @@ void Audio::setup()
 {
   Serial.println("audio cofing start");
   i2s_config_t i2s_config = {.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
-                             .sample_rate = sample_rate,
+                             .sample_rate = config.sample_rate,
                              .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
                              .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
                              .communication_format = I2S_COMM_FORMAT_I2S,
@@ -43,9 +43,21 @@ void Audio::play_audio()
   size_t bytesRead;
   int16_t buffer[audio_buffer_size];
 
+  float volFactor = config.volume / 100.0f;
+
   while (audioFile.available())
   {
     bytesRead = audioFile.read((uint8_t*)buffer, audio_buffer_size * sizeof(int16_t));
+
+    size_t samples = bytesRead / sizeof(int16_t);
+    for (size_t i = 0; i < samples; i++)
+    {
+      int32_t sample = buffer[i];
+      sample = (int32_t)(sample * volFactor);
+
+      buffer[i] = (int16_t)sample;
+    }
+
     i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
   }
 
@@ -56,7 +68,16 @@ void Audio::play_audio()
   Serial.println("playing end.");
 }
 
-void Audio::set_sample_rate(uint16_t _sample_rate)
+void Audio::set_config(Audio_config& _config)
 {
-  sample_rate = _sample_rate;
+  config = _config;
+  if (config.volume > 100)
+  {
+    config.volume = 100;
+  }
+}
+
+void Audio::get_config(Audio_config& _config)
+{
+  _config = config;
 }

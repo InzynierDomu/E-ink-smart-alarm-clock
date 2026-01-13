@@ -9,6 +9,13 @@ struct Open_weather_config
   float lon;
 };
 
+enum class Day_part
+{
+  morning,
+  afternoon,
+  evening
+};
+
 struct Simple_weather
 {
   int8_t temperature_morning;
@@ -25,8 +32,11 @@ class Weather_model
   void get_forecast(Simple_weather& weather, uint8_t offset_days = 0) const;
   void set_config(Open_weather_config& _config);
   void get_config(Open_weather_config& _config) const;
+  void set_day_part(Day_part part);
+  Day_part get_day_part() const;
 
   private:
   std::vector<Simple_weather> forecast;
   Open_weather_config config;
+  Day_part day_part;
 };

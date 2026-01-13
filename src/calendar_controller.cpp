@@ -46,26 +46,33 @@ void Calendar_controller::fetch_calendar()
       model->clear();
       JsonArray events = doc["events"];
       bool is_alarm = false;
-      for (JsonObject event : events)
+      if (!doc.containsKey("events") || !doc["events"].is<JsonArray>())
       {
-        String name = event["title"] | "";
-        String calendar_name = event["calendarName"] | "";
-        String temp_time = event["startTime"] | "";
-        Simple_time start(temp_time);
-        temp_time = event["endTime"] | "";
-        Simple_time end(temp_time);
-        Calendar_event new_event(name, calendar_name, start, end);
-        Serial.println(new_event.name);
-        Serial.println(new_event.calendar);
-        if (calendar_name == config.alarm_calendar_id)
+        Serial.println("JSON parse - no events");
+      }
+      else
+      {
+        for (JsonObject event : events)
         {
-          alarm_controller->set_alarm(new_event.time_start);
-          alarm_controller->enable_alarm();
-          is_alarm = true;
-        }
-        else if (calendar_name == config.google_calendar_id)
-        {
-          model->update(new_event);
+          String name = event["title"] | "";
+          String calendar_name = event["calendarName"] | "";
+          String temp_time = event["startTime"] | "";
+          Simple_time start(temp_time);
+          temp_time = event["endTime"] | "";
+          Simple_time end(temp_time);
+          Calendar_event new_event(name, calendar_name, start, end);
+          Serial.println(new_event.name);
+          Serial.println(new_event.calendar);
+          if (calendar_name == config.alarm_calendar_id)
+          {
+            alarm_controller->set_alarm(new_event.time_start);
+            alarm_controller->enable_alarm();
+            is_alarm = true;
+          }
+          else if (calendar_name == config.google_calendar_id)
+          {
+            model->update(new_event);
+          }
         }
       }
       if (!is_alarm)
@@ -75,7 +82,8 @@ void Calendar_controller::fetch_calendar()
     }
     else
     {
-      Serial.println("JSON parse error lub brak wydarzeń");
+      Serial.println("JSON parse error - no events");
+      alarm_controller->set_no_alarm();
     }
   }
   else

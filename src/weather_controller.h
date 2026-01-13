@@ -1,18 +1,21 @@
 #pragma once
 #include "RTClib.h"
+#include "http_server.h"
 #include "weather_model.h"
 #include "weather_view.h"
 
 class Weather_controller
 {
   public:
-  Weather_controller(Weather_model* model, Weather_view* view);
+  Weather_controller(Weather_model* model, Weather_view* view, HttpServer* _http_server);
   void fetch_weather(DateTime& now);
   void update_view();
 
   private:
   String get_date_string(DateTime dt, uint8_t offset = 0);
+  void check_day_part(DateTime& now);
 
   Weather_model* model;
   Weather_view* view;
+  HttpServer* http_server;
 };
