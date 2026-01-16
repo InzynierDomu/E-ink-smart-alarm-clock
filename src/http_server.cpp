@@ -705,7 +705,7 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   float new_lat = server_.arg("lat").toFloat();
   float new_lon = server_.arg("lon").toFloat();
 
-  String new_google_script_uri = server_.arg("google_script_uri");
+  String new_google_script_url = server_.arg("google_script_url");
   String new_google_calendar_id = server_.arg("google_calendar_id");
   String new_google_calendar_alarm_id = server_.arg("google_calendar_alarm_id");
 
@@ -727,7 +727,7 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
 
-  doc["google_script_url"] = new_google_script_uri;
+  doc["google_script_url"] = new_google_script_url;
   doc["google_calendar_id"] = new_google_calendar_id;
   doc["google_calendar_alarm_id"] = new_google_calendar_alarm_id;
 
