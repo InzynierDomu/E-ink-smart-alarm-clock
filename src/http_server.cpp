@@ -1,6 +1,7 @@
 #include "http_server.h"
 
 #include "config.h"
+#include "config_page_style.h"
 
 #include <ArduinoJson.h>
 #include <SD.h>
@@ -17,24 +18,14 @@ HttpServer::HttpServer(WebServer& server, Clock_model& clock_model, Weather_mode
 
 void HttpServer::begin()
 {
-  server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
-  server_.on("/save", HTTP_POST, [this]() { this->handleSave(); });
-
-  server_.on("/config_page_style.css", HTTP_GET, [this]() {
-    String css;
-    if (SD.exists("/config_page_style.css"))
-    {
-      File file = SD.open("/config_page_style.css");
-      if (file)
-      {
-        css = file.readString();
-        file.close();
-      }
-    }
-    server_.send(200, "text/css", css);
-  });
-
-  server_.begin();
+    server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
+    server_.on("/save", HTTP_POST, [this]() { this->handleSave(); });
+    
+    server_.on("/config_page_style.css", HTTP_GET, [this]() {
+        server_.send(200, "text/css", config_page_style_css);
+    });
+    
+    server_.begin();
 }
 
 void HttpServer::ha_set_config(HA_config& config)

@@ -1,4 +1,6 @@
-/* styles.css - Stylizacje dla strony konfiguracyjnej e-ink alarm clock */
+#pragma once
+
+const char* config_page_style_css = R"(
 
 * {
     margin: 0;
@@ -244,3 +246,4 @@ button[type="reset"]:hover {
         width: 100%;
     }
 }
+)";
