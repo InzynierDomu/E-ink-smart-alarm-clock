@@ -56,28 +56,25 @@ int8_t HttpServer::get_ha_weather()
 
   client.print(request);
 
-  // Odbiór nagłówków
   String headers;
   while (client.connected())
   {
     String line = client.readStringUntil('\n');
     if (line == "\r")
     {
-      break; // koniec nagłówków
+      break;
     }
     headers += line + "\n";
   }
   Serial.println("[HA] Headers:");
   Serial.println(headers);
 
-  // Prosta walidacja kodu odpowiedzi
   if (!headers.startsWith("HTTP/1.1 200"))
   {
     Serial.println("[HA] Non-200 response");
     return 0;
   }
 
-  // Odbiór body
   String body;
   while (client.available())
   {
@@ -88,7 +85,6 @@ int8_t HttpServer::get_ha_weather()
   Serial.println("[HA] Body:");
   Serial.println(body);
 
-  // Parsowanie JSON
   int idx = body.indexOf("\"state\":");
   if (idx < 0)
   {
@@ -718,7 +714,6 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   String new_ha_entity = server_.arg("ha_entity_weather");
   bool new_weather_from_ha = server_.arg("weather_from_ha").toInt();
 
-  // Pola zgodne z tym, co parsujesz w read_config()
   doc["ssid"] = new_ssid;
   doc["pass"] = new_pass;
   doc["timezone"] = tz_seconds;
