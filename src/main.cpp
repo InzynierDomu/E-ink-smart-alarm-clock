@@ -114,7 +114,11 @@ void read_config()
   ha_config.ha_host = doc["HA_host"] | "";
   ha_config.ha_port = doc["HA_port"];
   ha_config.ha_token = doc["HA_token"] | "";
+  ha_config.ha_user = doc["HA_user"] | "";
+  ha_config.ha_pass = doc["HA_pass"] | "";
   ha_config.ha_enitty_weather_name = doc["HA_weather_entity_name"] | "";
+  ha_config.ha_entity_clock_name = doc["HA_clock_entity_name"] | "";
+  ha_config.mqtt_port = doc["mqtt_port"];
   ha_config.weather_from_ha = doc["weather_from_HA"];
   httpServer.ha_set_config(ha_config);
 
@@ -130,8 +134,9 @@ void update_clock()
   DateTime now;
   clock_controller.get_time(now);
 
-  if (alarm_controller.check_alarm(now))
+  if (alarm_controller.check_alarm(now) && state != State::alarm)
   {
+    httpServer.send_mqtt_action();
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
   }
@@ -192,6 +197,7 @@ void setup()
   {
     Serial.println("SSID ustawione, lacze jako STA");
     WiFi.mode(WIFI_STA);
+    // WiFi.setHostname("EInkClock");
     WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -200,6 +206,8 @@ void setup()
     }
     Serial.println("\nWiFi connected");
     state = State::normal;
+    Serial.print("IP:");
+    Serial.println(WiFi.localIP());
   }
 
   clock_controller.setup_clock();
@@ -219,6 +227,7 @@ void setup()
 
   audio.setup();
 
+  httpServer.entity_clock_setup();
   httpServer.begin();
 }
 

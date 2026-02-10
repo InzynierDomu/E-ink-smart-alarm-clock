@@ -14,18 +14,17 @@ HttpServer::HttpServer(WebServer& server, Clock_model& clock_model, Weather_mode
 , weather_model_(weather_model)
 , calendar_model_(calendar_model)
 , audio_(audio)
+, mqtt_client(client)
 {}
 
 void HttpServer::begin()
 {
-    server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
-    server_.on("/save", HTTP_POST, [this]() { this->handleSave(); });
-    
-    server_.on("/config_page_style.css", HTTP_GET, [this]() {
-        server_.send(200, "text/css", config_page_style_css);
-    });
-    
-    server_.begin();
+  server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
+  server_.on("/save", HTTP_POST, [this]() { this->handleSave(); });
+
+  server_.on("/config_page_style.css", HTTP_GET, [this]() { server_.send(200, "text/css", config_page_style_css); });
+
+  server_.begin();
 }
 
 void HttpServer::ha_set_config(HA_config& config)
@@ -44,7 +43,6 @@ int8_t HttpServer::get_ha_weather()
     return 0;
   }
 
-  WiFiClient client;
   Serial.printf("[HA] Connecting to %s:%u\n", ha_config.ha_host, ha_config.ha_port);
   if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
   {
@@ -118,6 +116,50 @@ bool HttpServer::is_weather_from_ha()
   return ha_config.weather_from_ha;
 }
 
+void HttpServer::entity_clock_setup()
+{
+  mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
+  mqtt_client.setBufferSize(1024);
+  if (!mqtt_client.connected())
+  {
+    Serial.println("MQTT niepołączone, próba rekonakcji...");
+    mqtt_reconnect();
+    delay(1000);
+  }
+
+  DynamicJsonDocument doc(1024);
+  doc["name"] = ha_config.ha_entity_clock_name;
+  doc["unique_id"] = ha_config.ha_entity_clock_name; // Musi być unikalne w skali całego HA
+  doc["state_topic"] = "eink_clock/" + ha_config.ha_entity_clock_name + "/state";
+  doc["payload_on"] = "ON";
+  doc["payload_off"] = "OFF";
+  doc["device_class"] = "motion"; // "motion" pasuje do jednorazowych zdarzeń (jak czujnik ruchu)
+  doc["off_delay"] = 1; // Home Assistant sam przełączy na OFF po 1 sekundzie
+
+  JsonObject device = doc.createNestedObject("device");
+  device["identifiers"][0] = "eink_clock_" + ha_config.ha_entity_clock_name;
+  device["name"] = ha_config.ha_entity_clock_name;
+  device["model"] = "ESP32 e-ink";
+  device["manufacturer"] = "inzynier domu";
+
+  String msg;
+  serializeJson(doc, msg);
+
+  String topic = "homeassistant/binary_sensor/" + ha_config.ha_entity_clock_name + "/config";
+
+  Serial.print("Wysyłanie konfiguracji do: ");
+  Serial.println(topic);
+
+  if (mqtt_client.publish(topic.c_str(), msg.c_str(), true))
+  {
+    Serial.println("Konfiguracja wysłana pomyślnie!");
+  }
+  else
+  {
+    Serial.println("Błąd wysyłania! Sprawdź wielkość bufora (setBufferSize).");
+  }
+}
+
 String HttpServer::buildWifiSection()
 {
   Wifi_Config wifi;
@@ -142,6 +184,8 @@ String HttpServer::buildWifiSection()
 )rawHTML";
   return html;
 }
+
+void HttpServer::send_mqtt_action() {}
 
 String HttpServer::buildTimezoneSection()
 {
@@ -283,12 +327,39 @@ String HttpServer::buildHaSection()
                 <label class="form-label">Token</label>
                 <input type="password" name="ha_token" value=")rawHTML";
   html += ha_config.ha_token;
+  html += R"rawHTML("> 
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="form-row">
+                <label class="form-label">User</label>
+                <input type="text" name="ha_user" value=")rawHTML";
+  html += ha_config.ha_user;
+  html += R"rawHTML(">
+              </div>
+            <div class="form-row">
+                <label class="form-label">User pass</label>
+                <input type="password" name="ha_pass" value=")rawHTML";
+  html += ha_config.ha_pass;
   html += R"rawHTML(">
             </div>
             <div class="form-row">
                 <label class="form-label">Encja pogody</label>
                 <input type="text" name="ha_entity_weather" value=")rawHTML";
   html += ha_config.ha_enitty_weather_name;
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Encja zegara</label>
+                <input type="text" name="ha_entity_clock" value=")rawHTML";
+  html += ha_config.ha_entity_clock_name;
+  html += R"rawHTML(">
+            </div>
+            <div class="form-row">
+                <label class="form-label">Mqtt port</label>
+                <input type="text" name="mqtt_port" value=")rawHTML";
+  html += String(ha_config.mqtt_port);
   html += R"rawHTML(">
             </div>
             <div class="form-row">
@@ -467,7 +538,11 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   String new_ha_host = server_.arg("ha_host");
   uint16_t new_ha_port = server_.arg("ha_port").toInt();
   String new_ha_token = server_.arg("ha_token");
-  String new_ha_entity = server_.arg("ha_entity_weather");
+  String new_ha_user = server_.arg("ha_user");
+  String new_ha_pass = server_.arg("ha_pass");
+  String new_ha_entity_weather = server_.arg("ha_entity_weather");
+  String new_ha_entity_clock = server_.arg("ha_entity_clock");
+  uint16_t new_mqtt_port = server_.arg("mqtt_port").toInt();
   bool new_weather_from_ha = server_.arg("weather_from_ha").toInt();
 
   doc["ssid"] = new_ssid;
@@ -488,6 +563,33 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   doc["HA_host"] = new_ha_host;
   doc["HA_port"] = new_ha_port;
   doc["HA_token"] = new_ha_token;
-  doc["HA_weather_entity_name"] = new_ha_entity;
+  doc["HA_user"] = new_ha_user;
+  doc["HA_pass"] = new_ha_pass;
+  doc["HA_weather_entity_name"] = new_ha_entity_weather;
+  doc["HA_clock_entity_name"] = new_ha_entity_clock;
+  doc["mqtt_port"] = new_mqtt_port;
   doc["weather_from_HA"] = new_weather_from_ha;
+}
+
+void HttpServer::mqtt_reconnect()
+{
+  while (!mqtt_client.connected())
+  {
+    Serial.print("Próba połączenia MQTT...");
+
+    // LOGIN I HASŁO WPISUJESZ TUTAJ:
+    String clientId = "Eink_Clock_" + String(random(0xffff), HEX);
+
+    if (mqtt_client.connect(clientId.c_str(), ha_config.ha_user.c_str(), ha_config.ha_pass.c_str()))
+    {
+      Serial.println("Połączono!");
+    }
+    else
+    {
+      Serial.print("Błąd: ");
+      Serial.print(mqtt_client.state());
+      Serial.println(" ponowna próba za 5 sekund");
+      delay(5000);
+    }
+  }
 }

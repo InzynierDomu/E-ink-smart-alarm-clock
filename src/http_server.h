@@ -5,6 +5,7 @@
 #include "clock_model.h"
 #include "weather_model.h"
 
+#include <PubSubClient.h>
 #include <WebServer.h>
 
 
@@ -13,7 +14,11 @@ struct HA_config
   String ha_host;
   uint16_t ha_port;
   String ha_token;
+  String ha_user;
+  String ha_pass;
   String ha_enitty_weather_name;
+  String ha_entity_clock_name;
+  uint16_t mqtt_port;
   bool weather_from_ha;
 };
 
@@ -26,6 +31,8 @@ class HttpServer
   void ha_set_config(HA_config& config);
   int8_t get_ha_weather();
   bool is_weather_from_ha();
+  void entity_clock_setup();
+  void send_mqtt_action();
 
   private:
   WebServer& server_;
@@ -34,6 +41,8 @@ class HttpServer
   Calendar_model& calendar_model_;
   Audio& audio_;
   HA_config ha_config;
+  WiFiClient client;
+  PubSubClient mqtt_client;
 
   String buildPage();
   String buildWifiSection();
@@ -50,4 +59,5 @@ class HttpServer
   bool loadConfigJson(StaticJsonDocument<1024>& doc);
   bool saveConfigJson(const StaticJsonDocument<1024>& doc);
   void updateConfigFromRequest(StaticJsonDocument<1024>& doc);
+  void mqtt_reconnect();
 };
