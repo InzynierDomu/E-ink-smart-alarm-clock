@@ -185,7 +185,32 @@ String HttpServer::buildWifiSection()
   return html;
 }
 
-void HttpServer::send_mqtt_action() {}
+void HttpServer::send_mqtt_action()
+{
+  // 1. Sprawdź, czy w ogóle jesteśmy połączeni z MQTT
+  if (!mqtt_client.connected())
+  {
+    Serial.println("Nie można wysłać akcji: brak połączenia z MQTT!");
+    // Opcjonalnie: tutaj możesz wywołać swoją funkcję reconnect()
+    return;
+  }
+
+  // 2. Zbuduj topik stanu (taki sam jak w konfiguracji Discovery)
+  String topic = "eink_clock/" + String(ha_config.ha_entity_clock_name) + "/state";
+
+  // 3. Wyślij wiadomość "ON"
+  // Parametr 'false' na końcu oznacza, że wiadomość NIE jest typu 'retained'.
+  // Przy akcjach typu przycisk/ruch lepiej nie używać retain,
+  // żeby HA nie odczytał tego starego stanu po swoim restarcie.
+  if (mqtt_client.publish(topic.c_str(), "ON", false))
+  {
+    Serial.println("Akcja MQTT 'ON' wysłana do: " + topic);
+  }
+  else
+  {
+    Serial.println("Błąd wysyłania publish! Sprawdź połączenie.");
+  }
+}
 
 String HttpServer::buildTimezoneSection()
 {
@@ -329,9 +354,6 @@ String HttpServer::buildHaSection()
   html += ha_config.ha_token;
   html += R"rawHTML("> 
             </div>
-        </div>
-
-        <div class="section">
             <div class="form-row">
                 <label class="form-label">User</label>
                 <input type="text" name="ha_user" value=")rawHTML";
