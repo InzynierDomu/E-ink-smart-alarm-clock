@@ -190,9 +190,9 @@ void HttpServer::send_mqtt_action()
   // 1. Sprawdź, czy w ogóle jesteśmy połączeni z MQTT
   if (!mqtt_client.connected())
   {
-    Serial.println("Nie można wysłać akcji: brak połączenia z MQTT!");
-    // Opcjonalnie: tutaj możesz wywołać swoją funkcję reconnect()
-    return;
+    Serial.println("MQTT niepołączone, próba rekonakcji...");
+    mqtt_reconnect();
+    delay(1000);
   }
 
   // 2. Zbuduj topik stanu (taki sam jak w konfiguracji Discovery)
