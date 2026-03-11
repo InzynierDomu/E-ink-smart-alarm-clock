@@ -462,7 +462,7 @@ String HttpServer::buildPage()
 )rawHTML";
 
   page += buildWifiSection();
-  page += buildTimezoneSection();
+  // page += buildTimezoneSection(); TODO fix
   page += buildWeatherSection();
   page += buildGoogleCalendarSection();
   page += buildHaSection();
@@ -543,8 +543,8 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
 {
   String new_ssid = server_.arg("ssid");
   String new_pass = server_.arg("pass");
-  int tz_hours = server_.arg("timezone_hours").toInt();
-  int tz_seconds = tz_hours * 3600;
+  // int tz_hours = server_.arg("timezone_hours").toInt(); TODO fix
+  // int tz_seconds = tz_hours * 3600;
 
   String new_api_key = server_.arg("api_key");
   float new_lat = server_.arg("lat").toFloat();
@@ -569,7 +569,7 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
 
   doc["ssid"] = new_ssid;
   doc["pass"] = new_pass;
-  doc["timezone"] = tz_seconds;
+  // doc["timezone"] = tz_seconds; TODO fix
 
   doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
