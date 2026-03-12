@@ -66,6 +66,21 @@ Weather_view weather_view(&screen);
 Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);
 
 State state;
+
+TaskHandle_t audioTaskHandle = nullptr;
+volatile bool startAlarmAudio = false;
+void audioTask(void* pvParameters)
+{
+  for (;;)
+  {
+    if (startAlarmAudio)
+    {
+      startAlarmAudio = false;
+      audio.play_audio();
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+  }
+}
 void read_config()
 {
   File file = SD.open(config::config_path, "r");
@@ -139,6 +154,7 @@ void update_clock()
     httpServer.send_mqtt_action();
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
+    startAlarmAudio = true;
   }
 }
 
@@ -163,7 +179,6 @@ static void update_date(lv_timer_t* timer)
     update_counter++;
   }
 }
-
 void setup()
 {
   Serial.begin(115200);
@@ -227,6 +242,8 @@ void setup()
 
   audio.setup();
 
+  xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 0);
+
   httpServer.entity_clock_setup();
   httpServer.begin();
 }
@@ -245,8 +262,6 @@ bool check_button()
     return false;
   }
 }
-
-unsigned long lastHaUpdate = 0;
 void loop()
 {
   if (state != State::AP)
@@ -257,9 +272,9 @@ void loop()
 
   if (state == State::alarm)
   {
-    audio.play_audio();
     if (check_button())
     {
+      audio.stop();
       state = State::normal;
       digitalWrite(config::led_pin, LOW);
     }
@@ -279,6 +294,5 @@ void loop()
   {
     screen.full_clear();
   }
-
   server.handleClient();
 }
