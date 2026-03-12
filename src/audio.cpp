@@ -44,7 +44,6 @@ void Audio::play_audio()
   int16_t buffer[audio_buffer_size];
 
   float volFactor = config.volume / 100.0f;
-  stop_requested = false;
 
   while (audioFile.available() && !stop_requested)
   {
@@ -86,4 +85,9 @@ void Audio::get_config(Audio_config& _config)
 void Audio::stop()
 {
   stop_requested = true;
+}
+
+void Audio::start()
+{
+  stop_requested = false;
 }

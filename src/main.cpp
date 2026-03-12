@@ -75,7 +75,6 @@ void audioTask(void* pvParameters)
   {
     if (startAlarmAudio)
     {
-      startAlarmAudio = false;
       audio.play_audio();
     }
     vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -154,6 +153,7 @@ void update_clock()
     httpServer.send_mqtt_action();
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
+    audio.start();
     startAlarmAudio = true;
   }
 }
@@ -274,8 +274,9 @@ void loop()
   {
     if (check_button())
     {
-      audio.stop();
       state = State::normal;
+      audio.stop();
+      startAlarmAudio = false;
       digitalWrite(config::led_pin, LOW);
     }
   }

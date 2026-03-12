@@ -16,9 +16,10 @@ class Audio
   void set_config(Audio_config& config);
   void get_config(Audio_config& config);
   void stop();
+  void start();
 
   private:
-  volatile bool stop_requested = false;
+  volatile bool stop_requested = true;
   const uint16_t audio_buffer_size = 512;
   Audio_config config;
 };
