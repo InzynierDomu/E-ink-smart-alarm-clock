@@ -52,13 +52,13 @@ void Weather_view::show(const Weather_model& data)
 const char* Weather_view::weather_icon_change(int cloud_cover, int precipitation)
 {
   if (cloud_cover > 30 && precipitation == 0)
-    return "ú";
+    return "B";
 
   if (precipitation < 5 && precipitation != 0)
-    return "û";
+    return "C";
 
   if (precipitation > 5)
-    return "ü";
+    return "D";
 
-  return "ù";
+  return "A";
 }

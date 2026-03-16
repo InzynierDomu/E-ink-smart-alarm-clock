@@ -15,16 +15,16 @@ void Alarm_view::show(const Alarm_model& data)
     lv_label_set_text(ui_labAlarm, time_str);
     if (alarm.enable)
     {
-      lv_label_set_text(ui_labAlarmEnable, "ON");
+      lv_label_set_text(ui_labAlarmEnable, "E");
     }
     else
     {
-      lv_label_set_text(ui_labAlarmEnable, "OFF");
+      lv_label_set_text(ui_labAlarmEnable, "F");
     }
   }
   else
   {
     lv_label_set_text(ui_labAlarm, "00:00");
-    lv_label_set_text(ui_labAlarmEnable, "OFF");
+    lv_label_set_text(ui_labAlarmEnable, "F");
   }
 }
