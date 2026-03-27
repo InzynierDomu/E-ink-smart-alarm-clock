@@ -8,7 +8,6 @@
 #include <PubSubClient.h>
 #include <WebServer.h>
 
-
 struct HA_config
 {
   String ha_host;
@@ -24,7 +23,7 @@ struct HA_config
 
 class HttpServer
 {
-  public:
+public:
   HttpServer(WebServer& server, Clock_model& clock_model, Weather_model& weather_model, Calendar_model& calendar_model, Audio& audio);
 
   void begin();
@@ -34,8 +33,9 @@ class HttpServer
   void entity_clock_setup();
   void send_mqtt_action();
   void set_device_id(const String& id) { device_id_ = id; }
+  String get_device_id() const { return device_id_; }
 
-  private:
+private:
   WebServer& server_;
   Clock_model& clock_model_;
   Weather_model& weather_model_;
