@@ -33,6 +33,7 @@ class HttpServer
   bool is_weather_from_ha();
   void entity_clock_setup();
   void send_mqtt_action();
+  void set_device_id(const String& id) { device_id_ = id; }
 
   private:
   WebServer& server_;
@@ -43,6 +44,7 @@ class HttpServer
   HA_config ha_config;
   WiFiClient client;
   PubSubClient mqtt_client;
+  String device_id_;
 
   String buildPage();
   String buildWifiSection();
