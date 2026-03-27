@@ -6,15 +6,13 @@
 
 struct google_api_config
 {
-  String script_url;
-  String alarm_calendar_id;
-  String google_calendar_id;
+  String api_base_url; // e.g., https://inzynierdomu.pl/clock-api/
 };
 
 struct Calendar_event
 {
   Calendar_event() {}
-  Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
+  Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)Simplify google_api_config to use base URL
   : name(_name)
   , calendar(_calendar)
   , time_start(_time_start)
@@ -33,7 +31,7 @@ struct Calendar_event
 
 class Calendar_model
 {
-  public:
+public:
   void clear();
   void update(const Calendar_event& calendar_event);
   uint8_t get_event_count() const;
@@ -41,7 +39,7 @@ class Calendar_model
   void set_config(google_api_config& _config);
   void get_config(google_api_config& _config) const;
 
-  private:
+private:
   google_api_config config;
   std::vector<Calendar_event> calendar_events;
 };
