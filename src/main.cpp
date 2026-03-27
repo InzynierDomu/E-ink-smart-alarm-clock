@@ -124,9 +124,6 @@ void read_config()
   weather_config.lon = doc["lon"];
   weather_model.set_config(weather_config);
 
-  // Google Calendar config is now handled by the backend using device_id
-  // We don't need to load old script URLs or calendar IDs here anymore
-
   HA_config ha_config;
   ha_config.ha_host = doc["HA_host"] | "";
   ha_config.ha_port = doc["HA_port"];
@@ -228,9 +225,15 @@ WiFi connected");
     Serial.println(WiFi.localIP());
   }
 
-  // Generate and set device ID for pairing
+  // Generate and set device ID for pairing and calendar fetching
   String deviceId = get_device_id();
   httpServer.set_device_id(deviceId);
+  
+  google_api_config calendar_config;
+  calendar_config.api_base_url = "https://inzynierdomu.pl/clock-api/";
+  calendar_config.device_id = deviceId;
+  calendar_model.set_config(calendar_config);
+
   Serial.print("Device ID: ");
   Serial.println(deviceId);
 
