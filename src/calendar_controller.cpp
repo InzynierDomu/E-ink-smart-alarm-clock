@@ -16,10 +16,17 @@ void Calendar_controller::fetch_calendar()
   http.setTimeout(20000);
   google_api_config config;
   model->get_config(config);
-  String url = "https://script.google.com/macros/s/" + config.script_url + "/exec";
+
+  // New API URL using api_base_url and device_id
+  String url = config.api_base_url + "calendar.php?device_id=" + config.device_id;
+
+  Serial.print("Fetching calendar from: ");
+  Serial.println(url);
+
   if (!http.begin(url))
   {
-    Serial.println("Cannot connect to google script");
+    Serial.println("Cannot connect to Google Calendar API");
+    return;
   }
 
   int httpResponseCode = http.GET();
@@ -27,7 +34,8 @@ void Calendar_controller::fetch_calendar()
   if (httpResponseCode == 301 || httpResponseCode == 302)
   {
     String newUrl = http.getLocation();
-    Serial.printf("Przekierowanie: %d -> %s\n", httpResponseCode, newUrl.c_str());
+    Serial.printf("Przekierowanie: %d -> %s
+", httpResponseCode, newUrl.c_str());
     http.end();
 
     http.begin(newUrl);
@@ -48,52 +56,53 @@ void Calendar_controller::fetch_calendar()
       bool is_alarm = false;
       if (!doc.containsKey("events") || !doc["events"].is<JsonArray>())
       {
-        Serial.println("JSON parse - no events");
+        return;
       }
-      else
+      for (JsonObject event : events)
       {
-        for (JsonObject event : events)
+        String name = event["name"];
+        String calendar = event["calendar"];
+        String startStr = event["start"];
+        String endStr = event["end"];
+
+        Simple_time time_start(startStr);
+        Simple_time time_stop(endStr);
+
+        Calendar_event calendar_event(name, calendar, time_start, time_stop);
+        model->update(calendar_event);
+
+        if (calendar == "Alarm")
         {
-          String name = event["title"] | "";
-          String calendar_name = event["calendarName"] | "";
-          String temp_time = event["startTime"] | "";
-          Simple_time start(temp_time);
-          temp_time = event["endTime"] | "";
-          Simple_time end(temp_time);
-          Calendar_event new_event(name, calendar_name, start, end);
-          Serial.println(new_event.name);
-          Serial.println(new_event.calendar);
-          if (calendar_name == config.alarm_calendar_id)
-          {
-            alarm_controller->set_alarm(new_event.time_start);
-            alarm_controller->enable_alarm();
-            is_alarm = true;
-          }
-          else if (calendar_name == config.google_calendar_id)
-          {
-            model->update(new_event);
-          }
+          alarm_controller->set_alarm(time_start);
+          is_alarm = true;
         }
       }
       if (!is_alarm)
       {
-        alarm_controller->set_no_alarm();
+        // alarm_controller->clear_alarm();
       }
     }
     else
     {
-      Serial.println("JSON parse error - no events");
-      alarm_controller->set_no_alarm();
+      Serial.print("Błąd parsowania JSON: ");
+      Serial.println(error.c_str());
     }
   }
   else
   {
-    Serial.printf("HTTP error: %d\n", httpResponseCode);
+    Serial.print("HTTP Error: ");
+    Serial.println(httpResponseCode);
   }
   http.end();
 }
 
 void Calendar_controller::update_view()
 {
-  view->show(*model);
+  view->clear_calendar_list();
+  for (size_t i = 0; i < model->get_event_count(); ++i)
+  {
+    Calendar_event event;
+    model->get_event(event, i);
+    view->add_event(event.get_calendar_label());
+  }
 }
