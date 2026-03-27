@@ -9,10 +9,10 @@ Clock_controller::Clock_controller(Clock_view* _view, Clock_model* _model)
 
 void Clock_controller::setup_clock()
 {
-  Wifi_Config wifi_config;
-  model->get_wifi_config(wifi_config);
+  // Wifi_Config wifi_config;
+  // model->get_wifi_config(wifi_config);
   configTime(0, 0, config::time_server);
-  setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1); // Magiczny ciąg dla Polski
+  setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
   tzset();
 
   tm time_info;
