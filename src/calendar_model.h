@@ -7,12 +7,13 @@
 struct google_api_config
 {
   String api_base_url; // e.g., https://inzynierdomu.pl/clock-api/
+  String device_id;    // Generated from MAC address
 };
 
 struct Calendar_event
 {
   Calendar_event() {}
-  Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)Simplify google_api_config to use base URL
+  Calendar_event(String& _name, String& _calendar, Simple_time& _time_start, Simple_time& _time_stop)
   : name(_name)
   , calendar(_calendar)
   , time_start(_time_start)
