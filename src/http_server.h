@@ -51,6 +51,7 @@ class HttpServer
   String buildGoogleCalendarSection();
   String buildAudioSection();
   String buildHaSection();
+  String buildFirmwareUpdateSection();
   String buildFooter();
 
   void handleRoot();

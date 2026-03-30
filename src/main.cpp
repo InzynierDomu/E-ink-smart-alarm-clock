@@ -9,6 +9,7 @@
 #include "clock_model.h"
 #include "clock_view.h"
 #include "config.h"
+#include "firmware_update.h"
 #include "http_server.h"
 #include "lvgl.h"
 #include "screen.h"
@@ -28,6 +29,7 @@
 #include <WiFiUdp.h>
 #include <time.h>
 #include <vector>
+
 
 enum class State
 {
@@ -142,6 +144,17 @@ void read_config()
   audio.set_config(audio_config);
 }
 
+String get_device_id()
+{
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+
+  char id[13];
+  snprintf(id, sizeof(id), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  return String(id); // np. "A4CF1234ABCD"
+}
+
 void update_clock()
 {
   clock_controller.update_view();
@@ -195,6 +208,11 @@ void setup()
   {
     Serial.println("SD card ok");
   }
+
+  // if (checkAndPerformUpdateFromSD())
+  // {
+  //   return;
+  // }
 
   read_config();
 
