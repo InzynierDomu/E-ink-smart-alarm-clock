@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
+#define FW_VERSION "1.1"
 namespace config
 {
 constexpr uint8_t sd_cs_pin = 10;
