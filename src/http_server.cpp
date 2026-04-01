@@ -26,8 +26,9 @@ void HttpServer::begin()
   server_.on(
       "/upload_firmware",
       HTTP_POST,
-      [this]() { server_.send(200, "text/plain", "OK"); },
-      [this](HTTPUpload& upload) {
+      [this]() { server_.send(200, "text/plain", "Firmware zapisany na SD jako /firmware.bin. Zrestartuj urzadzenie."); },
+      [this]() {
+        HTTPUpload& upload = server_.upload();
         static File uploadFile;
 
         if (upload.status == UPLOAD_FILE_START)
@@ -37,6 +38,14 @@ void HttpServer::begin()
             SD.remove("/firmware.bin");
           }
           uploadFile = SD.open("/firmware.bin", FILE_WRITE);
+          if (!uploadFile)
+          {
+            Serial.println("Nie mozna otworzyc /firmware.bin do zapisu");
+          }
+          else
+          {
+            Serial.printf("Start uploadu firmware: %s\n", upload.filename.c_str());
+          }
         }
         else if (upload.status == UPLOAD_FILE_WRITE)
         {
@@ -51,7 +60,19 @@ void HttpServer::begin()
           {
             uploadFile.close();
           }
-          Serial.printf("Firmware upload complete: %s\n", upload.filename.c_str());
+          Serial.printf("Firmware upload complete: %s, size=%u\n", upload.filename.c_str(), upload.totalSize);
+        }
+        else if (upload.status == UPLOAD_FILE_ABORTED)
+        {
+          if (uploadFile)
+          {
+            uploadFile.close();
+          }
+          if (SD.exists("/firmware.bin"))
+          {
+            SD.remove("/firmware.bin");
+          }
+          Serial.println("Upload firmware przerwany");
         }
       });
 
@@ -451,32 +472,36 @@ String HttpServer::buildFirmwareUpdateSection()
   return html;
 }
 
-String HttpServer::buildFirmwareUpdateSection()
+String HttpServer::buildFooter()
 {
   String html;
   html += R"rawHTML(
-  <div class="section">
-    <div class="section-title">🛠️ Aktualizacja firmware</div>
-    <p>
-      Aktualna wersja oprogramowania: <strong>)rawHTML";
-  html += FW_VERSION;
-  html += R"rawHTML(</strong>
-    </p>
-    <p>
-      Wybierz plik z nowym oprogramowaniem (plik <code>.bin</code>) i wgraj go na urządzenie.
-      Po ponownym uruchomieniu, jeśli plik <code>firmware.bin</code> będzie na karcie SD,
-      urządzenie spróbuje wykonać aktualizację.
-    </p>
-    <form method="POST" action="/upload_firmware" enctype="multipart/form-data">
-      <div class="form-row">
-        <input type="file" name="firmware">
-      </div>
-      <div class="form-row">
-        <button type="submit">Wgraj firmware</button>
-      </div>
-    </form>
-  </div>
-  )rawHTML";
+        <div class="footer">
+            <p>&copy; 2026 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
+            <div class="footer-icons">
+                <a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock" target="_blank" title="GitHub" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+                <a href="https://buycoffee.to/inzynier-domu" target="_blank" title="Postaw kawę" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
+                    </svg>
+                </a>
+                <a href="https://www.inzynierdomu.pl/" target="_blank" title="Blog" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 2H5a3 3 0 00-3 3v14a3 3 0 003 3h14a3 3 0 003-3V5a3 3 0 00-3-3zm0 16H5V5h14v13zm-7-9h-4v2h4V9zm6 0h-4v2h4V9zm0 4h-6v2h6v-2z"/>
+                    </svg>
+                </a>
+                <a href="https://www.youtube.com/c/InzynierDomu?sub_confirmation=1" target="_blank" title="YouTube" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+)rawHTML";
   return html;
 }
 
@@ -508,7 +533,7 @@ String HttpServer::buildPage()
             <div class="header-spacer"></div>
         </div>
 
-        <!-- Formularz -->
+        <!-- Formularz konfiguracji -->
         <form method="POST" action="/save">
 )rawHTML";
 
@@ -518,7 +543,6 @@ String HttpServer::buildPage()
   page += buildGoogleCalendarSection();
   page += buildHaSection();
   page += buildAudioSection();
-  page += buildFirmwareUpdateSection();
 
   page += R"rawHTML(
             <div class="button-group">
@@ -526,6 +550,9 @@ String HttpServer::buildPage()
             </div>
         </form>
 )rawHTML";
+
+  // Sekcja uploadu firmware MUSI być poza formularzem /save
+  page += buildFirmwareUpdateSection();
 
   page += buildFooter();
 

@@ -209,10 +209,10 @@ void setup()
     Serial.println("SD card ok");
   }
 
-  // if (checkAndPerformUpdateFromSD())
-  // {
-  //   return;
-  // }
+  if (checkAndPerformUpdateFromSD())
+  {
+    return;
+  }
 
   read_config();
 
