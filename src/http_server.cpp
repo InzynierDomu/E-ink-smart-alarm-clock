@@ -26,7 +26,12 @@ void HttpServer::begin()
   server_.on(
       "/upload_firmware",
       HTTP_POST,
-      [this]() { server_.send(200, "text/plain", "Firmware zapisany na SD jako /firmware.bin. Zrestartuj urzadzenie."); },
+      [this]() {
+        server_.send(200,
+                     "text/plain",
+                     "Firmware zapisany na SD jako /firmware.bin. Zrestartuj urzadzenie. Po ponownym uruchomieniu, urządzenie spróbuje "
+                     "wykonać aktualizację.");
+      },
       [this]() {
         HTTPUpload& upload = server_.upload();
         static File uploadFile;
@@ -452,17 +457,16 @@ String HttpServer::buildFirmwareUpdateSection()
 {
   String html;
   html += R"rawHTML(
-  <div class="section">
+  <br><div class="section">
     <div class="section-title">🛠️ Aktualizacja firmware</div>
-    <p>
-      Wybierz plik z nowym oprogramowaniem (plik <code>.bin</code>) i wgraj go na urządzenie.
-      Po ponownym uruchomieniu, jeśli plik <code>firmware.bin</code> będzie na karcie SD,
-      urządzenie spróbuje wykonać aktualizację.
-    </p>
+    <div class="form-row">
+      <label class="form-label">Obecna wersja: </label><label class="form-label">)rawHTML";
+  html += config::version;
+  html +=
+      R"rawHTML(</label></div><div class="form-row"><label class="form-label">Wybierz plik z nowym oprogramowaniem (*<code>.bin</code>).</label>
     <form method="POST" action="/upload_firmware" enctype="multipart/form-data">
-      <div class="form-row">
         <input type="file" name="firmware">
-      </div>
+    </div>
       <div class="form-row">
         <button type="submit">Wgraj firmware</button>
       </div>
@@ -551,7 +555,6 @@ String HttpServer::buildPage()
         </form>
 )rawHTML";
 
-  // Sekcja uploadu firmware MUSI być poza formularzem /save
   page += buildFirmwareUpdateSection();
 
   page += buildFooter();
