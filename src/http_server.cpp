@@ -102,14 +102,23 @@ int8_t HttpServer::get_ha_weather()
 
   Serial.printf("[HA] Connecting to %s:%u
 ", ha_config.ha_host, ha_config.ha_port);
+  Serial.printf("[HA] Connecting to %s:%u
+", ha_config.ha_host, ha_config.ha_port);
   if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
   {
     Serial.println("[HA] Connection failed");
     return 0;
   }
 
+
   Serial.println("[HA] Connected, sending request");
   String url = "/api/states/" + String(ha_config.ha_enitty_weather_name);
+  String request = String("GET ") + url + " HTTP/1.1\r
+" + "Host: " + String(ha_config.ha_host) + "\r
+" + "Authorization: Bearer " + String(ha_config.ha_token) + "\r
+" + "Connection: close\r
+\r
+";
   String request = String("GET ") + url + " HTTP/1.1\r
 " + "Host: " + String(ha_config.ha_host) + "\r
 " + "Authorization: Bearer " + String(ha_config.ha_token) + "\r
@@ -127,13 +136,18 @@ int8_t HttpServer::get_ha_weather()
   {
     String line = client.readStringUntil('
 ');
+    String line = client.readStringUntil('
+');
     if (line == "\r")
     {
       break;
     }
     headers += line + "
 ";
+    headers += line + "
+";
   }
+
 
   Serial.println("[HA] Headers:");
   Serial.println(headers);
@@ -164,6 +178,7 @@ int8_t HttpServer::get_ha_weather()
   int start = body.indexOf("\"", idx + 8);
   int end = body.indexOf("\"", start + 1);
 
+
   if (start < 0 || end < 0 || end <= start)
   {
     Serial.println("[HA] Failed to parse state string");
@@ -186,6 +201,7 @@ void HttpServer::entity_clock_setup()
 {
   mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
   mqtt_client.setBufferSize(1024);
+
 
   if (!mqtt_client.connected())
   {
@@ -231,6 +247,7 @@ String HttpServer::buildWifiSection()
   Wifi_Config wifi;
   clock_model_.get_wifi_config(wifi);
 
+
   String html;
   html += R"rawHTML(
 <fieldset>
@@ -241,6 +258,7 @@ String HttpServer::buildWifiSection()
 <label>Hasło</label> <input type="password" name="pass" value=")rawHTML";
   html += String(wifi.pass);
   html += R"rawHTML(">
+</fieldset>
 </fieldset>
 )rawHTML";
   return html;
@@ -279,6 +297,7 @@ String HttpServer::buildTimezoneSection()
   clock_model_.get_wifi_config(wifi);
   int timezone_hours = wifi.timezone / 3600;
 
+
   String html;
   html += R"rawHTML(
 <fieldset>
@@ -286,6 +305,7 @@ String HttpServer::buildTimezoneSection()
 <label>UTC offset [h]</label> <input type="number" step="1" name="timezone_hours" value=")rawHTML";
   html += String(timezone_hours);
   html += R"rawHTML(">
+</fieldset>
 </fieldset>
 )rawHTML";
   return html;
@@ -295,6 +315,7 @@ String HttpServer::buildWeatherSection()
 {
   Open_weather_config weather;
   weather_model_.get_config(weather);
+
 
   String html;
   html += R"rawHTML(
@@ -309,6 +330,7 @@ String HttpServer::buildWeatherSection()
 <label>Długość (lon)</label> <input type="text" name="lon" value=")rawHTML";
   html += String(weather.lon);
   html += R"rawHTML(">
+</fieldset>
 </fieldset>
 )rawHTML";
   return html;
@@ -335,25 +357,30 @@ String HttpServer::buildAudioSection()
   audio_.get_config(config);
   const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
 
+
   String html;
   html += R"rawHTML(
 <fieldset>
 <legend>🔊 Audio</legend>
 <label>Sample rate</label> <select name="sample_rate">)rawHTML";
+<fieldset>
+<legend>🔊 Audio</legend>
+<label>Sample rate</label> <select name="sample_rate">)rawHTML";
   for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
-  {
-    html += "<option value=\"" + String(sr_list[i]) + "\"";
-    if (sr_list[i] == config.sample_rate)
-      html += " selected";
-    html += ">" + String(sr_list[i]) + " Hz</option>";
-  }
-  html += R"rawHTML(</select>
+{
+  html += "<option value=\"" + String(sr_list[i]) + "\"";
+  if (sr_list[i] == config.sample_rate)
+    html += " selected";
+  html += ">" + String(sr_list[i]) + " Hz</option>";
+}
+html += R"rawHTML(</select>
 <label>Głośność</label> <input type="range" name="volume" min="0" max="100" value=")rawHTML";
-  html += String(config.volume);
-  html += R"rawHTML(" style="width: 100%;">
+html += String(config.volume);
+html += R"rawHTML(" style="width: 100%;">
+</fieldset>
 </fieldset>
 )rawHTML";
-  return html;
+return html;
 }
 
 String HttpServer::buildHaSection()
@@ -387,13 +414,14 @@ String HttpServer::buildHaSection()
   html += String(ha_config.mqtt_port);
   html += R"rawHTML(">
 <label>Pogoda z HA</label> <input type="checkbox" name="weather_from_ha" value="1" )rawHTML";
+<label>Pogoda z HA</label> <input type="checkbox" name="weather_from_ha" value="1" )rawHTML";
   if (ha_config.weather_from_ha)
     html += "checked";
-  html += R"rawHTML(>
+html += R"rawHTML(>
             </div>
         </div>
 )rawHTML";
-  return html;
+return html;
 }
 
 String HttpServer::buildFirmwareUpdateSection()
@@ -423,6 +451,15 @@ String HttpServer::buildFooter()
 {
   String html;
   html += R"rawHTML(
+<footer>
+<p>&copy; 2026 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
+<div class="links">
+<a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock">GitHub</a>
+<a href="https://buycoffee.to/inzynier-domu">Postaw kawę</a>
+<a href="https://www.inzynierdomu.pl/">Blog</a>
+<a href="https://www.youtube.com/c/InzynierDomu?sub_confirmation=1">YouTube</a>
+</div>
+</footer>
 <footer>
 <p>&copy; 2026 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
 <div class="links">
@@ -479,11 +516,15 @@ String HttpServer::buildPage()
 <button type="submit">Zapisz konfigurację</button>
 </form>
 </main>
+<button type="submit">Zapisz konfigurację</button>
+</form>
+</main>
 )rawHTML";
 
   page += buildFirmwareUpdateSection();
 
   page += buildFooter();
+  page += R"rawHTML(</body></html>)rawHTML";
   page += R"rawHTML(</body></html>)rawHTML";
 
   return page;
