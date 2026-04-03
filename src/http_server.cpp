@@ -100,31 +100,17 @@ int8_t HttpServer::get_ha_weather()
     return 0;
   }
 
-  Serial.printf("[HA] Connecting to %s:%u
-", ha_config.ha_host, ha_config.ha_port);
-  Serial.printf("[HA] Connecting to %s:%u
-", ha_config.ha_host, ha_config.ha_port);
+  Serial.printf("[HA] Connecting to %s:%u\n", ha_config.ha_host, ha_config.ha_port);
   if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
   {
     Serial.println("[HA] Connection failed");
     return 0;
   }
-
-
   Serial.println("[HA] Connected, sending request");
+
   String url = "/api/states/" + String(ha_config.ha_enitty_weather_name);
-  String request = String("GET ") + url + " HTTP/1.1\r
-" + "Host: " + String(ha_config.ha_host) + "\r
-" + "Authorization: Bearer " + String(ha_config.ha_token) + "\r
-" + "Connection: close\r
-\r
-";
-  String request = String("GET ") + url + " HTTP/1.1\r
-" + "Host: " + String(ha_config.ha_host) + "\r
-" + "Authorization: Bearer " + String(ha_config.ha_token) + "\r
-" + "Connection: close\r
-\r
-";
+  String request = String("GET ") + url + " HTTP/1.1\r\n" + "Host: " + String(ha_config.ha_host) + "\r\n" + "Authorization: Bearer " +
+                   String(ha_config.ha_token) + "\r\n" + "Connection: close\r\n\r\n";
 
   Serial.println("[HA] Request:");
   Serial.println(request);
@@ -134,21 +120,13 @@ int8_t HttpServer::get_ha_weather()
   String headers;
   while (client.connected())
   {
-    String line = client.readStringUntil('
-');
-    String line = client.readStringUntil('
-');
+    String line = client.readStringUntil('\n');
     if (line == "\r")
     {
       break;
     }
-    headers += line + "
-";
-    headers += line + "
-";
+    headers += line + "\n";
   }
-
-
   Serial.println("[HA] Headers:");
   Serial.println(headers);
 
@@ -177,8 +155,6 @@ int8_t HttpServer::get_ha_weather()
 
   int start = body.indexOf("\"", idx + 8);
   int end = body.indexOf("\"", start + 1);
-
-
   if (start < 0 || end < 0 || end <= start)
   {
     Serial.println("[HA] Failed to parse state string");
@@ -356,31 +332,33 @@ String HttpServer::buildAudioSection()
   Audio_config config;
   audio_.get_config(config);
   const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
-
-
   String html;
   html += R"rawHTML(
-<fieldset>
-<legend>🔊 Audio</legend>
-<label>Sample rate</label> <select name="sample_rate">)rawHTML";
-<fieldset>
-<legend>🔊 Audio</legend>
-<label>Sample rate</label> <select name="sample_rate">)rawHTML";
-  for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
-{
-  html += "<option value=\"" + String(sr_list[i]) + "\"";
-  if (sr_list[i] == config.sample_rate)
-    html += " selected";
-  html += ">" + String(sr_list[i]) + " Hz</option>";
-}
-html += R"rawHTML(</select>
-<label>Głośność</label> <input type="range" name="volume" min="0" max="100" value=")rawHTML";
-html += String(config.volume);
-html += R"rawHTML(" style="width: 100%;">
-</fieldset>
-</fieldset>
+        <div class="section">
+            <div class="section-title">🔊 Audio</div>
+            <div class="form-row">
+                <label class="form-label">Sample rate</label>
+                <select name="sample_rate">
 )rawHTML";
-return html;
+  for (uint8_t i = 0; i < sizeof(sr_list) / sizeof(sr_list[0]); i++)
+  {
+    html += "<option value=\"" + String(sr_list[i]) + "\"";
+    if (sr_list[i] == config.sample_rate)
+      html += " selected";
+    html += ">" + String(sr_list[i]) + " Hz</option>";
+  }
+  html += R"rawHTML(
+                </select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">Głośność</label>
+                <input type="range" name="volume" min="0" max="100" value=")rawHTML";
+  html += String(config.volume);
+  html += R"rawHTML(" style="width: 100%;">
+            </div>
+        </div>
+)rawHTML";
+  return html;
 }
 
 String HttpServer::buildHaSection()
@@ -414,14 +392,13 @@ String HttpServer::buildHaSection()
   html += String(ha_config.mqtt_port);
   html += R"rawHTML(">
 <label>Pogoda z HA</label> <input type="checkbox" name="weather_from_ha" value="1" )rawHTML";
-<label>Pogoda z HA</label> <input type="checkbox" name="weather_from_ha" value="1" )rawHTML";
   if (ha_config.weather_from_ha)
     html += "checked";
-html += R"rawHTML(>
+  html += R"rawHTML(>
             </div>
         </div>
 )rawHTML";
-return html;
+  return html;
 }
 
 String HttpServer::buildFirmwareUpdateSection()

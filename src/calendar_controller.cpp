@@ -34,8 +34,7 @@ void Calendar_controller::fetch_calendar()
   if (httpResponseCode == 301 || httpResponseCode == 302)
   {
     String newUrl = http.getLocation();
-    Serial.printf("Przekierowanie: %d -> %s
-", httpResponseCode, newUrl.c_str());
+    Serial.printf("Przekierowanie: %d -> %s", httpResponseCode, newUrl.c_str());
     http.end();
 
     http.begin(newUrl);
@@ -96,13 +95,17 @@ void Calendar_controller::fetch_calendar()
   http.end();
 }
 
+// void Calendar_controller::update_view()
+// {
+//   view->clear_calendar_list();
+//   for (size_t i = 0; i < model->get_event_count(); ++i)
+//   {
+//     Calendar_event event;
+//     model->get_event(event, i);
+//     view->add_event(event.get_calendar_label());
+//   }
+// }
 void Calendar_controller::update_view()
 {
-  view->clear_calendar_list();
-  for (size_t i = 0; i < model->get_event_count(); ++i)
-  {
-    Calendar_event event;
-    model->get_event(event, i);
-    view->add_event(event.get_calendar_label());
-  }
+  view->show(*model);
 }

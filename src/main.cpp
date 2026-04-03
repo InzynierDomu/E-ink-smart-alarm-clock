@@ -82,14 +82,6 @@ void audioTask(void* pvParameters)
   }
 }
 
-String get_device_id() {
-  uint8_t mac[6];
-  WiFi.macAddress(mac);
-  char macStr[13];
-  snprintf(macStr, sizeof(macStr), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  return String(macStr);
-}
-
 void read_config()
 {
   File file = SD.open(config::config_path, "r");
@@ -152,7 +144,7 @@ String get_device_id()
   char id[13];
   snprintf(id, sizeof(id), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-  return String(id); // np. "A4CF1234ABCD"
+  return String(id);
 }
 
 void update_clock()
@@ -236,8 +228,7 @@ void setup()
       delay(500);
       Serial.print(".");
     }
-    Serial.println("
-WiFi connected");
+    Serial.println("WiFi connected");
     state = State::normal;
     Serial.print("IP:");
     Serial.println(WiFi.localIP());
@@ -246,7 +237,7 @@ WiFi connected");
   // Generate and set device ID for pairing and calendar fetching
   String deviceId = get_device_id();
   httpServer.set_device_id(deviceId);
-  
+
   google_api_config calendar_config;
   calendar_config.api_base_url = "https://inzynierdomu.pl/clock-api/";
   calendar_config.device_id = deviceId;
