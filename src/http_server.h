@@ -48,7 +48,7 @@ private:
 
   String buildPage();
   String buildWifiSection();
-  String buildTimezoneSection();
+  // String buildTimezoneSection();
   String buildWeatherSection();
   String buildGoogleCalendarSection();
   String buildAudioSection();
