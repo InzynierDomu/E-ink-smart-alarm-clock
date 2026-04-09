@@ -46,45 +46,51 @@ void Calendar_controller::fetch_calendar()
     String response = http.getString();
     Serial.println("JSON received:");
 
-    DynamicJsonDocument doc(8192); // Zwiększ jeśli potrzebujesz
+    DynamicJsonDocument doc(8192);
     DeserializationError error = deserializeJson(doc, response);
-    if (!error && doc["success"])
-    {
-      model->clear();
-      JsonArray events = doc["events"];
-      bool is_alarm = false;
-      if (!doc.containsKey("events") || !doc["events"].is<JsonArray>())
-      {
-        return;
-      }
-      for (JsonObject event : events)
-      {
-        String name = event["name"];
-        String calendar = event["calendar"];
-        String startStr = event["start"];
-        String endStr = event["end"];
 
-        Simple_time time_start(startStr);
-        Simple_time time_stop(endStr);
-
-        Calendar_event calendar_event(name, calendar, time_start, time_stop);
-        model->update(calendar_event);
-
-        if (calendar == "Alarm")
-        {
-          alarm_controller->set_alarm(time_start);
-          is_alarm = true;
-        }
-      }
-      if (!is_alarm)
-      {
-        // alarm_controller->clear_alarm();
-      }
-    }
-    else
+    if (error)
     {
       Serial.print("Błąd parsowania JSON: ");
       Serial.println(error.c_str());
+      http.end();
+      return;
+    }
+
+    if (!doc.containsKey("events") || !doc["events"].is<JsonArray>())
+    {
+      Serial.println("Brak pola events albo zly format");
+      http.end();
+      return;
+    }
+
+    model->clear();
+
+    JsonArray events = doc["events"];
+    bool is_alarm = false;
+
+    for (JsonObject event : events)
+    {
+      String name = event["summary"] | "";
+      String calendar = event["calendar"] | "";
+      String startStr = event["start"] | "";
+      String endStr = event["end"] | "";
+
+      Simple_time time_start(startStr);
+      Simple_time time_stop(endStr);
+
+      Calendar_event calendar_event(name, calendar, time_start, time_stop);
+      model->update(calendar_event);
+
+      if (calendar == "Alarm")
+      {
+        alarm_controller->set_alarm(time_start);
+        is_alarm = true;
+      }
+    }
+    if (!is_alarm)
+    {
+      // alarm_controller->clear_alarm();
     }
   }
   else
@@ -92,6 +98,7 @@ void Calendar_controller::fetch_calendar()
     Serial.print("HTTP Error: ");
     Serial.println(httpResponseCode);
   }
+
   http.end();
 }
 

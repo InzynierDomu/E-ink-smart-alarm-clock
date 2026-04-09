@@ -326,13 +326,13 @@ String HttpServer::buildGoogleCalendarSection()
 {
   String html;
   html += R"rawHTML(
-<fieldset>
-<legend>📅 Google Calendar</legend>
-<p>Połącz swój zegar z kalendarzem Google, aby wyświetlać nadchodzące wydarzenia.</p>
+<div class="section">
+<div class="section-title">📅 Google Calendar</div>
+<div class="form-row">Połącz swój zegar z kalendarzem Google, aby wyświetlać nadchodzące wydarzenia.</p>
 <a href="https://inzynierdomu.pl/clock-api/pair.php?device_id=)rawHTML";
   html += device_id_;
-  html += R"rawHTML(" target="_blank" class="button">Połącz z Google Calendar</a>
-</fieldset>
+  html += R"rawHTML(" target="_blank" class="button">Połącz z Google Calendar</a></div>
+</div>
 )rawHTML";
   return html;
 }
