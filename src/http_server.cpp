@@ -326,17 +326,24 @@ String HttpServer::buildGoogleCalendarSection()
 {
   String html;
   html += R"rawHTML(
-<div class="section">
-<div class="section-title">📅 Google Calendar</div>
-<div class="form-row">Połącz swój zegar z kalendarzem Google, aby wyświetlać nadchodzące wydarzenia.</p>
+    <div class="section">
+        <div class="section-title">📅 Google Calendar</div>
+
+        <div class="form-row google-calendar-row">
+            <label class="form-label">
+                Połącz swój zegar z kalendarzem Google, aby wyświetlać nadchodzące wydarzenia.
+            </label>
+
 <a href="https://inzynierdomu.pl/clock-api/pair.php?device_id=)rawHTML";
   html += device_id_;
-  html += R"rawHTML(" target="_blank" class="button">Połącz z Google Calendar</a></div>
-</div>
+  html += R"rawHTML(" target="_blank" rel="noopener noreferrer" class="button-link">
+                Połącz
+            </a>
+        </div>
+    </div>
 )rawHTML";
   return html;
 }
-
 String HttpServer::buildAudioSection()
 {
   Audio_config config;
@@ -532,11 +539,6 @@ String HttpServer::buildPage()
   page += buildHaSection();
   page += buildAudioSection();
 
-  //   page += R"rawHTML(
-  // <button type="submit">Zapisz konfigurację</button>
-  // </form>
-  // </main>
-  // )rawHTML";
   page += R"rawHTML(
             <div class="button-group">
                 <button type="submit">Zapisz konfigurację</button>
@@ -547,7 +549,6 @@ String HttpServer::buildPage()
   page += buildFirmwareUpdateSection();
 
   page += buildFooter();
-  page += R"rawHTML(</body></html>)rawHTML";
   page += R"rawHTML(</body></html>)rawHTML";
 
   return page;
