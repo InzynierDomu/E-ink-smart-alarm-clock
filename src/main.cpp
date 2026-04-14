@@ -35,7 +35,8 @@ enum class State
 {
   alarm,
   normal,
-  AP
+  AP,
+  welcome_screen
 };
 
 Screen screen;
@@ -165,6 +166,10 @@ void update_clock()
 
 static void update_date(lv_timer_t* timer)
 {
+  if (state == State::welcome_screen)
+  {
+    return;
+  }
   static int update_counter = 10;
   update_clock();
   if (update_counter >= 10)
@@ -229,7 +234,7 @@ void setup()
       Serial.print(".");
     }
     Serial.println("WiFi connected");
-    state = State::normal;
+    state = State::welcome_screen;
     Serial.print("IP:");
     Serial.println(WiFi.localIP());
   }
@@ -296,6 +301,14 @@ void loop()
       audio.stop();
       startAlarmAudio = false;
       digitalWrite(config::led_pin, LOW);
+    }
+  }
+  else if (state == State::welcome_screen)
+  {
+    if (check_button())
+    {
+      lv_scr_load(ui_Screen1);
+      state = State::normal;
     }
   }
   else if (state == State::normal)

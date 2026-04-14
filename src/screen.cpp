@@ -22,7 +22,7 @@ void Screen::setup_screen()
 
   ui_init();
 
-  lv_obj_set_style_text_color(ui_Screen1, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_text_color(ui_Screen2, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void Screen::my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
