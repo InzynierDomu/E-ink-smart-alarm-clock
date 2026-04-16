@@ -166,7 +166,7 @@ void update_clock()
 
 static void update_date(lv_timer_t* timer)
 {
-  if (state == State::welcome_screen)
+  if (state == State::welcome_screen || state == State::AP)
   {
     return;
   }
@@ -256,6 +256,12 @@ void setup()
   calendar_view.setup_calendar_list();
   clock_view.setup_calendar_list();
 
+  if (state == State::welcome_screen)
+  {
+    String ip = "IP: " + WiFi.localIP().toString();
+    lv_label_set_text(ui_labwifistatus, ip.c_str());
+  }
+
   lv_timer_create(update_date, 60000, NULL);
   delay(1000);
 
@@ -269,11 +275,15 @@ void setup()
 
   httpServer.entity_clock_setup();
   httpServer.begin();
+
+  lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
+
+  digitalWrite(config::led_pin, HIGH);
 }
 
 bool check_button()
 {
-  static bool last_state = false;
+  static bool last_state = true;
   bool current_state = digitalRead(config::btn_pin);
   if (current_state != last_state)
   {
@@ -288,10 +298,7 @@ bool check_button()
 
 void loop()
 {
-  if (state != State::AP)
-  {
-    lv_timer_handler();
-  }
+  lv_timer_handler();
   delay(10);
   if (state == State::alarm)
   {
@@ -307,6 +314,7 @@ void loop()
   {
     if (check_button())
     {
+      digitalWrite(config::led_pin, LOW);
       lv_scr_load(ui_Screen1);
       state = State::normal;
     }

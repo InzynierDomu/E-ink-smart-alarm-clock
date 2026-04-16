@@ -6,8 +6,9 @@
 #include "ui.h"
 
 lv_obj_t * ui_Screen2 = NULL;
+lv_obj_t * ui_labwifistatus = NULL;
 lv_obj_t * ui_Image1 = NULL;
-lv_obj_t * ui_Label2 = NULL;
+lv_obj_t * ui_Label1 = NULL;
 // event funtions
 
 // build funtions
@@ -17,22 +18,33 @@ void ui_Screen2_screen_init(void)
     ui_Screen2 = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_Screen2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
+    ui_labwifistatus = lv_label_create(ui_Screen2);
+    lv_obj_set_width(ui_labwifistatus, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_labwifistatus, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_labwifistatus, 265);
+    lv_obj_set_y(ui_labwifistatus, 98);
+    lv_obj_set_align(ui_labwifistatus, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_labwifistatus, "Access point mode");
+    lv_obj_set_style_text_font(ui_labwifistatus, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
     ui_Image1 = lv_img_create(ui_Screen2);
     lv_img_set_src(ui_Image1, &ui_img_rect1_png);
     lv_obj_set_width(ui_Image1, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_Image1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Image1, -1);
-    lv_obj_set_y(ui_Image1, 4);
+    lv_obj_set_x(ui_Image1, -257);
+    lv_obj_set_y(ui_Image1, -58);
     lv_obj_set_align(ui_Image1, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_Image1, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_Image1, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_Label2 = lv_label_create(ui_Screen2);
-    lv_obj_set_width(ui_Label2, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_Label2, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label2, -335);
-    lv_obj_set_y(ui_Label2, 43);
-    lv_obj_set_align(ui_Label2, LV_ALIGN_CENTER);
+    ui_Label1 = lv_label_create(ui_Screen2);
+    lv_obj_set_width(ui_Label1, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_Label1, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_Label1, -228);
+    lv_obj_set_y(ui_Label1, 36);
+    lv_obj_set_align(ui_Label1, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_Label1, "Budzik przyjazny dla oka");
+    lv_obj_set_style_text_font(ui_Label1, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 }
 
@@ -42,7 +54,8 @@ void ui_Screen2_screen_destroy(void)
 
     // NULL screen variables
     ui_Screen2 = NULL;
+    ui_labwifistatus = NULL;
     ui_Image1 = NULL;
-    ui_Label2 = NULL;
+    ui_Label1 = NULL;
 
 }

@@ -14,8 +14,9 @@ extern "C" {
 extern void ui_Screen2_screen_init(void);
 extern void ui_Screen2_screen_destroy(void);
 extern lv_obj_t * ui_Screen2;
+extern lv_obj_t * ui_labwifistatus;
 extern lv_obj_t * ui_Image1;
-extern lv_obj_t * ui_Label2;
+extern lv_obj_t * ui_Label1;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

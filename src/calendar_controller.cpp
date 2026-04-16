@@ -79,14 +79,15 @@ void Calendar_controller::fetch_calendar()
       Simple_time time_start(startStr);
       Simple_time time_stop(endStr);
 
-      Calendar_event calendar_event(name, calendar, time_start, time_stop);
-      model->update(calendar_event);
-
       if (calendar == "Alarm")
       {
         alarm_controller->set_alarm(time_start);
         is_alarm = true;
+        continue;
       }
+
+      Calendar_event calendar_event(name, calendar, time_start, time_stop);
+      model->update(calendar_event);
     }
     if (!is_alarm)
     {
