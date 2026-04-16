@@ -70,10 +70,13 @@ void Audio::play_audio()
 
 void Audio::set_config(Audio_config& _config)
 {
-  config = _config;
-  if (config.volume > 100)
+  if (_config.sample_rate > 0)
   {
-    config.volume = 100;
+    config.sample_rate = _config.sample_rate;
+  }
+  if (_config.volume > 0)
+  {
+    config.volume = (_config.volume > 100) ? 100 : _config.volume;
   }
 }
 

@@ -3,8 +3,8 @@
 
 struct Audio_config
 {
-  uint16_t sample_rate;
-  uint8_t volume;
+  uint16_t sample_rate = 44100;
+  uint8_t volume = 50;
 };
 
 class Audio

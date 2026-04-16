@@ -156,7 +156,10 @@ void update_clock()
 
   if (alarm_controller.check_alarm(now) && state != State::alarm)
   {
-    httpServer.send_mqtt_action();
+    if (state != State::AP)
+    {
+      httpServer.send_mqtt_action();
+    }
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
     audio.start();
@@ -273,7 +276,10 @@ void setup()
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 0);
 
-  httpServer.entity_clock_setup();
+  if (state != State::AP)
+  {
+    httpServer.entity_clock_setup();
+  }
   httpServer.begin();
 
   lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
@@ -296,8 +302,65 @@ bool check_button()
   }
 }
 
+bool check_long_press()
+{
+  static unsigned long press_start = 0;
+  static bool is_pressed = false;
+  static bool initialized = false;
+  static bool initial_state = false;
+
+  bool current_state = digitalRead(config::btn_pin);
+
+  if (!initialized)
+  {
+    initial_state = current_state;
+    initialized = true;
+    return false;
+  }
+
+  if (current_state == initial_state)
+  {
+    is_pressed = false;
+    return false;
+  }
+
+  if (!is_pressed)
+  {
+    is_pressed = true;
+    press_start = millis();
+  }
+
+  if (is_pressed && (millis() - press_start > 10000))
+  {
+    is_pressed = false;
+    return true;
+  }
+  return false;
+}
+
+void clear_config()
+{
+  File file = SD.open(config::config_path, "w");
+  if (file)
+  {
+    file.print("{}");
+    file.close();
+    Serial.println("Config cleared");
+  }
+  else
+  {
+    Serial.println("Failed to clear config file");
+  }
+}
+
 void loop()
 {
+  if (check_long_press())
+  {
+    clear_config();
+    ESP.restart();
+  }
+
   lv_timer_handler();
   delay(10);
   if (state == State::alarm)
