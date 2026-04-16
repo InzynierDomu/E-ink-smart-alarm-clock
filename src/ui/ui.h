@@ -27,6 +27,7 @@ extern "C" {
 
 ///////////////////// SCREENS ////////////////////
 
+#include "ui_Screen2.h"
 #include "ui_Screen1.h"
 
 ///////////////////// VARIABLES ////////////////////
@@ -35,6 +36,9 @@ extern "C" {
 // EVENTS
 
 extern lv_obj_t * ui____initial_actions0;
+
+// IMAGES AND IMAGE SETS
+LV_IMG_DECLARE(ui_img_rect1_png);    // assets/rect1.png
 
 // FONTS
 LV_FONT_DECLARE(ui_font_Font1);

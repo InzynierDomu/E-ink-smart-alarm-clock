@@ -177,6 +177,8 @@ void HttpServer::entity_clock_setup()
 {
   mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
   mqtt_client.setBufferSize(1024);
+
+
   if (!mqtt_client.connected())
   {
     Serial.println("MQTT niepołączone, próba rekonakcji...");
@@ -203,7 +205,6 @@ void HttpServer::entity_clock_setup()
   serializeJson(doc, msg);
 
   String topic = "homeassistant/binary_sensor/" + ha_config.ha_entity_clock_name + "/config";
-
   Serial.print("Wysyłanie konfiguracji do: ");
   Serial.println(topic);
 
@@ -242,6 +243,7 @@ String HttpServer::buildWifiSection()
   return html;
 }
 
+
 void HttpServer::send_mqtt_action()
 {
   // 1. Sprawdź, czy w ogóle jesteśmy połączeni z MQTT
@@ -269,25 +271,25 @@ void HttpServer::send_mqtt_action()
   }
 }
 
-String HttpServer::buildTimezoneSection()
-{
-  Wifi_Config wifi;
-  clock_model_.get_wifi_config(wifi);
-  int timezone_hours = wifi.timezone / 3600;
-  String html;
-  html += R"rawHTML(
-        <div class="section">
-            <div class="section-title">🕐 Strefa czasowa</div>
-            <div class="form-row">
-                <label class="form-label">UTC offset [h]</label>
-                <input type="number" step="1" name="timezone_hours" value=")rawHTML";
-  html += String(timezone_hours);
-  html += R"rawHTML(">
-            </div>
-        </div>
-)rawHTML";
-  return html;
-}
+// String HttpServer::buildTimezoneSection()
+// {
+//   Wifi_Config wifi;
+//   clock_model_.get_wifi_config(wifi);
+//   int timezone_hours = wifi.timezone / 3600;
+
+
+//   String html;
+//   html += R"rawHTML(
+// <fieldset>
+// <legend>🕐 Strefa czasowa</legend>
+// <label>UTC offset [h]</label> <input type="number" step="1" name="timezone_hours" value=")rawHTML";
+//   html += String(timezone_hours);
+//   html += R"rawHTML(">
+// </fieldset>
+// </fieldset>
+// )rawHTML";
+//   return html;
+// }
 
 String HttpServer::buildWeatherSection()
 {
@@ -322,37 +324,26 @@ String HttpServer::buildWeatherSection()
 
 String HttpServer::buildGoogleCalendarSection()
 {
-  google_api_config config;
-  calendar_model_.get_config(config);
-
   String html;
   html += R"rawHTML(
-        <div class="section">
-            <div class="section-title">📅 Google Calendar / Skrypt</div>
-            <div class="form-row">
-                <label class="form-label">API skryptu Apps</label>
-                <input type="password" name="google_script_url" value=")rawHTML";
-  html += config.script_url;
-  html += R"rawHTML(" placeholder="https://script.google.com/macros/d/...">
-            </div>
-            <div class="form-row">
-                <label class="form-label">ID kalendarza (wszystkie)</label>
-                <input type="text" name="google_calendar_id" value=")rawHTML";
-  html += config.google_calendar_id;
-  html += R"rawHTML(" placeholder="abc123@group.calendar.google.com">
-            </div>
-            <div class="form-row">
-                <label class="form-label">ID kalendarza (alarmy)</label>
-                <input type="text" name="google_calendar_alarm_id" value=")rawHTML";
-  html += config.alarm_calendar_id;
-  html += R"rawHTML(" placeholder="abc@group.calendar.google.com">
-            </div>
+    <div class="section">
+        <div class="section-title">📅 Google Calendar</div>
+
+        <div class="form-row google-calendar-row">
+            <label class="form-label">
+                Połącz swój zegar z kalendarzem Google, aby wyświetlać nadchodzące wydarzenia.
+            </label>
+
+<a href="https://inzynierdomu.pl/clock-api/pair.php?device_id=)rawHTML";
+  html += device_id_;
+  html += R"rawHTML(" target="_blank" rel="noopener noreferrer" class="button-link">
+                Połącz
+            </a>
         </div>
+    </div>
 )rawHTML";
   return html;
 }
-
-
 String HttpServer::buildAudioSection()
 {
   Audio_config config;
@@ -558,12 +549,7 @@ String HttpServer::buildPage()
   page += buildFirmwareUpdateSection();
 
   page += buildFooter();
-
-  page += R"rawHTML(
-    </div>
-</body>
-</html>
-)rawHTML";
+  page += R"rawHTML(</body></html>)rawHTML";
 
   return page;
 }
@@ -581,15 +567,12 @@ void HttpServer::handleSave()
     server_.send(500, "text/plain", "Blad odczytu config");
     return;
   }
-
   updateConfigFromRequest(doc);
-
   if (!saveConfigJson(doc))
   {
     server_.send(500, "text/plain", "Blad zapisu config");
     return;
   }
-
   server_.send(200, "text/plain", "Zapisano, restartuje...");
   delay(500);
   ESP.restart();
@@ -600,12 +583,10 @@ bool HttpServer::loadConfigJson(StaticJsonDocument<1024>& doc)
   File file = SD.open(config::config_path, "r");
   if (!file)
     return false;
-
   String jsonData;
   while (file.available())
     jsonData += (char)file.read();
   file.close();
-
   DeserializationError err = deserializeJson(doc, jsonData);
   return !err;
 }
@@ -615,7 +596,6 @@ bool HttpServer::saveConfigJson(const StaticJsonDocument<1024>& doc)
   File file = SD.open(config::config_path, "w");
   if (!file)
     return false;
-
   bool ok = serializeJson(doc, file) > 0;
   file.close();
   return ok;
@@ -627,18 +607,11 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   String new_pass = server_.arg("pass");
   // int tz_hours = server_.arg("timezone_hours").toInt(); TODO fix
   // int tz_seconds = tz_hours * 3600;
-
   String new_api_key = server_.arg("api_key");
   float new_lat = server_.arg("lat").toFloat();
   float new_lon = server_.arg("lon").toFloat();
-
-  String new_google_script_url = server_.arg("google_script_url");
-  String new_google_calendar_id = server_.arg("google_calendar_id");
-  String new_google_calendar_alarm_id = server_.arg("google_calendar_alarm_id");
-
   uint16_t new_sr = server_.arg("sample_rate").toInt();
   uint8_t new_vol = server_.arg("volume").toInt();
-
   String new_ha_host = server_.arg("ha_host");
   uint16_t new_ha_port = server_.arg("ha_port").toInt();
   String new_ha_token = server_.arg("ha_token");
@@ -652,18 +625,11 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   doc["ssid"] = new_ssid;
   doc["pass"] = new_pass;
   // doc["timezone"] = tz_seconds; TODO fix
-
   doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
-
-  doc["google_script_url"] = new_google_script_url;
-  doc["google_calendar_id"] = new_google_calendar_id;
-  doc["google_calendar_alarm_id"] = new_google_calendar_alarm_id;
-
   doc["sample_rate"] = new_sr;
   doc["volume"] = new_vol;
-
   doc["HA_host"] = new_ha_host;
   doc["HA_port"] = new_ha_port;
   doc["HA_token"] = new_ha_token;
@@ -680,10 +646,8 @@ void HttpServer::mqtt_reconnect()
   while (!mqtt_client.connected())
   {
     Serial.print("Próba połączenia MQTT...");
-
     // LOGIN I HASŁO WPISUJESZ TUTAJ:
     String clientId = "Eink_Clock_" + String(random(0xffff), HEX);
-
     if (mqtt_client.connect(clientId.c_str(), ha_config.ha_user.c_str(), ha_config.ha_pass.c_str()))
     {
       Serial.println("Połączono!");

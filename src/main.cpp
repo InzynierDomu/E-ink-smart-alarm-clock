@@ -35,7 +35,8 @@ enum class State
 {
   alarm,
   normal,
-  AP
+  AP,
+  welcome_screen
 };
 
 Screen screen;
@@ -44,7 +45,6 @@ DateTime screen_reffresh_time(2000, 1, 1, 3, 0);
 SPIClass spi = SPIClass(HSPI);
 
 Audio audio;
-
 DynamicJsonDocument docs(19508);
 
 Alarm_model alarm_model;
@@ -60,7 +60,6 @@ Clock_view clock_view(&screen);
 Clock_controller clock_controller(&clock_view, &clock_model);
 
 Weather_model weather_model;
-
 WebServer server(80);
 HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);
 
@@ -71,6 +70,7 @@ State state;
 
 TaskHandle_t audioTaskHandle = nullptr;
 volatile bool startAlarmAudio = false;
+
 void audioTask(void* pvParameters)
 {
   for (;;)
@@ -82,6 +82,7 @@ void audioTask(void* pvParameters)
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
+
 void read_config()
 {
   File file = SD.open(config::config_path, "r");
@@ -90,7 +91,6 @@ void read_config()
     Serial.println("error, no config file");
     return;
   }
-
   String jsonData;
   while (file.available())
   {
@@ -99,7 +99,6 @@ void read_config()
   file.close();
 
   StaticJsonDocument<1024> doc;
-
   DeserializationError error = deserializeJson(doc, jsonData);
   if (error)
   {
@@ -119,12 +118,6 @@ void read_config()
   weather_config.lat = doc["lat"];
   weather_config.lon = doc["lon"];
   weather_model.set_config(weather_config);
-
-  google_api_config google_config;
-  google_config.script_url = doc["google_script_url"] | "";
-  google_config.alarm_calendar_id = doc["google_calendar_alarm_id"] | "";
-  google_config.google_calendar_id = doc["google_calendar_id"] | "";
-  calendar_model.set_config(google_config);
 
   HA_config ha_config;
   ha_config.ha_host = doc["HA_host"] | "";
@@ -152,7 +145,7 @@ String get_device_id()
   char id[13];
   snprintf(id, sizeof(id), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-  return String(id); // np. "A4CF1234ABCD"
+  return String(id);
 }
 
 void update_clock()
@@ -173,6 +166,10 @@ void update_clock()
 
 static void update_date(lv_timer_t* timer)
 {
+  if (state == State::welcome_screen || state == State::AP)
+  {
+    return;
+  }
   static int update_counter = 10;
   update_clock();
   if (update_counter >= 10)
@@ -192,6 +189,7 @@ static void update_date(lv_timer_t* timer)
     update_counter++;
   }
 }
+
 void setup()
 {
   Serial.begin(115200);
@@ -199,7 +197,6 @@ void setup()
   digitalWrite(config::sd_power_pin, HIGH);
   delay(10);
   spi.begin(39, 13, 40);
-
   if (!SD.begin(config::sd_cs_pin, spi, 80000000))
   {
     Serial.println("no SD card");
@@ -218,7 +215,6 @@ void setup()
 
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
-
   if (wifi_config.ssid.length() == 0)
   {
     Serial.println("Brak SSID, uruchamiam AP");
@@ -237,18 +233,34 @@ void setup()
       delay(500);
       Serial.print(".");
     }
-    Serial.println("\nWiFi connected");
-    state = State::normal;
+    Serial.println("WiFi connected");
+    state = State::welcome_screen;
     Serial.print("IP:");
     Serial.println(WiFi.localIP());
   }
 
+  // Generate and set device ID for pairing and calendar fetching
+  String deviceId = get_device_id();
+  httpServer.set_device_id(deviceId);
+
+  google_api_config calendar_config;
+  calendar_config.api_base_url = "https://inzynierdomu.pl/clock-api/";
+  calendar_config.device_id = deviceId;
+  calendar_model.set_config(calendar_config);
+
+  Serial.print("Device ID: ");
+  Serial.println(deviceId);
+
   clock_controller.setup_clock();
-
   screen.setup_screen();
-
   calendar_view.setup_calendar_list();
   clock_view.setup_calendar_list();
+
+  if (state == State::welcome_screen)
+  {
+    String ip = "IP: " + WiFi.localIP().toString();
+    lv_label_set_text(ui_labwifistatus, ip.c_str());
+  }
 
   lv_timer_create(update_date, 60000, NULL);
   delay(1000);
@@ -259,16 +271,19 @@ void setup()
   digitalWrite(config::led_pin, LOW);
 
   audio.setup();
-
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 0);
 
   httpServer.entity_clock_setup();
   httpServer.begin();
+
+  lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
+
+  digitalWrite(config::led_pin, HIGH);
 }
 
 bool check_button()
 {
-  static bool last_state = false;
+  static bool last_state = true;
   bool current_state = digitalRead(config::btn_pin);
   if (current_state != last_state)
   {
@@ -280,14 +295,11 @@ bool check_button()
     return false;
   }
 }
+
 void loop()
 {
-  if (state != State::AP)
-  {
-    lv_timer_handler();
-  }
+  lv_timer_handler();
   delay(10);
-
   if (state == State::alarm)
   {
     if (check_button())
@@ -296,6 +308,15 @@ void loop()
       audio.stop();
       startAlarmAudio = false;
       digitalWrite(config::led_pin, LOW);
+    }
+  }
+  else if (state == State::welcome_screen)
+  {
+    if (check_button())
+    {
+      digitalWrite(config::led_pin, LOW);
+      lv_scr_load(ui_Screen1);
+      state = State::normal;
     }
   }
   else if (state == State::normal)
