@@ -68,6 +68,13 @@ Weather_controller weather_controller(&weather_model, &weather_view, &httpServer
 
 State state;
 
+static bool btn_last_state = true;
+static int update_counter = 10;
+
+static unsigned long lp_press_start = 0;
+static bool lp_is_pressed = false;
+static bool lp_initial_state = false;
+
 TaskHandle_t audioTaskHandle = nullptr;
 volatile bool startAlarmAudio = false;
 
@@ -173,7 +180,6 @@ static void update_date(lv_timer_t* timer)
   {
     return;
   }
-  static int update_counter = 10;
   update_clock();
   if (update_counter >= 10)
   {
@@ -196,6 +202,8 @@ static void update_date(lv_timer_t* timer)
 void setup()
 {
   Serial.begin(115200);
+  delay(3000);  // DEBUG: wait for serial monitor
+  Serial.println("=== SETUP START ===");
   pinMode(config::sd_power_pin, OUTPUT);
   digitalWrite(config::sd_power_pin, HIGH);
   delay(10);
@@ -222,7 +230,12 @@ void setup()
   {
     Serial.println("Brak SSID, uruchamiam AP");
     WiFi.mode(WIFI_AP);
-    WiFi.softAP("EInkClock-AP", "inzynier_domu");
+    delay(100);
+    bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
+    Serial.print("AP started: ");
+    Serial.println(ap_ok ? "YES" : "NO");
+    Serial.print("AP IP: ");
+    Serial.println(WiFi.softAPIP());
     state = State::AP;
   }
   else
@@ -272,6 +285,11 @@ void setup()
   pinMode(config::btn_pin, INPUT_PULLDOWN);
   pinMode(config::led_pin, OUTPUT);
   digitalWrite(config::led_pin, LOW);
+  btn_last_state = digitalRead(config::btn_pin);
+  lp_initial_state = digitalRead(config::btn_pin);
+  lp_is_pressed = false;
+  lp_press_start = 0;
+  update_counter = 10;
 
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 0);
@@ -289,50 +307,41 @@ void setup()
 
 bool check_button()
 {
-  static bool last_state = true;
   bool current_state = digitalRead(config::btn_pin);
-  if (current_state != last_state)
+  if (current_state != btn_last_state)
   {
-    last_state = current_state;
+    btn_last_state = current_state;
     return true;
   }
-  else
-  {
-    return false;
-  }
+  return false;
+}
+
+void reset_long_press()
+{
+  lp_initial_state = digitalRead(config::btn_pin);
+  lp_is_pressed = false;
+  lp_press_start = 0;
 }
 
 bool check_long_press()
 {
-  static unsigned long press_start = 0;
-  static bool is_pressed = false;
-  static bool initialized = false;
-  static bool initial_state = false;
-
   bool current_state = digitalRead(config::btn_pin);
 
-  if (!initialized)
+  if (current_state == lp_initial_state)
   {
-    initial_state = current_state;
-    initialized = true;
+    lp_is_pressed = false;
     return false;
   }
 
-  if (current_state == initial_state)
+  if (!lp_is_pressed)
   {
-    is_pressed = false;
-    return false;
+    lp_is_pressed = true;
+    lp_press_start = millis();
   }
 
-  if (!is_pressed)
+  if (lp_is_pressed && (millis() - lp_press_start > 10000))
   {
-    is_pressed = true;
-    press_start = millis();
-  }
-
-  if (is_pressed && (millis() - press_start > 10000))
-  {
-    is_pressed = false;
+    lp_is_pressed = false;
     return true;
   }
   return false;
@@ -371,6 +380,7 @@ void loop()
       audio.stop();
       startAlarmAudio = false;
       digitalWrite(config::led_pin, LOW);
+      reset_long_press();
     }
   }
   else if (state == State::welcome_screen)
@@ -380,6 +390,7 @@ void loop()
       digitalWrite(config::led_pin, LOW);
       lv_scr_load(ui_Screen1);
       state = State::normal;
+      reset_long_press();
     }
   }
   else if (state == State::normal)
@@ -390,6 +401,7 @@ void loop()
       alarm_controller.toggle_alarm();
       alarm_controller.update_view();
       digitalWrite(config::led_pin, LOW);
+      reset_long_press();
     }
   }
 
