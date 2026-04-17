@@ -11,14 +11,15 @@ A minimalist clock and alarm that displays the daily weather forecast and calend
 
 ## Features
 
-Video about device [video](https://youtu.be/p92zGk0prb8) 
+Video about device [video](https://youtu.be/p92zGk0prb8)
 
 - Clock and calendar
 - Alarm
-- weather forecast
-- Google calendar events list
+- Weather forecast
+- Google Calendar events list (today only, including recurring events)
+- Home Assistant integration (optional)
 
-![photo](https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/main/photo.JPG)
+![photo](https://www.inzynierdomu.pl/wp-content/uploads/2026/03/Zegarek-eink-scaled.jpg)
 
 <div align="center">
 <h2>Support</h2>
@@ -29,10 +30,10 @@ Video about device [video](https://youtu.be/p92zGk0prb8)
 ## Required environment
 
 - **Board**: [CrowPanel ESP32 5.79inch E-paper](https://www.elecrow.com/crowpanel-esp32-5-79-e-paper-hmi-display-with-272-792-resolution-black-white-color-driven-by-spi-interface.html?idd=6)
-- **Platform**: PlatformIO [video](https://platformio.org/) 
-- **Framework**: Arduino 
+- **Platform**: PlatformIO [video](https://platformio.org/)
+- **Framework**: Arduino
 
-## Installation
+## Hardware
 
 ### Parts
 
@@ -40,38 +41,68 @@ Video about device [video](https://youtu.be/p92zGk0prb8)
 - DS1307
 - MAX98357
 - Speaker
-- Touch button with LED backlight 
+- Touch button with LED backlight
 
-### Schem
+### Schematic
 
 ![schem](https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/main/schem.png)
+
+## Installation
 
 ### SD Card Setup
 
 1. Format the SD card as FAT32.
-2. Configuration file - fulfill [config.json](https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/main/config.json) and copy to SD card
-   - you need to register at [openweathermap](https://openweathermap.org/) and obtain an API key
-   - enter your latitude and longitude where you want to read the weather
-   - you need a WiFi connection (SSID and password) to synchronize the clock
-   - sample_rate should be changed if the ringtone you uploaded sounds slowed down or sped up, then check the sample rate of this sound
-3. Alarm - copy the selected sound with the name ringtone.wav
+2. Copy the alarm sound file named `ringtone.wav` to the root of the SD card.
+3. Insert the SD card into the device — configuration is done via the web interface on first boot.
 
-### Google calendar script
+### First Boot & Configuration
 
-1. Create your own Google Apps Script at [script.new](https://script.new/)
-2. Copy the script content directly in [google_apps_script_json.js](https://github.com/InzynierDomu/E-ink-smart-alarm-clock/blob/main/google_apps_script_json.js)
-3. After creating the script, copy the unique link (webhook/API URL) provided by Google and enter it in the configuration file on the SD card in the google_script_url field.
+1. Power the device via USB-C (5V, e.g. phone charger).
+2. On first boot the device starts in **AP (Access Point) mode**.
+3. Connect to the Wi-Fi network **`AlarmClock`** (password: `inzynier_domu`) from your phone or computer.
+4. Open a browser and go to **`http://192.168.4.1`**.
+5. Fill in the configuration form (see sections below) and click **Save**.
+6. The device will restart and connect to your home Wi-Fi.
 
-### Filtering calendar
+To reset the configuration at any time, hold the button for **10 seconds** — the device will clear the config and restart in AP mode.
 
-1. To filter the alarm and events displayed on the watch, you need to provide the IDs of the calendars you want to filter in the configuration file
-2. You can get the ID by running the google script - implementation test
+### Configuration fields
+
+**Wi-Fi**
+- SSID and password of your home network.
+
+**Weather (OpenWeatherMap)**
+- Register at [openweathermap.org](https://openweathermap.org/) and get a free API key.
+- Enter your latitude and longitude (right-click your location on Google Maps to copy coordinates).
+
+**Google Calendar (iCal)**
+
+The device fetches today's events directly from Google Calendar using a private iCal URL. Recurring events are fully supported.
+
+- Open [Google Calendar](https://calendar.google.com) → Settings → select your calendar → scroll to **Integrate calendar** → copy the **Secret address in iCal format**.
+- Paste it into the **Calendar URL (events)** field.
+- Optionally, create a separate Google Calendar for alarms and paste its iCal URL into the **Alarm calendar URL** field — any event in that calendar will set the alarm to its start time.
+
+**Home Assistant** *(optional)*
+- Enter your HA host IP, port (`8123`), and a long-lived access token (HA → Profile → Long-Lived Access Tokens).
+- Provide the weather entity name (e.g. `weather.home`) to pull temperature from HA instead of OpenWeatherMap.
+
+**Audio**
+- Set the volume (0–100) and sample rate (default `44100` Hz — change only if the alarm sound plays at wrong speed).
 
 ## Usage
 
-1. To add an alarm, set an event in Google Calendar in the appropriate calendar provided during configuration.
-2. to change the alarm ON/OFF press the button
-3. To turn off the alarm, press the button while it is ringing
+| Action | Effect |
+|--------|--------|
+| Short press | Toggle alarm on / off |
+| Press while ringing | Dismiss alarm |
+| Hold 10 seconds | Reset config, restart in AP mode |
+
+## Buy a ready-made device
+
+Don't want to build it yourself? You can order a ready-made device directly from me:
+
+👉 **[inzynierdomu.pl/zegarek-przyjemny-dla-oka](https://www.inzynierdomu.pl/zegarek-przyjemny-dla-oka/)**
 
 ## Thanks
 
