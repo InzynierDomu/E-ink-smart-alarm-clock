@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+
+static const char* PROXY_BASE_URL = "https://inzynierdomu.pl/calendar_proxy/calendar.php";
 
 Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller)
 : model(_model)
@@ -10,109 +13,121 @@ Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* 
 , alarm_controller(_alarm_controller)
 {}
 
-void Calendar_controller::fetch_calendar()
+static String url_encode(const String& str)
 {
-  HTTPClient http;
-  http.setTimeout(20000);
-  google_api_config config;
-  model->get_config(config);
-
-  // New API URL using api_base_url and device_id
-  String url = config.api_base_url + "calendar.php?device_id=" + config.device_id;
-
-  Serial.print("Fetching calendar from: ");
-  Serial.println(url);
-
-  if (!http.begin(url))
+  String encoded;
+  for (size_t i = 0; i < str.length(); i++)
   {
-    Serial.println("Cannot connect to Google Calendar API");
+    char c = str[i];
+    if (isAlphaNumeric(c) || c == '-' || c == '_' || c == '.' || c == '~')
+    {
+      encoded += c;
+    }
+    else
+    {
+      char buf[4];
+      snprintf(buf, sizeof(buf), "%%%02X", (unsigned char)c);
+      encoded += buf;
+    }
+  }
+  return encoded;
+}
+
+static Simple_time parse_hhmm(const String& hhmm)
+{
+  int colon = hhmm.indexOf(':');
+  if (colon < 0)
+    return Simple_time(0, 0);
+  uint8_t hour    = hhmm.substring(0, colon).toInt();
+  uint8_t minutes = hhmm.substring(colon + 1).toInt();
+  return Simple_time(hour, minutes);
+}
+
+void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
+{
+  WiFiClientSecure wifiClient;
+  wifiClient.setInsecure();
+  HTTPClient http;
+  http.setTimeout(15000);
+  http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+
+  String proxy_url = String(PROXY_BASE_URL) + "?url=" + url_encode(ical_url);
+
+  if (!http.begin(wifiClient, proxy_url))
+  {
+    Serial.println("Cannot connect to proxy");
     return;
   }
 
-  int httpResponseCode = http.GET();
-
-  if (httpResponseCode == 301 || httpResponseCode == 302)
+  int httpCode = http.GET();
+  if (httpCode != 200)
   {
-    String newUrl = http.getLocation();
-    Serial.printf("Przekierowanie: %d -> %s", httpResponseCode, newUrl.c_str());
+    Serial.printf("Proxy HTTP Error: %d\n", httpCode);
     http.end();
-
-    http.begin(newUrl);
-    httpResponseCode = http.GET();
+    return;
   }
 
-  if (httpResponseCode == 200)
-  {
-    String response = http.getString();
-    Serial.println("JSON received:");
-
-    DynamicJsonDocument doc(8192);
-    DeserializationError error = deserializeJson(doc, response);
-
-    if (error)
-    {
-      Serial.print("Błąd parsowania JSON: ");
-      Serial.println(error.c_str());
-      http.end();
-      return;
-    }
-
-    if (!doc.containsKey("events") || !doc["events"].is<JsonArray>())
-    {
-      Serial.println("Brak pola events albo zly format");
-      http.end();
-      return;
-    }
-
-    model->clear();
-
-    JsonArray events = doc["events"];
-    bool is_alarm = false;
-
-    for (JsonObject event : events)
-    {
-      String name = event["summary"] | "";
-      String calendar = event["calendar"] | "";
-      String startStr = event["start"] | "";
-      String endStr = event["end"] | "";
-
-      Simple_time time_start(startStr);
-      Simple_time time_stop(endStr);
-
-      if (calendar == "Alarm")
-      {
-        alarm_controller->set_alarm(time_start);
-        is_alarm = true;
-        continue;
-      }
-
-      Calendar_event calendar_event(name, calendar, time_start, time_stop);
-      model->update(calendar_event);
-    }
-    if (!is_alarm)
-    {
-      // alarm_controller->clear_alarm();
-    }
-  }
-  else
-  {
-    Serial.print("HTTP Error: ");
-    Serial.println(httpResponseCode);
-  }
-
+  String payload = http.getString();
   http.end();
+
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, payload);
+  if (err)
+  {
+    Serial.printf("JSON parse error: %s\n", err.c_str());
+    return;
+  }
+
+  if (!doc.is<JsonArray>())
+  {
+    Serial.println("Expected JSON array from proxy");
+    return;
+  }
+
+  for (JsonObject event : doc.as<JsonArray>())
+  {
+    String summary   = event["summary"].as<String>();
+    String start_str = event["start"].as<String>();
+    String end_str   = event["end"].as<String>();
+
+    Simple_time time_start = parse_hhmm(start_str);
+    Simple_time time_stop  = parse_hhmm(end_str);
+
+    if (is_alarm)
+    {
+      alarm_controller->set_alarm(time_start);
+      alarm_controller->enable_alarm();
+      Serial.printf("Alarm set: %02d:%02d\n", time_start.hour, time_start.minutes);
+    }
+    else
+    {
+      String calName = "";
+      Calendar_event ev(summary, calName, time_start, time_stop);
+      model->update(ev);
+    }
+  }
 }
 
-// void Calendar_controller::update_view()
-// {
-//   view->clear_calendar_list();
-//   for (size_t i = 0; i < model->get_event_count(); ++i)
-//   {
-//     Calendar_event event;
-//     model->get_event(event, i);
-//     view->add_event(event.get_calendar_label());
-//   }
-// }
+void Calendar_controller::fetch_calendar()
+{
+  google_api_config config;
+  model->get_config(config);
+
+  model->clear();
+
+  if (config.ical_url.length() > 0)
+  {
+    Serial.println("Fetching calendar via proxy...");
+    fetch_ical(config.ical_url, false);
+  }
+
+  if (config.ical_alarm_url.length() > 0)
+  {
+    Serial.println("Fetching alarm via proxy...");
+    fetch_ical(config.ical_alarm_url, true);
+  }
+}
+
 void Calendar_controller::update_view()
 {
   view->show(*model);

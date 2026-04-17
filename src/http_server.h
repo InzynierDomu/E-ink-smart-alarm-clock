@@ -59,8 +59,8 @@ private:
   void handleRoot();
   void handleSave();
 
-  bool loadConfigJson(StaticJsonDocument<1024>& doc);
-  bool saveConfigJson(const StaticJsonDocument<1024>& doc);
-  void updateConfigFromRequest(StaticJsonDocument<1024>& doc);
+  bool loadConfigJson(JsonDocument& doc);
+  bool saveConfigJson(const JsonDocument& doc);
+  void updateConfigFromRequest(JsonDocument& doc);
   void mqtt_reconnect();
 };

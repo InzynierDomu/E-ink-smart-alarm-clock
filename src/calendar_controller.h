@@ -11,6 +11,7 @@ class Calendar_controller
   void update_view();
 
   private:
+  void fetch_ical(const String& url, bool is_alarm);
   Calendar_model* model;
   Calendar_view* view;
   Alarm_controller* alarm_controller;

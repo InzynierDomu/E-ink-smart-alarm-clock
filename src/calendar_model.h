@@ -6,8 +6,10 @@
 
 struct google_api_config
 {
-  String api_base_url; // e.g., https://inzynierdomu.pl/clock-api/
-  String device_id;    // Generated from MAC address
+  String api_base_url;
+  String device_id;
+  String ical_url;        // Google Calendar iCal URL (main calendar)
+  String ical_alarm_url;  // Google Calendar iCal URL (Alarm calendar)
 };
 
 struct Calendar_event

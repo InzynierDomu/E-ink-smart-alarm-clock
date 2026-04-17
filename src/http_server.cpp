@@ -324,21 +324,26 @@ String HttpServer::buildWeatherSection()
 
 String HttpServer::buildGoogleCalendarSection()
 {
+  google_api_config cal_config;
+  calendar_model_.get_config(cal_config);
   String html;
   html += R"rawHTML(
     <div class="section">
-        <div class="section-title">📅 Google Calendar</div>
-
-        <div class="form-row google-calendar-row">
-            <label class="form-label">
-                Połącz swój zegar z kalendarzem Google, aby wyświetlać nadchodzące wydarzenia.
-            </label>
-
-<a href="https://inzynierdomu.pl/clock-api/pair.php?device_id=)rawHTML";
-  html += device_id_;
-  html += R"rawHTML(" target="_blank" rel="noopener noreferrer" class="button-link">
-                Połącz
-            </a>
+        <div class="section-title">📅 Google Calendar (iCal)</div>
+        <div class="form-row">
+            <label class="form-label">W ustawieniach Google Calendar skopiuj <b>Tajny adres w formacie iCal</b> dla każdego kalendarza.</label>
+        </div>
+        <div class="form-row">
+            <label class="form-label">URL kalendarza (wydarzenia)</label>
+            <input type="password" name="ical_url" value=")rawHTML";
+  html += cal_config.ical_url;
+  html += R"rawHTML(">
+        </div>
+        <div class="form-row">
+            <label class="form-label">URL kalendarza alarmów</label>
+            <input type="password" name="ical_alarm_url" value=")rawHTML";
+  html += cal_config.ical_alarm_url;
+  html += R"rawHTML(">
         </div>
     </div>
 )rawHTML";
@@ -561,7 +566,7 @@ void HttpServer::handleRoot()
 
 void HttpServer::handleSave()
 {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   if (!loadConfigJson(doc))
   {
     server_.send(500, "text/plain", "Blad odczytu config");
@@ -578,7 +583,7 @@ void HttpServer::handleSave()
   ESP.restart();
 }
 
-bool HttpServer::loadConfigJson(StaticJsonDocument<1024>& doc)
+bool HttpServer::loadConfigJson(JsonDocument& doc)
 {
   File file = SD.open(config::config_path, "r");
   if (!file)
@@ -591,7 +596,7 @@ bool HttpServer::loadConfigJson(StaticJsonDocument<1024>& doc)
   return !err;
 }
 
-bool HttpServer::saveConfigJson(const StaticJsonDocument<1024>& doc)
+bool HttpServer::saveConfigJson(const JsonDocument& doc)
 {
   File file = SD.open(config::config_path, "w");
   if (!file)
@@ -601,7 +606,7 @@ bool HttpServer::saveConfigJson(const StaticJsonDocument<1024>& doc)
   return ok;
 }
 
-void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
+void HttpServer::updateConfigFromRequest(JsonDocument& doc)
 {
   String new_ssid = server_.arg("ssid");
   String new_pass = server_.arg("pass");
@@ -622,8 +627,13 @@ void HttpServer::updateConfigFromRequest(StaticJsonDocument<1024>& doc)
   uint16_t new_mqtt_port = server_.arg("mqtt_port").toInt();
   bool new_weather_from_ha = server_.arg("weather_from_ha").toInt();
 
+  String new_ical_url = server_.arg("ical_url");
+  String new_ical_alarm_url = server_.arg("ical_alarm_url");
+
   doc["ssid"] = new_ssid;
   doc["pass"] = new_pass;
+  doc["ical_url"] = new_ical_url;
+  doc["ical_alarm_url"] = new_ical_alarm_url;
   // doc["timezone"] = tz_seconds; TODO fix
   doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
