@@ -105,7 +105,7 @@ void read_config()
   }
   file.close();
 
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, jsonData);
   if (error)
   {
@@ -137,6 +137,11 @@ void read_config()
   ha_config.mqtt_port = doc["mqtt_port"];
   ha_config.weather_from_ha = doc["weather_from_HA"];
   httpServer.ha_set_config(ha_config);
+
+  google_api_config calendar_config;
+  calendar_config.ical_url = doc["ical_url"] | "";
+  calendar_config.ical_alarm_url = doc["ical_alarm_url"] | "";
+  calendar_model.set_config(calendar_config);
 
   Audio_config audio_config;
   audio_config.sample_rate = doc["sample_rate"];
@@ -260,7 +265,7 @@ void setup()
   httpServer.set_device_id(deviceId);
 
   google_api_config calendar_config;
-  calendar_config.api_base_url = "https://inzynierdomu.pl/clock-api/";
+  calendar_model.get_config(calendar_config);  // preserve ical_url from read_config()
   calendar_config.device_id = deviceId;
   calendar_model.set_config(calendar_config);
 
