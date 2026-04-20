@@ -176,17 +176,17 @@ bool HttpServer::is_weather_from_ha()
 void HttpServer::entity_clock_setup()
 {
   mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
-  mqtt_client.setBufferSize(1024);
+  mqtt_client.setBufferSize(324);
 
 
   if (!mqtt_client.connected())
   {
     Serial.println("MQTT niepołączone, próba rekonakcji...");
     mqtt_reconnect();
-    delay(1000);
+    delay(300);
   }
 
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(324);
   doc["name"] = ha_config.ha_entity_clock_name;
   doc["unique_id"] = ha_config.ha_entity_clock_name; // Musi być unikalne w skali całego HA
   doc["state_topic"] = "eink_clock/" + ha_config.ha_entity_clock_name + "/state";
@@ -251,7 +251,7 @@ void HttpServer::send_mqtt_action()
   {
     Serial.println("MQTT niepołączone, próba rekonakcji...");
     mqtt_reconnect();
-    delay(1000);
+    delay(300);
   }
 
   // 2. Zbuduj topik stanu (taki sam jak w konfiguracji Discovery)
@@ -299,6 +299,9 @@ String HttpServer::buildWeatherSection()
   html += R"rawHTML(
         <div class="section">
             <div class="section-title">🌤️ Pogoda (OpenWeather)</div>
+            <div class="form-row">
+                <label class="form-label">Klucz API uzyskasz po rejestracji na <a href="https://openweathermap.org/" target="_blank" rel="noopener">openweathermap.org</a>.</label>
+            </div>
             <div class="form-row">
                 <label class="form-label">API key</label>
                 <input type="password" name="api_key" value=")rawHTML";
@@ -353,7 +356,7 @@ String HttpServer::buildAudioSection()
 {
   Audio_config config;
   audio_.get_config(config);
-  const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
+  const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 4430, 48000};
   String html;
   html += R"rawHTML(
         <div class="section">
@@ -374,9 +377,9 @@ String HttpServer::buildAudioSection()
             </div>
             <div class="form-row">
                 <label class="form-label">Głośność</label>
-                <input type="range" name="volume" min="0" max="100" value=")rawHTML";
+                <input type="range" name="volume" min="0" max="30" value=")rawHTML";
   html += String(config.volume);
-  html += R"rawHTML(" style="width: 100%;">
+  html += R"rawHTML(" style="width: 30%;">
             </div>
         </div>
 )rawHTML";
@@ -481,12 +484,12 @@ String HttpServer::buildFooter()
             <div class="footer-icons">
                 <a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock" target="_blank" title="GitHub" rel="noopener">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.37-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.32.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                     </svg>
                 </a>
                 <a href="https://buycoffee.to/inzynier-domu" target="_blank" title="Postaw kawę" rel="noopener">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
+                        <path d="M20 3H4v3c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
                     </svg>
                 </a>
                 <a href="https://www.inzynierdomu.pl/" target="_blank" title="Blog" rel="noopener">
@@ -587,23 +590,31 @@ bool HttpServer::loadConfigJson(JsonDocument& doc)
 {
   File file = SD.open(config::config_path, "r");
   if (!file)
-    return false;
+    return true; // brak pliku — zacznij od pustego doca
   String jsonData;
   while (file.available())
     jsonData += (char)file.read();
   file.close();
+  if (jsonData.length() == 0)
+    return true; // pusty plik — zacznij od pustego doca
   DeserializationError err = deserializeJson(doc, jsonData);
   return !err;
 }
 
 bool HttpServer::saveConfigJson(const JsonDocument& doc)
 {
-  File file = SD.open(config::config_path, "w");
+  if (SD.exists(config::config_path))
+    SD.remove(config::config_path);
+  File file = SD.open(config::config_path, FILE_WRITE);
   if (!file)
+  {
+    Serial.println("saveConfigJson: nie mozna otworzyc pliku do zapisu");
     return false;
-  bool ok = serializeJson(doc, file) > 0;
+  }
+  size_t written = serializeJson(doc, file);
   file.close();
-  return ok;
+  Serial.printf("saveConfigJson: zapisano %u bajtow\n", written);
+  return written > 0;
 }
 
 void HttpServer::updateConfigFromRequest(JsonDocument& doc)
@@ -653,10 +664,10 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
 
 void HttpServer::mqtt_reconnect()
 {
-  while (!mqtt_client.connected())
+  uint8_t attempts = 0;
+  while (!mqtt_client.connected() && attempts < 3)
   {
-    Serial.print("Próba połączenia MQTT...");
-    // LOGIN I HASŁO WPISUJESZ TUTAJ:
+    Serial.printf("Próba połączenia MQTT (%d/3)...", attempts + 1);
     String clientId = "Eink_Clock_" + String(random(0xffff), HEX);
     if (mqtt_client.connect(clientId.c_str(), ha_config.ha_user.c_str(), ha_config.ha_pass.c_str()))
     {
@@ -668,6 +679,9 @@ void HttpServer::mqtt_reconnect()
       Serial.print(mqtt_client.state());
       Serial.println(" ponowna próba za 5 sekund");
       delay(5000);
+      attempts++;
     }
   }
+  if (!mqtt_client.connected())
+    Serial.println("MQTT: przekroczono limit prób, pomijam.");
 }
