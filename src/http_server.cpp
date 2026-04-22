@@ -28,7 +28,7 @@ void HttpServer::begin()
       HTTP_POST,
       [this]() {
         server_.send(200,
-                     "text/plain",
+                     "text/plain; charset=utf-8",
                      "Firmware zapisany na SD jako /firmware.bin. Zrestartuj urzadzenie. Po ponownym uruchomieniu, urządzenie spróbuje "
                      "wykonać aktualizację.");
       },
