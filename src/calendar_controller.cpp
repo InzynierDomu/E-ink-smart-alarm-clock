@@ -123,6 +123,7 @@ void Calendar_controller::fetch_calendar()
 
   if (config.ical_alarm_url.length() > 0)
   {
+    alarm_controller->set_no_alarm();
     Serial.println("Fetching alarm via proxy...");
     fetch_ical(config.ical_alarm_url, true);
   }

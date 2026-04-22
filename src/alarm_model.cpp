@@ -15,6 +15,7 @@ void Alarm_model::get_alarm(Clock_alarm& _alarm) const
 
 void Alarm_model::set_no_alarm()
 {
+  alarm.time = Simple_time(0, 0);
   alarm.enable = false;
   is_alarm = false;
 }

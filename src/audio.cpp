@@ -58,7 +58,8 @@ void Audio::play_audio()
       buffer[i] = (int16_t)sample;
     }
 
-    i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, portMAX_DELAY);
+    i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, pdMS_TO_TICKS(500));
+    vTaskDelay(1); // oddaj CPU żeby IDLE0 mógł zasilić WDT
   }
 
   audioFile.close();
