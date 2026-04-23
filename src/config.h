@@ -26,5 +26,9 @@ constexpr unsigned int local_port = 2390; // local port to listen for UDP packet
 constexpr char time_server[] = "tempus1.gum.gov.pl"; // extenral NTP server
 constexpr int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
+constexpr unsigned long btn_debounce_ms = 75;
+constexpr uint8_t reset_press_count_threshold = 5;
+constexpr unsigned long reset_window_ms = 10000;
+
 const String version = "1.2.2";
 } // namespace config

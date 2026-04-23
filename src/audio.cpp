@@ -39,6 +39,9 @@ void Audio::play_audio()
     return;
   }
 
+  Serial.printf("[AUDIO] file size: %u bytes, volume: %u, volFactor: %.3f\n",
+                (unsigned)audioFile.size(), config.volume, config.volume / 100.0f);
+
   i2s_start(I2S_NUM_1);
   size_t bytesRead;
   int16_t buffer[audio_buffer_size];

@@ -569,6 +569,7 @@ void HttpServer::handleRoot()
 
 void HttpServer::handleSave()
 {
+  Serial.printf("[SAVE] ssid from form: '%s'\n", server_.arg("ssid").c_str());
   JsonDocument doc;
   if (!loadConfigJson(doc))
   {

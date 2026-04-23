@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/markiszy/Test/Obsidian_vault/Moje_notatki/Inżynier_domu/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\\" | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\Budzik\\\\\" | ForEach-Object { $_.Name })",
+      "Read(//c/Users/markiszy/Test/Obsidian_vault/Moje_notatki/Inzynier_domu/Produkty/Budzik/**)",
+      "PowerShell($f = \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\Budzik\\\\Budzik - instrukcja druk booklet.html\"; $lines = [System.IO.File]::ReadAllLines\\($f, [System.Text.Encoding]::UTF8\\); for\\($i=0; $i -lt $lines.Count; $i++\\) { if\\($lines[$i] -match 'calendar|Google|iCal|tip'\\) { Write-Output \"$\\($i+1\\): $\\($lines[$i]\\)\" } })",
+      "PowerShell($f = \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\Budzik\\\\Budzik - instrukcja druk booklet.html\"; $lines = [System.IO.File]::ReadAllLines\\($f, [System.Text.Encoding]::UTF8\\); for\\($i=474; $i -lt 485; $i++\\) { Write-Output \"$\\($i+1\\): $\\($lines[$i]\\)\" })",
+      "PowerShell($f = \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\Budzik\\\\Budzik - instrukcja druk.html\"; $lines = [System.IO.File]::ReadAllLines\\($f, [System.Text.Encoding]::UTF8\\); for\\($i=0; $i -lt $lines.Count; $i++\\) { if\\($lines[$i] -match 'calendar|iCal|tip|osobny'\\) { Write-Output \"$\\($i+1\\): $\\($lines[$i]\\)\" } })"
+    ]
+  }
+}

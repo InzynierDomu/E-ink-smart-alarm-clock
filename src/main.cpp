@@ -68,12 +68,14 @@ Weather_controller weather_controller(&weather_model, &weather_view, &httpServer
 
 State state;
 
-static bool btn_last_state = true;
+static bool btn_stable_state = false;
+static bool btn_raw_state = false;
+static unsigned long btn_change_time = 0;
 static int update_counter = 10;
 
-static unsigned long lp_press_start = 0;
-static bool lp_is_pressed = false;
-static bool lp_initial_state = false;
+static uint8_t reset_press_count = 0;
+static unsigned long reset_window_start = 0;
+static unsigned long boot_time = 0;
 
 TaskHandle_t audioTaskHandle = nullptr;
 volatile bool startAlarmAudio = false;
@@ -119,6 +121,7 @@ void read_config()
   wifi_config.pass = doc["pass"] | "";
   wifi_config.timezone = doc["timezone"];
   clock_model.set_wifi_config(wifi_config);
+  Serial.printf("[CONFIG] SSID read: '%s'\n", wifi_config.ssid.c_str());
 
   Open_weather_config weather_config;
   weather_config.api_key = doc["openweathermap_api_key"] | "";
@@ -290,10 +293,12 @@ void setup()
   pinMode(config::btn_pin, INPUT_PULLDOWN);
   pinMode(config::led_pin, OUTPUT);
   digitalWrite(config::led_pin, LOW);
-  btn_last_state = digitalRead(config::btn_pin);
-  lp_initial_state = digitalRead(config::btn_pin);
-  lp_is_pressed = false;
-  lp_press_start = 0;
+  btn_stable_state = digitalRead(config::btn_pin);
+  btn_raw_state = btn_stable_state;
+  btn_change_time = millis();
+  reset_press_count = 0;
+  reset_window_start = 0;
+  boot_time = millis();
   update_counter = 10;
 
   audio.setup();
@@ -312,41 +317,43 @@ void setup()
 
 bool check_button()
 {
-  bool current_state = digitalRead(config::btn_pin);
-  if (current_state != btn_last_state)
+  bool reading = digitalRead(config::btn_pin);
+  if (reading != btn_raw_state)
   {
-    btn_last_state = current_state;
+    btn_raw_state = reading;
+    btn_change_time = millis();
+  }
+  if (btn_raw_state != btn_stable_state && millis() - btn_change_time > config::btn_debounce_ms)
+  {
+    btn_stable_state = btn_raw_state;
+    Serial.printf("[BTN] edge detected, stable=%d t=%lu\n", btn_stable_state, millis());
     return true;
   }
   return false;
 }
 
-void reset_long_press()
+bool check_reset_sequence()
 {
-  lp_initial_state = digitalRead(config::btn_pin);
-  lp_is_pressed = false;
-  lp_press_start = 0;
-}
-
-bool check_long_press()
-{
-  bool current_state = digitalRead(config::btn_pin);
-
-  if (current_state == lp_initial_state)
+  if (millis() - boot_time < 3000)
   {
-    lp_is_pressed = false;
+    Serial.printf("[RST] blocked (boot protection), t=%lu boot=%lu\n", millis(), boot_time);
     return false;
   }
 
-  if (!lp_is_pressed)
+  unsigned long now = millis();
+  if (reset_press_count == 0 || (now - reset_window_start > config::reset_window_ms))
   {
-    lp_is_pressed = true;
-    lp_press_start = millis();
+    reset_press_count = 1;
+    reset_window_start = now;
+    Serial.println("[RST] count=1 (new window)");
+    return false;
   }
-
-  if (lp_is_pressed && (millis() - lp_press_start > 10000))
+  reset_press_count++;
+  Serial.printf("[RST] count=%d\n", reset_press_count);
+  if (reset_press_count >= config::reset_press_count_threshold)
   {
-    lp_is_pressed = false;
+    reset_press_count = 0;
+    Serial.println("[RST] TRIGGERED - clearing config!");
     return true;
   }
   return false;
@@ -369,44 +376,53 @@ void clear_config()
 
 void loop()
 {
-  if (check_long_press())
-  {
-    clear_config();
-    ESP.restart();
-  }
+  bool btn_edge = check_button();
 
   lv_timer_handler();
   delay(10);
   if (state == State::alarm)
   {
-    if (check_button())
+    if (btn_edge)
     {
       state = State::normal;
       audio.stop();
       startAlarmAudio = false;
       digitalWrite(config::led_pin, LOW);
-      reset_long_press();
     }
   }
   else if (state == State::welcome_screen)
   {
-    if (check_button())
+    if (btn_edge)
     {
-      digitalWrite(config::led_pin, LOW);
-      lv_scr_load(ui_Screen1);
-      state = State::normal;
-      reset_long_press();
+      if (check_reset_sequence())
+      {
+        clear_config();
+        ESP.restart();
+      }
+      else
+      {
+        digitalWrite(config::led_pin, LOW);
+        lv_scr_load(ui_Screen1);
+        state = State::normal;
+      }
     }
   }
   else if (state == State::normal)
   {
-    if (check_button())
+    if (btn_edge)
     {
-      digitalWrite(config::led_pin, HIGH);
-      alarm_controller.toggle_alarm();
-      alarm_controller.update_view();
-      digitalWrite(config::led_pin, LOW);
-      reset_long_press();
+      if (check_reset_sequence())
+      {
+        clear_config();
+        ESP.restart();
+      }
+      else
+      {
+        digitalWrite(config::led_pin, HIGH);
+        alarm_controller.toggle_alarm();
+        alarm_controller.update_view();
+        digitalWrite(config::led_pin, LOW);
+      }
     }
   }
 
