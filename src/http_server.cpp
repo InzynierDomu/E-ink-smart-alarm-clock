@@ -356,7 +356,7 @@ String HttpServer::buildAudioSection()
 {
   Audio_config config;
   audio_.get_config(config);
-  const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 4430, 48000};
+  const uint16_t sr_list[] = {8000, 16000, 22050, 32000, 44100, 48000};
   String html;
   html += R"rawHTML(
         <div class="section">
@@ -377,9 +377,9 @@ String HttpServer::buildAudioSection()
             </div>
             <div class="form-row">
                 <label class="form-label">Głośność</label>
-                <input type="range" name="volume" min="0" max="30" value=")rawHTML";
+                <input type="range" name="volume" min="0" max="100" value=")rawHTML";
   html += String(config.volume);
-  html += R"rawHTML(" style="width: 30%;">
+  html += R"rawHTML(" style="width: 100%;">
             </div>
         </div>
 )rawHTML";
