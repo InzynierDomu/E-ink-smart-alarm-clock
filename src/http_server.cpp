@@ -545,7 +545,7 @@ String HttpServer::buildPage()
   page += buildWeatherSection();
   page += buildGoogleCalendarSection();
   page += buildHaSection();
-  page += buildAudioSection();
+  // page += buildAudioSection();  // audio is hard-coded (44100 Hz, 70%)
 
   page += R"rawHTML(
             <div class="button-group">
@@ -627,8 +627,8 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   String new_api_key = server_.arg("api_key");
   float new_lat = server_.arg("lat").toFloat();
   float new_lon = server_.arg("lon").toFloat();
-  uint16_t new_sr = server_.arg("sample_rate").toInt();
-  uint8_t new_vol = server_.arg("volume").toInt();
+  // uint16_t new_sr = server_.arg("sample_rate").toInt();  // audio hard-coded
+  // uint8_t new_vol = server_.arg("volume").toInt();       // audio hard-coded
   String new_ha_host = server_.arg("ha_host");
   uint16_t new_ha_port = server_.arg("ha_port").toInt();
   String new_ha_token = server_.arg("ha_token");
@@ -650,8 +650,8 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
-  doc["sample_rate"] = new_sr;
-  doc["volume"] = new_vol;
+  // doc["sample_rate"] = new_sr;  // audio hard-coded
+  // doc["volume"] = new_vol;       // audio hard-coded
   doc["HA_host"] = new_ha_host;
   doc["HA_port"] = new_ha_port;
   doc["HA_token"] = new_ha_token;

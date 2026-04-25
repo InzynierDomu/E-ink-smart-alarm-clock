@@ -146,10 +146,11 @@ void read_config()
   calendar_config.ical_alarm_url = doc["ical_alarm_url"] | "";
   calendar_model.set_config(calendar_config);
 
-  Audio_config audio_config;
-  audio_config.sample_rate = doc["sample_rate"];
-  audio_config.volume = doc["volume"];
-  audio.set_config(audio_config);
+  // Audio config is hard-coded (44100 Hz, 70% volume) — not configurable via web UI
+  // Audio_config audio_config;
+  // audio_config.sample_rate = doc["sample_rate"];
+  // audio_config.volume = doc["volume"];
+  // audio.set_config(audio_config);
 }
 
 String get_device_id()
@@ -174,6 +175,7 @@ void update_clock()
     if (state != State::AP)
     {
       httpServer.send_mqtt_action();
+      delay(200);
     }
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
