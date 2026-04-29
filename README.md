@@ -64,7 +64,7 @@ Video about device [video](https://youtu.be/p92zGk0prb8)
 5. Fill in the configuration form (see sections below) and click **Save**.
 6. The device will restart and connect to your home Wi-Fi.
 
-To reset the configuration at any time, hold the button for **10 seconds** — the device will clear the config and restart in AP mode.
+To reset the configuration at any time, press the button **5 times within 10 seconds** — the device will clear the config and restart in AP mode.
 
 ### Configuration fields
 
@@ -81,22 +81,23 @@ The device fetches today's events directly from Google Calendar using a private 
 
 - Open [Google Calendar](https://calendar.google.com) → Settings → select your calendar → scroll to **Integrate calendar** → copy the **Secret address in iCal format**.
 - Paste it into the **Calendar URL (events)** field.
-- Optionally, create a separate Google Calendar for alarms and paste its iCal URL into the **Alarm calendar URL** field — any event in that calendar will set the alarm to its start time.
+- Optionally paste a second iCal URL into the **Alarm calendar URL** field — any event in that calendar will set the alarm to its start time.
+
+> Calendar, alarm and weather data refresh automatically every ~11 minutes. The first fetch happens about one minute after boot.
 
 **Home Assistant** *(optional)*
 - Enter your HA host IP, port (`8123`), and a long-lived access token (HA → Profile → Long-Lived Access Tokens).
 - Provide the weather entity name (e.g. `weather.home`) to pull temperature from HA instead of OpenWeatherMap.
 
-**Audio**
-- Set the volume (0–100) and sample rate (default `44100` Hz — change only if the alarm sound plays at wrong speed).
-
 ## Usage
 
 | Action | Effect |
 |--------|--------|
-| Short press | Toggle alarm on / off |
+| Short press | Toggle alarm on / off (mute/unmute) |
 | Press while ringing | Dismiss alarm |
-| Hold 10 seconds | Reset config, restart in AP mode |
+| 5 quick presses in 10 seconds | Reset config, restart in AP mode |
+
+> After each press wait a moment — the mute/unmute change is visible on screen. Pressing too fast may be interpreted as the reset sequence.
 
 ## Buy a ready-made device
 
