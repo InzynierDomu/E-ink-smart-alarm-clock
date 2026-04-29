@@ -1,5 +1,6 @@
 #include "RTClib.h"
 #include "alarm_model.h"
+#include "logger.h"
 #include "alarm_view.h"
 #include "audio.h"
 #include "calendar_controller.h"
@@ -226,6 +227,24 @@ void setup()
   {
     Serial.println("SD card ok");
   }
+
+  Logger::setup("/logs.txt", 50);
+
+  esp_reset_reason_t reset_reason = esp_reset_reason();
+  const char* reset_str = "UNKNOWN";
+  switch (reset_reason)
+  {
+    case ESP_RST_POWERON:   reset_str = "POWERON";   break;
+    case ESP_RST_SW:        reset_str = "SW_RESET";  break;
+    case ESP_RST_PANIC:     reset_str = "PANIC";     break;
+    case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
+    case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
+    case ESP_RST_WDT:       reset_str = "WDT";       break;
+    case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
+    case ESP_RST_SDIO:      reset_str = "SDIO";      break;
+    default: break;
+  }
+  Logger::info("BOOT", String("Reset reason: ") + reset_str + " | version: " + config::version);
 
   if (checkAndPerformUpdateFromSD())
   {

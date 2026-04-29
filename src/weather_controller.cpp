@@ -1,4 +1,5 @@
 #include "weather_controller.h"
+#include "logger.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -32,22 +33,35 @@ void Weather_controller::fetch_weather(DateTime& now)
                         "&lon=" + String(config.lon, 4) + "&date=" + dateStr + "&appid=" + config.api_key + "&units=metric";
 
     HTTPClient http;
+    http.setTimeout(10000);
     http.begin(serverPath.c_str());
     int code = http.GET();
 
-    if (code == HTTP_CODE_OK)
+    if (code != HTTP_CODE_OK)
+    {
+      Logger::error("OWM", "HTTP " + String(code) + " for day+" + String(i));
+      http.end();
+      continue;
+    }
+
     {
       String response = http.getString();
+
+      if (!response.startsWith("{"))
+      {
+        Logger::error("OWM", "Response is not JSON for day+" + String(i));
+        http.end();
+        continue;
+      }
 
       StaticJsonDocument<4096> doc;
       DeserializationError error = deserializeJson(doc, response);
 
       if (error)
       {
-        Serial.print("JSON error: ");
-        Serial.println(error.c_str());
+        Logger::error("OWM", "JSON parse error: " + String(error.c_str()));
         http.end();
-        return;
+        continue;
       }
       else
       {
@@ -74,11 +88,6 @@ void Weather_controller::fetch_weather(DateTime& now)
       }
     }
 
-    else
-    {
-      Serial.print("HTTP error: ");
-      Serial.println(code);
-    }
     http.end();
   }
 

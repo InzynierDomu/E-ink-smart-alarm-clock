@@ -1,4 +1,5 @@
 #include "http_server.h"
+#include "logger.h"
 
 #include "config.h"
 #include "config_page_style.h"
@@ -96,14 +97,14 @@ int8_t HttpServer::get_ha_weather()
 
   if (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("[HA] WiFi not connected");
+    Logger::warn("HA", "WiFi not connected, skipping weather fetch");
     return 0;
   }
 
   Serial.printf("[HA] Connecting to %s:%u\n", ha_config.ha_host, ha_config.ha_port);
   if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
   {
-    Serial.println("[HA] Connection failed");
+    Logger::error("HA", "Connection failed to " + ha_config.ha_host + ":" + String(ha_config.ha_port));
     return 0;
   }
   Serial.println("[HA] Connected, sending request");
@@ -132,7 +133,9 @@ int8_t HttpServer::get_ha_weather()
 
   if (!headers.startsWith("HTTP/1.1 200"))
   {
-    Serial.println("[HA] Non-200 response");
+    String status_line = headers.substring(0, headers.indexOf('\n'));
+    Logger::error("HA", "Non-200 response: " + status_line);
+    client.stop();
     return 0;
   }
 
@@ -149,7 +152,7 @@ int8_t HttpServer::get_ha_weather()
   int idx = body.indexOf("\"state\":");
   if (idx < 0)
   {
-    Serial.println("[HA] 'state' not found in JSON");
+    Logger::error("HA", "'state' not found in response body");
     return 0;
   }
 
@@ -157,7 +160,7 @@ int8_t HttpServer::get_ha_weather()
   int end = body.indexOf("\"", start + 1);
   if (start < 0 || end < 0 || end <= start)
   {
-    Serial.println("[HA] Failed to parse state string");
+    Logger::error("HA", "Failed to parse state value from body");
     return 0;
   }
 

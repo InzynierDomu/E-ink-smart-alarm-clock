@@ -1,4 +1,5 @@
 #include "calendar_controller.h"
+#include "logger.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -53,16 +54,18 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
 
   String proxy_url = String(PROXY_BASE_URL) + "?url=" + url_encode(ical_url);
 
+  const String tag = is_alarm ? "CAL_ALARM" : "CAL";
+
   if (!http.begin(wifiClient, proxy_url))
   {
-    Serial.println("Cannot connect to proxy");
+    Logger::error(tag, "Cannot connect to proxy");
     return;
   }
 
   int httpCode = http.GET();
   if (httpCode != 200)
   {
-    Serial.printf("Proxy HTTP Error: %d\n", httpCode);
+    Logger::error(tag, "Proxy HTTP " + String(httpCode));
     http.end();
     return;
   }
@@ -70,17 +73,23 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
   String payload = http.getString();
   http.end();
 
+  if (!payload.startsWith("[") && !payload.startsWith("{"))
+  {
+    Logger::error(tag, "Response is not JSON");
+    return;
+  }
+
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, payload);
   if (err)
   {
-    Serial.printf("JSON parse error: %s\n", err.c_str());
+    Logger::error(tag, "JSON parse error: " + String(err.c_str()));
     return;
   }
 
   if (!doc.is<JsonArray>())
   {
-    Serial.println("Expected JSON array from proxy");
+    Logger::error(tag, "Expected JSON array from proxy");
     return;
   }
 
