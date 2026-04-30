@@ -259,6 +259,7 @@ void setup()
   {
     Serial.println("Brak SSID, uruchamiam AP");
     WiFi.mode(WIFI_AP);
+    WiFi.setSleep(false);
     delay(100);
     bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
     Serial.print("AP started: ");

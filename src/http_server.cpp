@@ -23,6 +23,8 @@ void HttpServer::begin()
   server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
   server_.on("/save", HTTP_POST, [this]() { this->handleSave(); });
   server_.on("/config_page_style.css", HTTP_GET, [this]() { server_.send(200, "text/css", config_page_style_css); });
+  server_.on("/logs", HTTP_GET, [this]() { this->handleLogs(); });
+  server_.on("/logs/clear", HTTP_POST, [this]() { this->handleLogsClear(); });
 
   server_.on(
       "/upload_firmware",
@@ -478,6 +480,52 @@ String HttpServer::buildFirmwareUpdateSection()
   return html;
 }
 
+String HttpServer::buildLogsSection()
+{
+  String html;
+  html += R"rawHTML(
+  <div class="section">
+    <div class="section-title">📋 Logi</div>
+    <div class="form-row" style="gap:8px; flex-wrap:wrap;">
+      <a href="/logs" download="logs.txt"><button type="button">Pobierz logi</button></a>
+      <form method="POST" action="/logs/clear" style="margin:0;">
+        <button type="submit" style="width:auto; padding-left:24px; padding-right:24px;" onclick="return confirm('Wyczyścić plik logów?')">Wyczyść logi</button>
+      </form>
+    </div>
+  </div>
+  )rawHTML";
+  return html;
+}
+
+void HttpServer::handleLogs()
+{
+  if (!SD.exists(Logger::path()))
+  {
+    server_.send(404, "text/plain; charset=utf-8", "Brak pliku logów.");
+    return;
+  }
+  File f = SD.open(Logger::path(), "r");
+  if (!f)
+  {
+    server_.send(500, "text/plain; charset=utf-8", "Nie można otworzyć pliku logów.");
+    return;
+  }
+  server_.sendHeader("Content-Disposition", "attachment; filename=\"logs.txt\"");
+  server_.streamFile(f, "text/plain; charset=utf-8");
+  f.close();
+}
+
+void HttpServer::handleLogsClear()
+{
+  if (SD.exists(Logger::path()))
+  {
+    SD.remove(Logger::path());
+  }
+  Logger::info("LOG", "Log file cleared via web UI");
+  server_.sendHeader("Location", "/");
+  server_.send(303);
+}
+
 String HttpServer::buildFooter()
 {
   String html;
@@ -558,6 +606,7 @@ String HttpServer::buildPage()
 )rawHTML";
 
   page += buildFirmwareUpdateSection();
+  page += buildLogsSection();
 
   page += buildFooter();
   page += R"rawHTML(</body></html>)rawHTML";

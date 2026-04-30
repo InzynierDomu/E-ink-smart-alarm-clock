@@ -54,10 +54,13 @@ private:
   String buildAudioSection();
   String buildHaSection();
   String buildFirmwareUpdateSection();
+  String buildLogsSection();
   String buildFooter();
 
   void handleRoot();
   void handleSave();
+  void handleLogs();
+  void handleLogsClear();
 
   bool loadConfigJson(JsonDocument& doc);
   bool saveConfigJson(const JsonDocument& doc);
