@@ -185,6 +185,19 @@ void update_clock()
   }
 }
 
+static void wifi_watchdog(lv_timer_t* timer)
+{
+  if (state == State::AP || state == State::welcome_screen)
+  {
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Logger::warn("WIFI", "Connection lost, reconnecting...");
+    WiFi.reconnect();
+  }
+}
+
 static void update_date(lv_timer_t* timer)
 {
   if (state == State::welcome_screen || state == State::AP)
@@ -259,9 +272,9 @@ void setup()
   {
     Serial.println("Brak SSID, uruchamiam AP");
     WiFi.mode(WIFI_AP);
-    WiFi.setSleep(false);
     delay(100);
     bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
+    WiFi.setSleep(false);
     Serial.print("AP started: ");
     Serial.println(ap_ok ? "YES" : "NO");
     Serial.print("AP IP: ");
@@ -309,6 +322,7 @@ void setup()
   }
 
   lv_timer_create(update_date, 60000, NULL);
+  lv_timer_create(wifi_watchdog, 120000, NULL);
   delay(1000);
 
   pinMode(config::alarm_enable_button_pin, INPUT);

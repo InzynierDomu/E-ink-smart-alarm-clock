@@ -33,6 +33,7 @@ void Weather_controller::fetch_weather(DateTime& now)
                         "&lon=" + String(config.lon, 4) + "&date=" + dateStr + "&appid=" + config.api_key + "&units=metric";
 
     HTTPClient http;
+    http.setConnectTimeout(10000);
     http.setTimeout(10000);
     http.begin(serverPath.c_str());
     int code = http.GET();

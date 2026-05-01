@@ -49,6 +49,7 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
   WiFiClientSecure wifiClient;
   wifiClient.setInsecure();
   HTTPClient http;
+  http.setConnectTimeout(10000);
   http.setTimeout(15000);
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 
