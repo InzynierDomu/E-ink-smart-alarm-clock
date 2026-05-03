@@ -468,7 +468,7 @@ String HttpServer::buildFirmwareUpdateSection()
   html += config::version;
   html +=
       R"rawHTML(</label></div><div class="form-row"><label class="form-label">Wybierz plik z nowym oprogramowaniem (*<code>.bin</code>).</label>
-    <form method="POST" action="/upload_firmware" enctype="multipart/form-data">
+    <form id="firmware-form" method="POST" action="/upload_firmware" enctype="multipart/form-data">
         <input type="file" name="firmware">
     </div>
       <div class="form-row">
@@ -609,7 +609,17 @@ String HttpServer::buildPage()
   page += buildLogsSection();
 
   page += buildFooter();
-  page += R"rawHTML(</body></html>)rawHTML";
+  page += R"rawHTML(
+<div id="upload-overlay" class="upload-overlay">
+    <div class="spinner"></div>
+    <div class="overlay-text">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>
+</div>
+<script>
+document.getElementById('firmware-form').addEventListener('submit', function() {
+    document.getElementById('upload-overlay').classList.add('active');
+});
+</script>
+</body></html>)rawHTML";
 
   return page;
 }

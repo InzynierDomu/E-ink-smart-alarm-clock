@@ -302,7 +302,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent1, 32);
     lv_obj_set_y(ui_labCalendarEvent1, -106);
     lv_obj_set_align(ui_labCalendarEvent1, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent1, "calendar");
+    lv_label_set_text(ui_labCalendarEvent1, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent1, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labCalendarEvent2 = lv_label_create(ui_Container6);
@@ -311,7 +311,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent2, 32);
     lv_obj_set_y(ui_labCalendarEvent2, -72);
     lv_obj_set_align(ui_labCalendarEvent2, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent2, "calendar");
+    lv_label_set_text(ui_labCalendarEvent2, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent2, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labCalendarEvent3 = lv_label_create(ui_Container6);
@@ -320,7 +320,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent3, 32);
     lv_obj_set_y(ui_labCalendarEvent3, -38);
     lv_obj_set_align(ui_labCalendarEvent3, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent3, "calendar");
+    lv_label_set_text(ui_labCalendarEvent3, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent3, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labCalendarEvent4 = lv_label_create(ui_Container6);
@@ -329,7 +329,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent4, 32);
     lv_obj_set_y(ui_labCalendarEvent4, -4);
     lv_obj_set_align(ui_labCalendarEvent4, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent4, "calendar");
+    lv_label_set_text(ui_labCalendarEvent4, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent4, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labCalendarEvent5 = lv_label_create(ui_Container6);
@@ -338,7 +338,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent5, 32);
     lv_obj_set_y(ui_labCalendarEvent5, 30);
     lv_obj_set_align(ui_labCalendarEvent5, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent5, "calendar");
+    lv_label_set_text(ui_labCalendarEvent5, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent5, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labCalendarEvent6 = lv_label_create(ui_Container6);
@@ -347,7 +347,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent6, 32);
     lv_obj_set_y(ui_labCalendarEvent6, 64);
     lv_obj_set_align(ui_labCalendarEvent6, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent6, "calendar");
+    lv_label_set_text(ui_labCalendarEvent6, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent6, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_labCalendarEvent7 = lv_label_create(ui_Container6);
@@ -356,7 +356,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_set_x(ui_labCalendarEvent7, 32);
     lv_obj_set_y(ui_labCalendarEvent7, 98);
     lv_obj_set_align(ui_labCalendarEvent7, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_labCalendarEvent7, "calendar");
+    lv_label_set_text(ui_labCalendarEvent7, "-");
     lv_obj_set_style_text_font(ui_labCalendarEvent7, &ui_font_Font2, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 }

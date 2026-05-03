@@ -258,6 +258,44 @@ button[type="reset"]:hover {
     flex: 1 1 320px;
 }
 
+.upload-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.88);
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    backdrop-filter: blur(4px);
+}
+
+.upload-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    width: 56px;
+    height: 56px;
+    border: 5px solid rgba(96, 165, 250, 0.2);
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.overlay-text {
+    color: #e2e8f0;
+    font-size: 1.1em;
+    font-weight: 500;
+    text-align: center;
+}
+
 @media (max-width: 600px) {
     .form-row {
         grid-template-columns: 1fr;

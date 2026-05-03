@@ -30,5 +30,5 @@ constexpr unsigned long btn_debounce_ms = 75;
 constexpr uint8_t reset_press_count_threshold = 5;
 constexpr unsigned long reset_window_ms = 10000;
 
-const String version = "1.2.6";
+const String version = "1.2.7";
 } // namespace config

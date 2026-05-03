@@ -320,6 +320,10 @@ void setup()
     String ip = "IP: " + WiFi.localIP().toString();
     lv_label_set_text(ui_labwifistatus, ip.c_str());
   }
+  else if (state == State::AP)
+  {
+    lv_label_set_text(ui_labwifistatus, "Access point");
+  }
 
   lv_timer_create(update_date, 60000, NULL);
   lv_timer_create(wifi_watchdog, 120000, NULL);
