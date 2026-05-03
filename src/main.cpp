@@ -338,7 +338,7 @@ void setup()
   update_counter = 10;
 
   audio.setup();
-  xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 0);
+  xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
 
   if (state != State::AP)
   {
