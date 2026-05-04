@@ -1,9 +1,11 @@
 #include "weather_controller.h"
+
 #include "logger.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+
 
 Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _view, HttpServer* _http_server)
 : model(_model)
@@ -13,6 +15,13 @@ Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _vie
 
 void Weather_controller::fetch_weather(DateTime& now)
 {
+  Open_weather_config cfg_check;
+  model->get_config(cfg_check);
+  if (cfg_check.api_key.isEmpty() && !http_server->is_weather_from_ha())
+  {
+    return;
+  }
+
   model->clear();
   for (size_t i = 0; i < 4; i++)
   {
@@ -114,7 +123,7 @@ void Weather_controller::check_day_part(DateTime& now)
   {
     model->set_day_part(Day_part::evening);
   }
-  else if (now.hour() > 12)
+  else if (now.hour() > 10)
   {
     model->set_day_part(Day_part::afternoon);
   }

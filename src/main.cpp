@@ -214,7 +214,10 @@ static void update_date(lv_timer_t* timer)
     calendar_controller.fetch_calendar();
     calendar_controller.update_view();
     alarm_controller.update_view();
-    httpServer.get_ha_weather();
+    if (httpServer.is_weather_from_ha())
+    {
+      httpServer.get_ha_weather();
+    }
     update_counter = 0;
   }
   else
@@ -315,16 +318,6 @@ void setup()
   calendar_view.setup_calendar_list();
   clock_view.setup_calendar_list();
 
-  if (state == State::welcome_screen)
-  {
-    String ip = "IP: " + WiFi.localIP().toString();
-    lv_label_set_text(ui_labwifistatus, ip.c_str());
-  }
-  else if (state == State::AP)
-  {
-    lv_label_set_text(ui_labwifistatus, "Access point");
-  }
-
   lv_timer_create(update_date, 60000, NULL);
   lv_timer_create(wifi_watchdog, 120000, NULL);
   delay(1000);
@@ -349,6 +342,16 @@ void setup()
     httpServer.entity_clock_setup();
   }
   httpServer.begin();
+
+  if (state == State::welcome_screen)
+  {
+    String ip = "IP: " + WiFi.localIP().toString();
+    lv_label_set_text(ui_labwifistatus, ip.c_str());
+  }
+  else if (state == State::AP)
+  {
+    lv_label_set_text(ui_labwifistatus, "Access point");
+  }
 
   lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
 

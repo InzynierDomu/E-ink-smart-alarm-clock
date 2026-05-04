@@ -97,6 +97,10 @@ int8_t HttpServer::get_ha_weather()
   String haTemperature = "--";
   Serial.println("=== updateHaMeasurement ===");
 
+  if (ha_config.ha_host.isEmpty())
+  {
+    return 0;
+  }
   if (WiFi.status() != WL_CONNECTED)
   {
     Logger::warn("HA", "WiFi not connected, skipping weather fetch");
@@ -104,7 +108,7 @@ int8_t HttpServer::get_ha_weather()
   }
 
   Serial.printf("[HA] Connecting to %s:%u\n", ha_config.ha_host, ha_config.ha_port);
-  if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
+  if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port, 10000))
   {
     Logger::error("HA", "Connection failed to " + ha_config.ha_host + ":" + String(ha_config.ha_port));
     return 0;
@@ -118,6 +122,7 @@ int8_t HttpServer::get_ha_weather()
   Serial.println("[HA] Request:");
   Serial.println(request);
 
+  client.setTimeout(10);
   client.print(request);
 
   String headers;
