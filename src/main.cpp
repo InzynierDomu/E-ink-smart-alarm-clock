@@ -1,5 +1,6 @@
 #include "RTClib.h"
 #include "alarm_model.h"
+#include "logger.h"
 #include "alarm_view.h"
 #include "audio.h"
 #include "calendar_controller.h"
@@ -184,6 +185,19 @@ void update_clock()
   }
 }
 
+static void wifi_watchdog(lv_timer_t* timer)
+{
+  if (state == State::AP || state == State::welcome_screen)
+  {
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Logger::warn("WIFI", "Connection lost, reconnecting...");
+    WiFi.reconnect();
+  }
+}
+
 static void update_date(lv_timer_t* timer)
 {
   if (state == State::welcome_screen || state == State::AP)
@@ -227,6 +241,24 @@ void setup()
     Serial.println("SD card ok");
   }
 
+  Logger::setup("/logs.txt", 50);
+
+  esp_reset_reason_t reset_reason = esp_reset_reason();
+  const char* reset_str = "UNKNOWN";
+  switch (reset_reason)
+  {
+    case ESP_RST_POWERON:   reset_str = "POWERON";   break;
+    case ESP_RST_SW:        reset_str = "SW_RESET";  break;
+    case ESP_RST_PANIC:     reset_str = "PANIC";     break;
+    case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
+    case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
+    case ESP_RST_WDT:       reset_str = "WDT";       break;
+    case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
+    case ESP_RST_SDIO:      reset_str = "SDIO";      break;
+    default: break;
+  }
+  Logger::info("BOOT", String("Reset reason: ") + reset_str + " | version: " + config::version);
+
   if (checkAndPerformUpdateFromSD())
   {
     return;
@@ -242,6 +274,7 @@ void setup()
     WiFi.mode(WIFI_AP);
     delay(100);
     bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
+    WiFi.setSleep(false);
     Serial.print("AP started: ");
     Serial.println(ap_ok ? "YES" : "NO");
     Serial.print("AP IP: ");
@@ -287,8 +320,13 @@ void setup()
     String ip = "IP: " + WiFi.localIP().toString();
     lv_label_set_text(ui_labwifistatus, ip.c_str());
   }
+  else if (state == State::AP)
+  {
+    lv_label_set_text(ui_labwifistatus, "Access point");
+  }
 
   lv_timer_create(update_date, 60000, NULL);
+  lv_timer_create(wifi_watchdog, 120000, NULL);
   delay(1000);
 
   pinMode(config::alarm_enable_button_pin, INPUT);
@@ -304,7 +342,7 @@ void setup()
   update_counter = 10;
 
   audio.setup();
-  xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 0);
+  xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
 
   if (state != State::AP)
   {

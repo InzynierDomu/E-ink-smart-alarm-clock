@@ -1,4 +1,5 @@
 #include "http_server.h"
+#include "logger.h"
 
 #include "config.h"
 #include "config_page_style.h"
@@ -22,6 +23,8 @@ void HttpServer::begin()
   server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
   server_.on("/save", HTTP_POST, [this]() { this->handleSave(); });
   server_.on("/config_page_style.css", HTTP_GET, [this]() { server_.send(200, "text/css", config_page_style_css); });
+  server_.on("/logs", HTTP_GET, [this]() { this->handleLogs(); });
+  server_.on("/logs/clear", HTTP_POST, [this]() { this->handleLogsClear(); });
 
   server_.on(
       "/upload_firmware",
@@ -96,14 +99,14 @@ int8_t HttpServer::get_ha_weather()
 
   if (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("[HA] WiFi not connected");
+    Logger::warn("HA", "WiFi not connected, skipping weather fetch");
     return 0;
   }
 
   Serial.printf("[HA] Connecting to %s:%u\n", ha_config.ha_host, ha_config.ha_port);
   if (!client.connect(ha_config.ha_host.c_str(), ha_config.ha_port))
   {
-    Serial.println("[HA] Connection failed");
+    Logger::error("HA", "Connection failed to " + ha_config.ha_host + ":" + String(ha_config.ha_port));
     return 0;
   }
   Serial.println("[HA] Connected, sending request");
@@ -132,7 +135,9 @@ int8_t HttpServer::get_ha_weather()
 
   if (!headers.startsWith("HTTP/1.1 200"))
   {
-    Serial.println("[HA] Non-200 response");
+    String status_line = headers.substring(0, headers.indexOf('\n'));
+    Logger::error("HA", "Non-200 response: " + status_line);
+    client.stop();
     return 0;
   }
 
@@ -149,7 +154,7 @@ int8_t HttpServer::get_ha_weather()
   int idx = body.indexOf("\"state\":");
   if (idx < 0)
   {
-    Serial.println("[HA] 'state' not found in JSON");
+    Logger::error("HA", "'state' not found in response body");
     return 0;
   }
 
@@ -157,7 +162,7 @@ int8_t HttpServer::get_ha_weather()
   int end = body.indexOf("\"", start + 1);
   if (start < 0 || end < 0 || end <= start)
   {
-    Serial.println("[HA] Failed to parse state string");
+    Logger::error("HA", "Failed to parse state value from body");
     return 0;
   }
 
@@ -463,7 +468,7 @@ String HttpServer::buildFirmwareUpdateSection()
   html += config::version;
   html +=
       R"rawHTML(</label></div><div class="form-row"><label class="form-label">Wybierz plik z nowym oprogramowaniem (*<code>.bin</code>).</label>
-    <form method="POST" action="/upload_firmware" enctype="multipart/form-data">
+    <form id="firmware-form" method="POST" action="/upload_firmware" enctype="multipart/form-data">
         <input type="file" name="firmware">
     </div>
       <div class="form-row">
@@ -473,6 +478,52 @@ String HttpServer::buildFirmwareUpdateSection()
   </div>
   )rawHTML";
   return html;
+}
+
+String HttpServer::buildLogsSection()
+{
+  String html;
+  html += R"rawHTML(
+  <div class="section">
+    <div class="section-title">📋 Logi</div>
+    <div class="form-row" style="gap:8px; flex-wrap:wrap;">
+      <a href="/logs" download="logs.txt"><button type="button">Pobierz logi</button></a>
+      <form method="POST" action="/logs/clear" style="margin:0;">
+        <button type="submit" style="width:auto; padding-left:24px; padding-right:24px;" onclick="return confirm('Wyczyścić plik logów?')">Wyczyść logi</button>
+      </form>
+    </div>
+  </div>
+  )rawHTML";
+  return html;
+}
+
+void HttpServer::handleLogs()
+{
+  if (!SD.exists(Logger::path()))
+  {
+    server_.send(404, "text/plain; charset=utf-8", "Brak pliku logów.");
+    return;
+  }
+  File f = SD.open(Logger::path(), "r");
+  if (!f)
+  {
+    server_.send(500, "text/plain; charset=utf-8", "Nie można otworzyć pliku logów.");
+    return;
+  }
+  server_.sendHeader("Content-Disposition", "attachment; filename=\"logs.txt\"");
+  server_.streamFile(f, "text/plain; charset=utf-8");
+  f.close();
+}
+
+void HttpServer::handleLogsClear()
+{
+  if (SD.exists(Logger::path()))
+  {
+    SD.remove(Logger::path());
+  }
+  Logger::info("LOG", "Log file cleared via web UI");
+  server_.sendHeader("Location", "/");
+  server_.send(303);
 }
 
 String HttpServer::buildFooter()
@@ -555,9 +606,20 @@ String HttpServer::buildPage()
 )rawHTML";
 
   page += buildFirmwareUpdateSection();
+  page += buildLogsSection();
 
   page += buildFooter();
-  page += R"rawHTML(</body></html>)rawHTML";
+  page += R"rawHTML(
+<div id="upload-overlay" class="upload-overlay">
+    <div class="spinner"></div>
+    <div class="overlay-text">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>
+</div>
+<script>
+document.getElementById('firmware-form').addEventListener('submit', function() {
+    document.getElementById('upload-overlay').classList.add('active');
+});
+</script>
+</body></html>)rawHTML";
 
   return page;
 }

@@ -12,9 +12,13 @@ void Weather_model::clear()
 
 void Weather_model::get_forecast(Simple_weather& weather, uint8_t offset_days) const
 {
-  if (offset_days < 4)
+  if (offset_days < forecast.size())
   {
     weather = forecast[offset_days];
+  }
+  else
+  {
+    weather = Simple_weather{};
   }
 }
 

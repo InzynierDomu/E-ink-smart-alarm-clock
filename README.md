@@ -99,6 +99,10 @@ The device fetches today's events directly from Google Calendar using a private 
 
 > After each press wait a moment — the mute/unmute change is visible on screen. Pressing too fast may be interpreted as the reset sequence.
 
+## Troubleshooting
+
+If you run into a problem that you can't resolve, download the device log file from the configuration page (section **Logs**) and send it to **inzynier.domu@gmail.com** — it will help diagnose the issue quickly.
+
 ## Buy a ready-made device
 
 Don't want to build it yourself? You can order a ready-made device directly from me:
