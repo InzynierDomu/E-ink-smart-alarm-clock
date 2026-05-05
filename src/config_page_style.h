@@ -258,6 +258,25 @@ button[type="reset"]:hover {
     flex: 1 1 320px;
 }
 
+.loading-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
 .upload-overlay {
     display: none;
     position: fixed;
@@ -279,7 +298,7 @@ button[type="reset"]:hover {
 .spinner {
     width: 56px;
     height: 56px;
-    border: 5px solid rgba(96, 165, 250, 0.2);
+    border: 5px solid #334155;
     border-top-color: #60a5fa;
     border-radius: 50%;
     animation: spin 0.9s linear infinite;

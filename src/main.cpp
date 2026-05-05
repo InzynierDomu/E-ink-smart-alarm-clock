@@ -290,15 +290,32 @@ void setup()
     WiFi.mode(WIFI_STA);
     // WiFi.setHostname("EInkClock");
     WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
-    while (WiFi.status() != WL_CONNECTED)
+    unsigned long wifi_start = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - wifi_start < 60000)
     {
       delay(500);
       Serial.print(".");
     }
-    Serial.println("WiFi connected");
-    state = State::welcome_screen;
-    Serial.print("IP:");
-    Serial.println(WiFi.localIP());
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      Serial.println("WiFi connected");
+      state = State::welcome_screen;
+      Serial.print("IP:");
+      Serial.println(WiFi.localIP());
+    }
+    else
+    {
+      Logger::warn("WIFI", "Connection timeout, falling back to AP mode");
+      WiFi.mode(WIFI_AP);
+      delay(100);
+      bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
+      WiFi.setSleep(false);
+      Serial.print("AP started: ");
+      Serial.println(ap_ok ? "YES" : "NO");
+      Serial.print("AP IP: ");
+      Serial.println(WiFi.softAPIP());
+      state = State::AP;
+    }
   }
 
   // Generate and set device ID for pairing and calendar fetching
@@ -332,7 +349,7 @@ void setup()
   reset_press_count = 0;
   reset_window_start = 0;
   boot_time = millis();
-  update_counter = 10;
+  update_counter = 8;
 
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);

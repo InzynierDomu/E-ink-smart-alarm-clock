@@ -564,76 +564,61 @@ String HttpServer::buildFooter()
   return html;
 }
 
-String HttpServer::buildPage()
-{
-  String page = R"rawHTML(
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konfiguracja - Inteligentny alarm na e-ink</title>
-    <style>)rawHTML";
-  page += config_page_style_css;
-  page += R"rawHTML(</style>
-</head>
-<body>
-    <div class="container">
-    <!-- Top bar z logiem -->
-        <div class="top-bar">
-            <div class="logo-section">
-                <img src="https://www.inzynierdomu.pl/wp-content/uploads/2017/01/ID_logo-sygnetblue-1.png" 
-                     alt="Inżynier Domu" 
-                     class="logo-image"
-                     width="50" 
-                     height="50">
-                <div class="logo-text">
-                    <h1>Konfiguracja urządzenia</h1>
-                </div>
-            </div>
-            <div class="header-spacer"></div>
-        </div>
-
-        <!-- Formularz konfiguracji -->
-        <form method="POST" action="/save">
-)rawHTML";
-
-  page += buildWifiSection();
-  // page += buildTimezoneSection(); TODO fix
-  page += buildWeatherSection();
-  page += buildGoogleCalendarSection();
-  page += buildHaSection();
-  // page += buildAudioSection();  // audio is hard-coded (44100 Hz, 70%)
-
-  page += R"rawHTML(
-            <div class="button-group">
-                <button type="submit">Zapisz konfigurację</button>
-            </div>
-        </form>
-)rawHTML";
-
-  page += buildFirmwareUpdateSection();
-  page += buildLogsSection();
-
-  page += buildFooter();
-  page += R"rawHTML(
-<div id="upload-overlay" class="upload-overlay">
-    <div class="spinner"></div>
-    <div class="overlay-text">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>
-</div>
-<script>
-document.getElementById('firmware-form').addEventListener('submit', function() {
-    document.getElementById('upload-overlay').classList.add('active');
-});
-</script>
-</body></html>)rawHTML";
-
-  return page;
-}
-
 void HttpServer::handleRoot()
 {
-  server_.send(200, "text/html", buildPage());
+  server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server_.send(200, "text/html; charset=utf-8", "");
+
+  // chunk 1: head + CSS
+  server_.sendContent(
+    "<!DOCTYPE html><html lang=\"pl\"><head>"
+    "<meta charset=\"UTF-8\">"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+    "<title>Konfiguracja - Inteligentny alarm na e-ink</title>"
+    "<style>");
+  server_.sendContent(config_page_style_css);
+
+  // chunk 2: body open + loading overlay + form header
+  server_.sendContent(
+    "</style></head><body>"
+    "<div id=\"loading-overlay\" class=\"loading-overlay\">"
+    "<div class=\"spinner\"></div>"
+    "<div class=\"overlay-text\">Ładowanie&hellip;</div>"
+    "</div>"
+    "<div class=\"container\">"
+    "<div class=\"top-bar\"><div class=\"logo-section\">"
+    "<div class=\"logo-text\"><h1>Konfiguracja urządzenia</h1></div>"
+    "</div><div class=\"header-spacer\"></div></div>"
+    "<form method=\"POST\" action=\"/save\">");
+
+  // chunk 3: all config sections + save button in one go
+  server_.sendContent(
+    buildWifiSection() +
+    buildWeatherSection() +
+    buildGoogleCalendarSection() +
+    buildHaSection() +
+    "<div class=\"button-group\">"
+    "<button type=\"submit\">Zapisz konfigurację</button>"
+    "</div></form>");
+
+  // chunk 4: firmware + logs + footer + scripts
+  server_.sendContent(
+    buildFirmwareUpdateSection() +
+    buildLogsSection() +
+    buildFooter() +
+    "<div id=\"upload-overlay\" class=\"upload-overlay\">"
+    "<div class=\"spinner\"></div>"
+    "<div class=\"overlay-text\">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>"
+    "</div>"
+    "<script>"
+    "document.getElementById('loading-overlay').classList.add('hidden');"
+    "document.getElementById('firmware-form').addEventListener('submit',function(){"
+    "document.getElementById('upload-overlay').classList.add('active');"
+    "});"
+    "</script>"
+    "</body></html>");
+
+  server_.sendContent("");
 }
 
 void HttpServer::handleSave()
