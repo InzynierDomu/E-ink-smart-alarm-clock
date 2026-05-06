@@ -46,7 +46,6 @@ private:
   PubSubClient mqtt_client;
   String device_id_;
 
-  String buildPage();
   String buildWifiSection();
   // String buildTimezoneSection();
   String buildWeatherSection();
