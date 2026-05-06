@@ -186,7 +186,7 @@ bool HttpServer::is_weather_from_ha()
 void HttpServer::entity_clock_setup()
 {
   mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
-  mqtt_client.setBufferSize(324);
+  mqtt_client.setBufferSize(512);
 
 
   if (!mqtt_client.connected())
@@ -196,7 +196,7 @@ void HttpServer::entity_clock_setup()
     delay(300);
   }
 
-  DynamicJsonDocument doc(324);
+  DynamicJsonDocument doc(512);
   doc["name"] = ha_config.ha_entity_clock_name;
   doc["unique_id"] = ha_config.ha_entity_clock_name; // Musi być unikalne w skali całego HA
   doc["state_topic"] = "eink_clock/" + ha_config.ha_entity_clock_name + "/state";
@@ -537,6 +537,7 @@ String HttpServer::buildFooter()
   html += R"rawHTML(
         <div class="footer">
             <p>&copy; 2026 Inżynier Domu. Wszystkie prawa zastrzeżone.</p>
+            <p style="margin-top:8px;font-size:0.9em;"><a href="https://inzynierdomu.pl/budzik-instrukcja" target="_blank" rel="noopener" style="color:#60a5fa;">Instrukcja konfiguracji</a></p>
             <div class="footer-icons">
                 <a href="https://github.com/InzynierDomu/E-ink-smart-alarm-clock" target="_blank" title="GitHub" rel="noopener">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

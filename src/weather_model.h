@@ -1,6 +1,5 @@
 #pragma once
 #include <ArduinoJson.h>
-#include <vector>
 
 struct Open_weather_config
 {
@@ -24,11 +23,13 @@ struct Simple_weather
   uint8_t cloud_cover;
   uint8_t precipitation;
 };
+
+static constexpr uint8_t WEATHER_DAYS = 4;
+
 class Weather_model
 {
   public:
-  void update(const Simple_weather& forecast_weather);
-  void clear();
+  void update_at(uint8_t index, const Simple_weather& forecast_weather);
   void get_forecast(Simple_weather& weather, uint8_t offset_days = 0) const;
   void set_config(Open_weather_config& _config);
   void get_config(Open_weather_config& _config) const;
@@ -36,7 +37,7 @@ class Weather_model
   Day_part get_day_part() const;
 
   private:
-  std::vector<Simple_weather> forecast;
+  Simple_weather forecast[WEATHER_DAYS] = {};
   Open_weather_config config;
   Day_part day_part;
 };

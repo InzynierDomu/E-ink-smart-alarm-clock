@@ -1,25 +1,17 @@
 #include "weather_model.h"
 
-void Weather_model::update(const Simple_weather& forecast_weather)
+void Weather_model::update_at(uint8_t index, const Simple_weather& forecast_weather)
 {
-  forecast.push_back(forecast_weather);
-}
-
-void Weather_model::clear()
-{
-  forecast.clear();
+  if (index < WEATHER_DAYS)
+    forecast[index] = forecast_weather;
 }
 
 void Weather_model::get_forecast(Simple_weather& weather, uint8_t offset_days) const
 {
-  if (offset_days < forecast.size())
-  {
+  if (offset_days < WEATHER_DAYS)
     weather = forecast[offset_days];
-  }
   else
-  {
     weather = Simple_weather{};
-  }
 }
 
 void Weather_model::set_config(Open_weather_config& _config)

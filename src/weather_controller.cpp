@@ -22,8 +22,7 @@ void Weather_controller::fetch_weather(DateTime& now)
     return;
   }
 
-  model->clear();
-  for (size_t i = 0; i < 4; i++)
+  for (size_t i = 0; i < WEATHER_DAYS; i++)
   {
     String dateStr;
     if (i == 0)
@@ -94,7 +93,7 @@ void Weather_controller::fetch_weather(DateTime& now)
         }
         forecast_weather.precipitation = doc["precipitation"]["total"];
         forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
-        model->update(forecast_weather);
+        model->update_at(i, forecast_weather);
       }
     }
 
