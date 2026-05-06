@@ -8,7 +8,10 @@ class Alarm_controller
 {
   public:
   Alarm_controller(Alarm_model* _model, Alarm_view* _view);
-  void set_alarm(Simple_time time);
+  void add_alarm(Simple_time time);
+  void sort_alarms();
+  void advance_alarm();
+  void drop_past(const DateTime& now);
   bool check_alarm(DateTime& now);
   void set_no_alarm();
   void toggle_alarm();

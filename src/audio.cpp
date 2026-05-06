@@ -4,6 +4,9 @@
 
 #include <SD.h>
 #include <driver/i2s.h>
+#include <freertos/semphr.h>
+
+extern SemaphoreHandle_t sd_mutex;
 
 void Audio::setup()
 {
@@ -30,22 +33,21 @@ void Audio::setup()
 
 void Audio::play_audio()
 {
-  File audioFile;
-  Serial.println("playing audio...");
-  audioFile = SD.open(config::audio_path, FILE_READ);
+  if (sd_mutex != nullptr)
+    xSemaphoreTake(sd_mutex, portMAX_DELAY);
+
+  File audioFile = SD.open(config::audio_path, FILE_READ);
   if (!audioFile)
   {
     Serial.println("error with audio file");
+    if (sd_mutex != nullptr)
+      xSemaphoreGive(sd_mutex);
     return;
   }
-
-  Serial.printf("[AUDIO] file size: %u bytes, volume: %u, volFactor: %.3f\n",
-                (unsigned)audioFile.size(), config.volume, config.volume / 100.0f);
 
   i2s_start(I2S_NUM_1);
   size_t bytesRead;
   int16_t buffer[audio_buffer_size];
-
   float volFactor = config.volume / 100.0f;
 
   while (audioFile.available() && !stop_requested)
@@ -55,21 +57,19 @@ void Audio::play_audio()
     size_t samples = bytesRead / sizeof(int16_t);
     for (size_t i = 0; i < samples; i++)
     {
-      int32_t sample = buffer[i];
-      sample = (int32_t)(sample * volFactor);
-
+      int32_t sample = (int32_t)(buffer[i] * volFactor);
       buffer[i] = (int16_t)sample;
     }
 
     i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, pdMS_TO_TICKS(500));
-    vTaskDelay(1); // oddaj CPU żeby IDLE0 mógł zasilić WDT
+    vTaskDelay(1);
   }
 
   audioFile.close();
-
   i2s_stop(I2S_NUM_1);
 
-  Serial.println("playing end.");
+  if (sd_mutex != nullptr)
+    xSemaphoreGive(sd_mutex);
 }
 
 void Audio::set_config(Audio_config& _config)
