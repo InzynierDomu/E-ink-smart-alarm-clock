@@ -35,6 +35,9 @@ void Weather_view::show(const Weather_model& data)
       Day_part part = data.get_day_part();
       switch (part)
       {
+        case Day_part::night:
+          sprintf(temp_str, "%d℃", forecast.temperature_night);
+          break;
         case Day_part::morning:
           sprintf(temp_str, "%d℃", forecast.temperature_morning);
           break;

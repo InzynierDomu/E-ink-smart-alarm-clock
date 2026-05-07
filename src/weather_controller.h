@@ -17,10 +17,11 @@ class Weather_controller
   void update_view();
 
   private:
-  String get_date_string(DateTime dt, uint8_t offset = 0);
+  String get_date_string(DateTime dt, int offset = 0);
   void check_day_part(DateTime& now);
 
   Weather_model* model;
   Weather_view* view;
   HttpServer* http_server;
+  bool night_fetched = false; ///< True once yesterday's night temperature has been fetched in the current night window.
 };

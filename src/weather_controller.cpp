@@ -114,6 +114,51 @@ void Weather_controller::fetch_weather(DateTime& now)
     http.end();
   }
 
+  if (now.hour() >= config::day_part_morning_from)
+  {
+    night_fetched = false;
+  }
+  else if (!night_fetched && !http_server->is_weather_from_ha())
+  {
+    Open_weather_config config;
+    model->get_config(config);
+    if (!config.api_key.isEmpty())
+    {
+      String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
+                          "&lon=" + String(config.lon, 4) + "&date=" + get_date_string(now, -1) +
+                          "&appid=" + config.api_key + "&units=metric";
+
+      HTTPClient http;
+      http.setConnectTimeout(10000);
+      http.setTimeout(10000);
+      http.begin(serverPath.c_str());
+      int code = http.GET();
+
+      if (code == HTTP_CODE_OK)
+      {
+        String response = http.getString();
+        if (response.startsWith("{"))
+        {
+          StaticJsonDocument<4096> doc;
+          if (!deserializeJson(doc, response))
+          {
+            Simple_weather today;
+            model->get_forecast(today, 0);
+            float temp = doc["temperature"]["night"];
+            today.temperature_night = (int8_t)round(temp);
+            model->update_at(0, today);
+            night_fetched = true;
+          }
+        }
+      }
+      else
+      {
+        Logger::error("OWM", "HTTP " + String(code) + " for yesterday night");
+      }
+      http.end();
+    }
+  }
+
   check_day_part(now);
 }
 
@@ -131,9 +176,9 @@ void Weather_controller::update_view()
  * @param offset Number of days to add to the base date.
  * @return Date string in "YYYY-MM-DD" format.
  */
-String Weather_controller::get_date_string(DateTime dt, uint8_t offset)
+String Weather_controller::get_date_string(DateTime dt, int offset)
 {
-  DateTime dt_sum = dt + TimeSpan(offset, 0, 0, 0);
+  DateTime dt_sum = offset >= 0 ? dt + TimeSpan(offset, 0, 0, 0) : dt - TimeSpan(-offset, 0, 0, 0);
   char dateStr[11];
   sprintf(dateStr, "%04d-%02d-%02d", dt_sum.year(), dt_sum.month(), dt_sum.day());
   return String(dateStr);
@@ -145,11 +190,15 @@ String Weather_controller::get_date_string(DateTime dt, uint8_t offset)
  */
 void Weather_controller::check_day_part(DateTime& now)
 {
-  if (now.hour() > 16)
+  if (now.hour() < config::day_part_morning_from)
+  {
+    model->set_day_part(Day_part::night);
+  }
+  else if (now.hour() > config::day_part_afternoon_until)
   {
     model->set_day_part(Day_part::evening);
   }
-  else if (now.hour() > 10)
+  else if (now.hour() > config::day_part_morning_until)
   {
     model->set_day_part(Day_part::afternoon);
   }

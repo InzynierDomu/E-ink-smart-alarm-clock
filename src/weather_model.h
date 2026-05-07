@@ -15,6 +15,7 @@ struct Open_weather_config
 
 enum class Day_part
 {
+  night,
   morning,
   afternoon,
   evening
@@ -22,6 +23,7 @@ enum class Day_part
 
 struct Simple_weather
 {
+  int8_t temperature_night;
   int8_t temperature_morning;
   int8_t temperature_afternoon;
   int8_t temperature_evening;

@@ -36,4 +36,9 @@ constexpr uint8_t reset_press_count_threshold = 5;     ///< Number of presses re
 constexpr unsigned long reset_window_ms = 10000;       ///< Time window in ms within which reset presses must occur.
 
 const String version = "1.2.10";                       ///< Firmware version string.
+
+constexpr uint8_t day_part_morning_from = 6;     ///< Hour from which morning starts; before this hour the night part is shown.
+constexpr uint8_t day_part_morning_until = 10;   ///< Hour (exclusive) until which the morning weather part is shown.
+constexpr uint8_t day_part_afternoon_until = 16; ///< Hour (exclusive) until which the afternoon weather part is shown.
+                                                  ///< After this hour the evening part is shown.
 } // namespace config
