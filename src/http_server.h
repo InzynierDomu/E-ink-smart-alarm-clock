@@ -1,3 +1,8 @@
+/**
+ * @file http_server.h
+ * @brief HTTP configuration server and Home Assistant integration via MQTT.
+ */
+
 // http_server.h
 #pragma once
 #include "audio.h"

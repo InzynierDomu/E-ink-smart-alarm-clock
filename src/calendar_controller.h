@@ -1,3 +1,8 @@
+/**
+ * @file calendar_controller.h
+ * @brief Calendar controller for fetching iCal events and setting alarms.
+ */
+
 #pragma once
 #include "alarm_controller.h"
 #include "calendar_model.h"

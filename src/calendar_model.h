@@ -1,3 +1,8 @@
+/**
+ * @file calendar_model.h
+ * @brief Calendar model storing the list of events and API configuration.
+ */
+
 #pragma once
 #include "clock_model.h"
 

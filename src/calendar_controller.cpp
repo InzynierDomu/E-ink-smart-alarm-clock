@@ -1,3 +1,8 @@
+/**
+ * @file calendar_controller.cpp
+ * @brief Implementation of iCal calendar fetching via proxy and updating the model and alarm.
+ */
+
 #include "calendar_controller.h"
 #include "logger.h"
 
@@ -8,12 +13,23 @@
 
 static const char* PROXY_BASE_URL = "https://inzynierdomu.pl/calendar_proxy/calendar.php";
 
+/**
+ * @brief Initializes the controller with pointers to the model, view, and alarm controller.
+ * @param _model Pointer to the calendar model.
+ * @param _view Pointer to the calendar view.
+ * @param _alarm_controller Pointer to the alarm controller.
+ */
 Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller)
 : model(_model)
 , view(_view)
 , alarm_controller(_alarm_controller)
 {}
 
+/**
+ * @brief Encodes a string using percent-encoding (URL encoding).
+ * @param str The input string to encode.
+ * @return The URL-encoded string.
+ */
 static String url_encode(const String& str)
 {
   String encoded;
@@ -34,6 +50,11 @@ static String url_encode(const String& str)
   return encoded;
 }
 
+/**
+ * @brief Parses a time string in "HH:MM" format into a Simple_time structure.
+ * @param hhmm String containing the time in "HH:MM" format.
+ * @return Parsed time as Simple_time; (0,0) on parse error.
+ */
 static Simple_time parse_hhmm(const String& hhmm)
 {
   int colon = hhmm.indexOf(':');
@@ -44,6 +65,11 @@ static Simple_time parse_hhmm(const String& hhmm)
   return Simple_time(hour, minutes);
 }
 
+/**
+ * @brief Fetches and processes an iCal calendar through the HTTP proxy.
+ * @param ical_url URL of the iCal calendar to fetch.
+ * @param is_alarm true if the calendar is used for alarm setting, false for regular events.
+ */
 void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
 {
   WiFiClientSecure wifiClient;
@@ -118,6 +144,9 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
   }
 }
 
+/**
+ * @brief Fetches data from iCal calendars (events and alarms) and updates the model.
+ */
 void Calendar_controller::fetch_calendar()
 {
   google_api_config config;
@@ -139,6 +168,9 @@ void Calendar_controller::fetch_calendar()
   }
 }
 
+/**
+ * @brief Refreshes the calendar view based on the current model state.
+ */
 void Calendar_controller::update_view()
 {
   view->show(*model);

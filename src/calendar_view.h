@@ -1,3 +1,8 @@
+/**
+ * @file calendar_view.h
+ * @brief Calendar view for displaying the event list on the e-ink screen via LVGL.
+ */
+
 #pragma once
 #include "calendar_model.h"
 #include "screen.h"

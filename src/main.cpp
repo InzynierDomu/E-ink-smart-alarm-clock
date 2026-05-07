@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief Application entry point — initializes all subsystems and runs the main event loop.
+ */
+
 #include "RTClib.h"
 #include "alarm_model.h"
 #include "logger.h"
@@ -40,47 +45,51 @@ enum class State
   welcome_screen
 };
 
-Screen screen;
-DateTime screen_reffresh_time(2000, 1, 1, 3, 0);
+Screen screen;                                                                          ///< E-ink screen driver instance.
+DateTime screen_reffresh_time(2000, 1, 1, 3, 0);                                       ///< Time of day at which a full screen clear is triggered (03:00).
 
-SPIClass spi = SPIClass(HSPI);
+SPIClass spi = SPIClass(HSPI);                                                          ///< HSPI bus instance used by the SD card.
 
-Audio audio;
-DynamicJsonDocument docs(19508);
+Audio audio;                                                                            ///< Audio playback driver instance.
+DynamicJsonDocument docs(19508);                                                        ///< Shared JSON document buffer.
 
-Alarm_model alarm_model;
-Alarm_view alarm_view(&screen);
-Alarm_controller alarm_controller(&alarm_model, &alarm_view);
+Alarm_model alarm_model;                                                                ///< Data model for alarm state.
+Alarm_view alarm_view(&screen);                                                         ///< View responsible for rendering alarm information.
+Alarm_controller alarm_controller(&alarm_model, &alarm_view);                           ///< Controller managing alarm logic.
 
-Calendar_model calendar_model;
-Calendar_view calendar_view(&screen);
-Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_controller);
+Calendar_model calendar_model;                                                          ///< Data model for calendar events.
+Calendar_view calendar_view(&screen);                                                   ///< View responsible for rendering calendar events.
+Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_controller); ///< Controller managing calendar fetching and display.
 
-Clock_model clock_model;
-Clock_view clock_view(&screen);
-Clock_controller clock_controller(&clock_view, &clock_model);
+Clock_model clock_model;                                                                ///< Data model for time and Wi-Fi configuration.
+Clock_view clock_view(&screen);                                                         ///< View responsible for rendering the clock.
+Clock_controller clock_controller(&clock_view, &clock_model);                           ///< Controller managing clock synchronization and display.
 
-Weather_model weather_model;
-WebServer server(80);
-HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);
+Weather_model weather_model;                                                            ///< Data model for weather forecast.
+WebServer server(80);                                                                   ///< HTTP server listening on port 80.
+HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);       ///< Application-level HTTP/MQTT server wrapper.
 
-Weather_view weather_view(&screen);
-Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);
+Weather_view weather_view(&screen);                                                     ///< View responsible for rendering weather data.
+Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);      ///< Controller managing weather fetching and display.
 
-State state;
+State state;                                                                            ///< Current application state.
 
-static bool btn_stable_state = false;
-static bool btn_raw_state = false;
-static unsigned long btn_change_time = 0;
-static int update_counter = 10;
+static bool btn_stable_state = false;         ///< Debounced (stable) button state.
+static bool btn_raw_state = false;            ///< Raw (non-debounced) button reading.
+static unsigned long btn_change_time = 0;     ///< Timestamp of the last raw button state change (ms).
+static int update_counter = 10;               ///< Counter driving periodic data refresh ticks.
 
-static uint8_t reset_press_count = 0;
-static unsigned long reset_window_start = 0;
-static unsigned long boot_time = 0;
+static uint8_t reset_press_count = 0;         ///< Number of button presses counted within the reset window.
+static unsigned long reset_window_start = 0;  ///< Timestamp when the current reset press window started (ms).
+static unsigned long boot_time = 0;           ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
 
-TaskHandle_t audioTaskHandle = nullptr;
-volatile bool startAlarmAudio = false;
+TaskHandle_t audioTaskHandle = nullptr;       ///< Handle for the FreeRTOS audio playback task.
+volatile bool startAlarmAudio = false;        ///< Flag set by the main task to start/stop audio playback on Core 1.
 
+/**
+ * @brief FreeRTOS task that continuously plays alarm audio when the startAlarmAudio flag is set.
+ * @param pvParameters Unused task parameter.
+ */
 void audioTask(void* pvParameters)
 {
   for (;;)
@@ -93,6 +102,9 @@ void audioTask(void* pvParameters)
   }
 }
 
+/**
+ * @brief Reads the JSON configuration file from the SD card and applies settings to all subsystem models.
+ */
 void read_config()
 {
   File file = SD.open(config::config_path, "r");
@@ -154,6 +166,10 @@ void read_config()
   // audio.set_config(audio_config);
 }
 
+/**
+ * @brief Generates a unique device ID string derived from the ESP32 MAC address.
+ * @return Twelve-character hexadecimal string representing the device ID.
+ */
 String get_device_id()
 {
   uint8_t mac[6];
@@ -165,6 +181,9 @@ String get_device_id()
   return String(id);
 }
 
+/**
+ * @brief Updates the clock view and triggers alarm state if the alarm time is reached.
+ */
 void update_clock()
 {
   clock_controller.update_view();
@@ -185,6 +204,10 @@ void update_clock()
   }
 }
 
+/**
+ * @brief LVGL timer callback that checks WiFi connectivity and triggers reconnection if lost.
+ * @param timer Pointer to the LVGL timer that fired this callback.
+ */
 static void wifi_watchdog(lv_timer_t* timer)
 {
   if (state == State::AP || state == State::welcome_screen)
@@ -198,6 +221,10 @@ static void wifi_watchdog(lv_timer_t* timer)
   }
 }
 
+/**
+ * @brief LVGL timer callback that updates the clock and periodically fetches weather and calendar data.
+ * @param timer Pointer to the LVGL timer that fired this callback.
+ */
 static void update_date(lv_timer_t* timer)
 {
   if (state == State::welcome_screen || state == State::AP)
@@ -375,6 +402,10 @@ void setup()
   digitalWrite(config::led_pin, HIGH);
 }
 
+/**
+ * @brief Reads the button state with debounce filtering and reports a stable edge.
+ * @return true when a debounced button edge is detected, false otherwise.
+ */
 bool check_button()
 {
   bool reading = digitalRead(config::btn_pin);
@@ -392,6 +423,10 @@ bool check_button()
   return false;
 }
 
+/**
+ * @brief Checks whether the button has been pressed enough times within the reset window to trigger a config reset.
+ * @return true if the reset threshold was reached, false otherwise.
+ */
 bool check_reset_sequence()
 {
   if (millis() - boot_time < 3000)
@@ -419,6 +454,9 @@ bool check_reset_sequence()
   return false;
 }
 
+/**
+ * @brief Overwrites the configuration file on the SD card with an empty JSON object.
+ */
 void clear_config()
 {
   File file = SD.open(config::config_path, "w");

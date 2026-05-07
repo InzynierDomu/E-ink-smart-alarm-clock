@@ -1,3 +1,8 @@
+/**
+ * @file clock_controller.h
+ * @brief Clock controller handling NTP synchronization, RTC management, and view updates.
+ */
+
 #pragma once
 #include "RTClib.h"
 #include "clock_model.h"

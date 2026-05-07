@@ -1,3 +1,8 @@
+/**
+ * @file logger.h
+ * @brief Logger interface for writing messages to an SD card with INFO/WARN/ERROR levels.
+ */
+
 #pragma once
 #include <Arduino.h>
 

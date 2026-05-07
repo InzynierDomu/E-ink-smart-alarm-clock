@@ -1,9 +1,22 @@
+/**
+ * @file weather_view.cpp
+ * @brief Implementation of the weather view — updating LVGL labels with forecast temperatures and icons.
+ */
+
 #include "weather_view.h"
 
+/**
+ * @brief Initializes the view with a pointer to the screen object.
+ * @param scr Pointer to the Screen object.
+ */
 Weather_view::Weather_view(Screen* scr)
 : screen(scr)
 {}
 
+/**
+ * @brief Updates all LVGL temperature labels and weather icon labels from the weather model.
+ * @param data Reference to the weather model containing forecast data.
+ */
 void Weather_view::show(const Weather_model& data)
 {
   static lv_obj_t* tempLabelsMorning[] = {ui_labTempMorning, ui_labTempMorningDay1, ui_labTempMorningDay2, ui_labTempMorningDay3};
@@ -49,6 +62,12 @@ void Weather_view::show(const Weather_model& data)
   }
 }
 
+/**
+ * @brief Selects a weather icon character based on cloud cover and precipitation values.
+ * @param cloud_cover Cloud cover percentage.
+ * @param precipitation Precipitation amount.
+ * @return Single-character string representing the weather icon.
+ */
 const char* Weather_view::weather_icon_change(int cloud_cover, int precipitation)
 {
   if (cloud_cover > 30 && precipitation == 0)

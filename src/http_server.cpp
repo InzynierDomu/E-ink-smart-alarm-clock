@@ -1,3 +1,8 @@
+/**
+ * @file http_server.cpp
+ * @brief Implementation of the HTTP server — configuration page, settings persistence, logging, and HA/MQTT integration.
+ */
+
 #include "http_server.h"
 #include "logger.h"
 
@@ -8,6 +13,14 @@
 #include <SD.h>
 
 
+/**
+ * @brief Initializes the HTTP server with references to models and the audio object.
+ * @param server Reference to the WebServer object.
+ * @param clock_model Reference to the clock model.
+ * @param weather_model Reference to the weather model.
+ * @param calendar_model Reference to the calendar model.
+ * @param audio Reference to the Audio object.
+ */
 HttpServer::HttpServer(WebServer& server, Clock_model& clock_model, Weather_model& weather_model, Calendar_model& calendar_model,
                        Audio& audio)
 : server_(server)
@@ -18,6 +31,9 @@ HttpServer::HttpServer(WebServer& server, Clock_model& clock_model, Weather_mode
 , mqtt_client(client)
 {}
 
+/**
+ * @brief Registers HTTP handlers and starts the web server.
+ */
 void HttpServer::begin()
 {
   server_.on("/", HTTP_GET, [this]() { this->handleRoot(); });
@@ -87,11 +103,19 @@ void HttpServer::begin()
   server_.begin();
 }
 
+/**
+ * @brief Stores the Home Assistant configuration in the HTTP server.
+ * @param config Reference to the HA_config structure with configuration data.
+ */
 void HttpServer::ha_set_config(HA_config& config)
 {
   ha_config = config;
 }
 
+/**
+ * @brief Retrieves the current temperature from a Home Assistant weather entity via HTTP.
+ * @return Temperature in degrees Celsius, or 0 on error.
+ */
 int8_t HttpServer::get_ha_weather()
 {
   String haTemperature = "--";
@@ -178,11 +202,18 @@ int8_t HttpServer::get_ha_weather()
   return haTemperature.toInt();
 }
 
+/**
+ * @brief Checks whether weather data should be fetched from Home Assistant.
+ * @return true if weather from HA is configured.
+ */
 bool HttpServer::is_weather_from_ha()
 {
   return ha_config.weather_from_ha;
 }
 
+/**
+ * @brief Registers the clock entity in Home Assistant via MQTT Discovery.
+ */
 void HttpServer::entity_clock_setup()
 {
   mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
@@ -228,6 +259,10 @@ void HttpServer::entity_clock_setup()
   }
 }
 
+/**
+ * @brief Builds the HTML section for the WiFi configuration form.
+ * @return String containing the HTML for the WiFi section.
+ */
 String HttpServer::buildWifiSection()
 {
   Wifi_Config wifi;
@@ -254,6 +289,9 @@ String HttpServer::buildWifiSection()
 }
 
 
+/**
+ * @brief Sends an MQTT "ON" message to the clock entity state topic in Home Assistant.
+ */
 void HttpServer::send_mqtt_action()
 {
   // 1. Sprawdź, czy w ogóle jesteśmy połączeni z MQTT
@@ -301,6 +339,10 @@ void HttpServer::send_mqtt_action()
 //   return html;
 // }
 
+/**
+ * @brief Builds the HTML section for the OpenWeather configuration form.
+ * @return String containing the HTML for the weather section.
+ */
 String HttpServer::buildWeatherSection()
 {
   Open_weather_config weather;
@@ -335,6 +377,10 @@ String HttpServer::buildWeatherSection()
   return html;
 }
 
+/**
+ * @brief Builds the HTML section for the Google Calendar (iCal) configuration form.
+ * @return String containing the HTML for the calendar section.
+ */
 String HttpServer::buildGoogleCalendarSection()
 {
   google_api_config cal_config;
@@ -362,6 +408,10 @@ String HttpServer::buildGoogleCalendarSection()
 )rawHTML";
   return html;
 }
+/**
+ * @brief Builds the HTML section for the audio configuration form (sample rate and volume).
+ * @return String containing the HTML for the audio section.
+ */
 String HttpServer::buildAudioSection()
 {
   Audio_config config;
@@ -396,6 +446,10 @@ String HttpServer::buildAudioSection()
   return html;
 }
 
+/**
+ * @brief Builds the HTML section for the Home Assistant and MQTT configuration form.
+ * @return String containing the HTML for the Home Assistant section.
+ */
 String HttpServer::buildHaSection()
 {
   String html;
@@ -462,6 +516,10 @@ String HttpServer::buildHaSection()
   return html;
 }
 
+/**
+ * @brief Builds the HTML section for uploading firmware via the browser.
+ * @return String containing the HTML for the firmware update section.
+ */
 String HttpServer::buildFirmwareUpdateSection()
 {
   String html;
@@ -485,6 +543,10 @@ String HttpServer::buildFirmwareUpdateSection()
   return html;
 }
 
+/**
+ * @brief Builds the HTML section with buttons for downloading and clearing logs.
+ * @return String containing the HTML for the logs section.
+ */
 String HttpServer::buildLogsSection()
 {
   String html;
@@ -502,6 +564,9 @@ String HttpServer::buildLogsSection()
   return html;
 }
 
+/**
+ * @brief Handles the GET /logs request — sends the log file as a downloadable attachment.
+ */
 void HttpServer::handleLogs()
 {
   if (!SD.exists(Logger::path()))
@@ -520,6 +585,9 @@ void HttpServer::handleLogs()
   f.close();
 }
 
+/**
+ * @brief Handles the POST /logs/clear request — deletes the log file and redirects to the main page.
+ */
 void HttpServer::handleLogsClear()
 {
   if (SD.exists(Logger::path()))
@@ -531,6 +599,10 @@ void HttpServer::handleLogsClear()
   server_.send(303);
 }
 
+/**
+ * @brief Builds the HTML footer of the configuration page with links and icons.
+ * @return String containing the HTML for the footer.
+ */
 String HttpServer::buildFooter()
 {
   String html;
@@ -565,6 +637,9 @@ String HttpServer::buildFooter()
   return html;
 }
 
+/**
+ * @brief Handles the GET / request — generates and sends the configuration page using chunked transfer.
+ */
 void HttpServer::handleRoot()
 {
   server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -622,6 +697,9 @@ void HttpServer::handleRoot()
   server_.sendContent("");
 }
 
+/**
+ * @brief Handles the POST /save request — saves the form configuration to the SD card and restarts the ESP.
+ */
 void HttpServer::handleSave()
 {
   Serial.printf("[SAVE] ssid from form: '%s'\n", server_.arg("ssid").c_str());
@@ -642,6 +720,11 @@ void HttpServer::handleSave()
   ESP.restart();
 }
 
+/**
+ * @brief Loads the JSON configuration file from the SD card into an ArduinoJson document.
+ * @param doc Reference to the JSON document that will receive the configuration.
+ * @return true if loading succeeded or the file does not exist, false on parse error.
+ */
 bool HttpServer::loadConfigJson(JsonDocument& doc)
 {
   File file = SD.open(config::config_path, "r");
@@ -657,6 +740,11 @@ bool HttpServer::loadConfigJson(JsonDocument& doc)
   return !err;
 }
 
+/**
+ * @brief Saves the JSON configuration document to the SD card.
+ * @param doc Reference to the JSON document containing the configuration to save.
+ * @return true if saving succeeded, false on error.
+ */
 bool HttpServer::saveConfigJson(const JsonDocument& doc)
 {
   if (SD.exists(config::config_path))
@@ -673,6 +761,10 @@ bool HttpServer::saveConfigJson(const JsonDocument& doc)
   return written > 0;
 }
 
+/**
+ * @brief Populates the JSON document with values from the HTTP POST request parameters.
+ * @param doc Reference to the JSON document to be updated with form data.
+ */
 void HttpServer::updateConfigFromRequest(JsonDocument& doc)
 {
   String new_ssid = server_.arg("ssid");
@@ -718,6 +810,9 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   doc["weather_from_HA"] = new_weather_from_ha;
 }
 
+/**
+ * @brief Attempts to reconnect the MQTT client to the broker (up to 3 retries).
+ */
 void HttpServer::mqtt_reconnect()
 {
   uint8_t attempts = 0;

@@ -1,3 +1,8 @@
+/**
+ * @file alarm_controller.h
+ * @brief Alarm controller managing the logic for setting, checking, and toggling the alarm.
+ */
+
 #pragma once
 
 #include "RTClib.h"

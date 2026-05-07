@@ -1,3 +1,8 @@
+/**
+ * @file weather_controller.h
+ * @brief Weather controller for fetching forecast data and updating the weather view.
+ */
+
 #pragma once
 #include "RTClib.h"
 #include "http_server.h"

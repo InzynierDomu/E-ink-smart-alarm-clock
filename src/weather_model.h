@@ -1,3 +1,8 @@
+/**
+ * @file weather_model.h
+ * @brief Weather model storing multi-day forecast data and the OpenWeather API configuration.
+ */
+
 #pragma once
 #include <ArduinoJson.h>
 

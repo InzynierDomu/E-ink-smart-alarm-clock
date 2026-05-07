@@ -1,3 +1,8 @@
+/**
+ * @file weather_controller.cpp
+ * @brief Implementation of the weather controller — fetching OpenWeather forecast and updating the model and view.
+ */
+
 #include "weather_controller.h"
 
 #include "logger.h"
@@ -6,13 +11,22 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-
+/**
+ * @brief Initializes the controller with pointers to the model, view, and HTTP server.
+ * @param _model Pointer to the weather model.
+ * @param _view Pointer to the weather view.
+ * @param _http_server Pointer to the HTTP server used for Home Assistant weather queries.
+ */
 Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _view, HttpServer* _http_server)
 : model(_model)
 , view(_view)
 , http_server(_http_server)
 {}
 
+/**
+ * @brief Fetches weather forecast for multiple days from OpenWeather API or Home Assistant and updates the model.
+ * @param now Reference to the current RTC time used to calculate forecast dates.
+ */
 void Weather_controller::fetch_weather(DateTime& now)
 {
   Open_weather_config cfg_check;
@@ -103,11 +117,20 @@ void Weather_controller::fetch_weather(DateTime& now)
   check_day_part(now);
 }
 
+/**
+ * @brief Refreshes the weather view based on the current model state.
+ */
 void Weather_controller::update_view()
 {
   view->show(*model);
 }
 
+/**
+ * @brief Returns the date in "YYYY-MM-DD" format offset by the given number of days.
+ * @param dt Base date.
+ * @param offset Number of days to add to the base date.
+ * @return Date string in "YYYY-MM-DD" format.
+ */
 String Weather_controller::get_date_string(DateTime dt, uint8_t offset)
 {
   DateTime dt_sum = dt + TimeSpan(offset, 0, 0, 0);
@@ -116,6 +139,10 @@ String Weather_controller::get_date_string(DateTime dt, uint8_t offset)
   return String(dateStr);
 }
 
+/**
+ * @brief Determines the current part of the day and updates the model accordingly.
+ * @param now Reference to the current RTC time.
+ */
 void Weather_controller::check_day_part(DateTime& now)
 {
   if (now.hour() > 16)

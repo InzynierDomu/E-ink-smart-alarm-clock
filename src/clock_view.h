@@ -1,3 +1,8 @@
+/**
+ * @file clock_view.h
+ * @brief Clock view for displaying time and dates on the e-ink screen via LVGL.
+ */
+
 #pragma once
 #include "RTClib.h"
 #include "screen.h"

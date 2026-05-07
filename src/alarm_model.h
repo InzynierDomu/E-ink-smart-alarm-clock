@@ -1,3 +1,8 @@
+/**
+ * @file alarm_model.h
+ * @brief Alarm model storing the alarm time and its enabled state.
+ */
+
 #pragma once
 #include "clock_model.h"
 

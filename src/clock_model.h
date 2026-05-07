@@ -1,3 +1,8 @@
+/**
+ * @file clock_model.h
+ * @brief Clock model defining the Simple_time and Wifi_Config structures and the Clock_model class.
+ */
+
 #pragma once
 #include <Arduino.h>
 #include <time.h>

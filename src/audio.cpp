@@ -1,3 +1,8 @@
+/**
+ * @file audio.cpp
+ * @brief Implementation of WAV file playback over the I2S interface on ESP32.
+ */
+
 #include "audio.h"
 
 #include "config.h"
@@ -5,6 +10,9 @@
 #include <SD.h>
 #include <driver/i2s.h>
 
+/**
+ * @brief Initializes the I2S driver with the current audio configuration.
+ */
 void Audio::setup()
 {
   Serial.println("audio cofing start");
@@ -28,6 +36,9 @@ void Audio::setup()
   Serial.println("audio cofing end");
 }
 
+/**
+ * @brief Plays an audio file from the SD card over I2S with volume scaling applied.
+ */
 void Audio::play_audio()
 {
   File audioFile;
@@ -72,6 +83,10 @@ void Audio::play_audio()
   Serial.println("playing end.");
 }
 
+/**
+ * @brief Sets the audio configuration — sample rate and volume (range 1–100).
+ * @param _config Reference to the structure with the new configuration.
+ */
 void Audio::set_config(Audio_config& _config)
 {
   if (_config.sample_rate > 0)
@@ -84,16 +99,26 @@ void Audio::set_config(Audio_config& _config)
   }
 }
 
+/**
+ * @brief Copies the current audio configuration into the provided structure.
+ * @param _config Reference to the structure that will receive the configuration.
+ */
 void Audio::get_config(Audio_config& _config)
 {
   _config = config;
 }
 
+/**
+ * @brief Requests audio playback to stop.
+ */
 void Audio::stop()
 {
   stop_requested = true;
 }
 
+/**
+ * @brief Allows audio playback to proceed by clearing the stop flag.
+ */
 void Audio::start()
 {
   stop_requested = false;
