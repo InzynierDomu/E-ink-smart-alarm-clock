@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell($f = \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\Budzik\\\\Budzik - instrukcja druk booklet.html\"; $lines = [System.IO.File]::ReadAllLines\\($f, [System.Text.Encoding]::UTF8\\); for\\($i=223; $i -lt $lines.Count; $i++\\) { Write-Output \"$\\($i+1\\): $\\($lines[$i]\\)\" })",
-      "PowerShell($f = \"C:\\\\Users\\\\markiszy\\\\Test\\\\Obsidian_vault\\\\Moje_notatki\\\\Inżynier_domu\\\\Produkty\\\\Budzik\\\\Budzik - instrukcja druk booklet.html\"; $lines = [System.IO.File]::ReadAllLines\\($f, [System.Text.Encoding]::UTF8\\); for\\($i=0; $i -lt $lines.Count; $i++\\) { if\\($lines[$i] -match 'Str\\\\.|A4 NR|pusta'\\) { Write-Output \"$\\($i+1\\): $\\($lines[$i]\\)\" } })"
-    ]
-  }
-}
