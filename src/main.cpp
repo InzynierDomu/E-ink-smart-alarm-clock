@@ -40,6 +40,8 @@ enum class State
   welcome_screen
 };
 
+SemaphoreHandle_t sd_mutex = nullptr;
+
 Screen screen;
 DateTime screen_reffresh_time(2000, 1, 1, 3, 0);
 
@@ -72,7 +74,10 @@ State state;
 static bool btn_stable_state = false;
 static bool btn_raw_state = false;
 static unsigned long btn_change_time = 0;
-static int update_counter = 10;
+static int cal_counter       = 9;
+static int alarm_cal_counter = 8;
+static int owm_counter       = 7;
+static int ha_counter        = 6;
 
 static uint8_t reset_press_count = 0;
 static unsigned long reset_window_start = 0;
@@ -88,8 +93,12 @@ void audioTask(void* pvParameters)
     if (startAlarmAudio)
     {
       audio.play_audio();
+      vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    else
+    {
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
   }
 }
 
@@ -205,24 +214,51 @@ static void update_date(lv_timer_t* timer)
     return;
   }
   update_clock();
-  if (update_counter >= 10)
+  DateTime now;
+  clock_controller.get_time(now);
+
+  if (cal_counter >= 10)
   {
-    DateTime now;
-    clock_controller.get_time(now);
-    weather_controller.fetch_weather(now);
-    weather_controller.update_view();
-    calendar_controller.fetch_calendar();
+    calendar_controller.fetch_events();
     calendar_controller.update_view();
-    alarm_controller.update_view();
-    if (httpServer.is_weather_from_ha())
-    {
-      httpServer.get_ha_weather();
-    }
-    update_counter = 0;
+    cal_counter = 0;
   }
   else
   {
-    update_counter++;
+    cal_counter++;
+  }
+
+  if (alarm_cal_counter >= 10)
+  {
+    calendar_controller.fetch_alarms();
+    alarm_controller.drop_past(now);
+    alarm_controller.update_view();
+    alarm_cal_counter = 0;
+  }
+  else
+  {
+    alarm_cal_counter++;
+  }
+
+  if (owm_counter >= 10)
+  {
+    weather_controller.fetch_weather(now);
+    weather_controller.update_view();
+    owm_counter = 0;
+  }
+  else
+  {
+    owm_counter++;
+  }
+
+  if (ha_counter >= 10 && httpServer.is_weather_from_ha())
+  {
+    httpServer.get_ha_weather();
+    ha_counter = 0;
+  }
+  else
+  {
+    ha_counter++;
   }
 }
 
@@ -244,23 +280,33 @@ void setup()
     Serial.println("SD card ok");
   }
 
+  sd_mutex = xSemaphoreCreateMutex();
   Logger::setup("/logs.txt", 50);
 
   esp_reset_reason_t reset_reason = esp_reset_reason();
-  const char* reset_str = "UNKNOWN";
-  switch (reset_reason)
   {
-    case ESP_RST_POWERON:   reset_str = "POWERON";   break;
-    case ESP_RST_SW:        reset_str = "SW_RESET";  break;
-    case ESP_RST_PANIC:     reset_str = "PANIC";     break;
-    case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
-    case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
-    case ESP_RST_WDT:       reset_str = "WDT";       break;
-    case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
-    case ESP_RST_SDIO:      reset_str = "SDIO";      break;
-    default: break;
+    const char* reset_str = "UNKNOWN";
+    switch (reset_reason)
+    {
+      case ESP_RST_POWERON:   reset_str = "POWERON";   break;
+      case ESP_RST_SW:        reset_str = "SW_RESET";  break;
+      case ESP_RST_PANIC:     reset_str = "PANIC";     break;
+      case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
+      case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
+      case ESP_RST_WDT:       reset_str = "WDT";       break;
+      case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
+      case ESP_RST_SDIO:      reset_str = "SDIO";      break;
+      default: break;
+    }
+    bool is_error = (reset_reason == ESP_RST_PANIC || reset_reason == ESP_RST_INT_WDT ||
+                     reset_reason == ESP_RST_TASK_WDT || reset_reason == ESP_RST_WDT ||
+                     reset_reason == ESP_RST_BROWNOUT);
+    String msg = String(reset_str) + " | version: " + config::version;
+    if (is_error)
+      Logger::error("BOOT", msg);
+    else
+      Logger::info("BOOT", msg);
   }
-  Logger::info("BOOT", String("Reset reason: ") + reset_str + " | version: " + config::version);
 
   if (checkAndPerformUpdateFromSD())
   {
@@ -349,7 +395,10 @@ void setup()
   reset_press_count = 0;
   reset_window_start = 0;
   boot_time = millis();
-  update_counter = 8;
+  cal_counter       = 8;
+  alarm_cal_counter = 7;
+  owm_counter       = 6;
+  ha_counter        = 5;
 
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
@@ -444,6 +493,8 @@ void loop()
   {
     if (btn_edge)
     {
+      alarm_controller.advance_alarm();
+      alarm_controller.update_view();
       state = State::normal;
       audio.stop();
       startAlarmAudio = false;
@@ -456,6 +507,7 @@ void loop()
     {
       if (check_reset_sequence())
       {
+        Logger::warn("BOOT", "Config cleared by button");
         clear_config();
         ESP.restart();
       }
@@ -473,6 +525,7 @@ void loop()
     {
       if (check_reset_sequence())
       {
+        Logger::warn("BOOT", "Config cleared by button");
         clear_config();
         ESP.restart();
       }

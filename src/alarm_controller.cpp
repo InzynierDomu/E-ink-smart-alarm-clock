@@ -5,11 +5,27 @@ Alarm_controller::Alarm_controller(Alarm_model* _model, Alarm_view* _view)
 , view(_view)
 {}
 
-void Alarm_controller::set_alarm(Simple_time time)
+void Alarm_controller::add_alarm(Simple_time time)
 {
   Clock_alarm alarm;
   alarm.time = time;
-  model->set_alarm(alarm, true);
+  alarm.enable = true;
+  model->add_alarm(alarm);
+}
+
+void Alarm_controller::sort_alarms()
+{
+  model->sort_alarms();
+}
+
+void Alarm_controller::advance_alarm()
+{
+  model->advance_alarm();
+}
+
+void Alarm_controller::drop_past(const DateTime& now)
+{
+  model->drop_past(now.hour(), now.minute());
 }
 
 bool Alarm_controller::check_alarm(DateTime& now)
@@ -18,7 +34,6 @@ bool Alarm_controller::check_alarm(DateTime& now)
   model->get_alarm(alarm);
   if (alarm.enable)
   {
-    Serial.println(alarm.time.hour);
     if (now.hour() == alarm.time.hour && now.minute() == alarm.time.minutes)
     {
       return true;

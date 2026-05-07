@@ -188,10 +188,8 @@ void HttpServer::entity_clock_setup()
   mqtt_client.setServer(ha_config.ha_host.c_str(), ha_config.mqtt_port);
   mqtt_client.setBufferSize(512);
 
-
   if (!mqtt_client.connected())
   {
-    Serial.println("MQTT niepołączone, próba rekonakcji...");
     mqtt_reconnect();
     delay(300);
   }
@@ -215,16 +213,10 @@ void HttpServer::entity_clock_setup()
   serializeJson(doc, msg);
 
   String topic = "homeassistant/binary_sensor/" + ha_config.ha_entity_clock_name + "/config";
-  Serial.print("Wysyłanie konfiguracji do: ");
-  Serial.println(topic);
 
-  if (mqtt_client.publish(topic.c_str(), msg.c_str(), true))
+  if (!mqtt_client.publish(topic.c_str(), msg.c_str(), true))
   {
-    Serial.println("Konfiguracja wysłana pomyślnie!");
-  }
-  else
-  {
-    Serial.println("Błąd wysyłania! Sprawdź wielkość bufora (setBufferSize).");
+    Logger::error("HA-MQTT", "Publish failed (state: " + String(mqtt_client.state()) + ")");
   }
 }
 
@@ -256,28 +248,17 @@ String HttpServer::buildWifiSection()
 
 void HttpServer::send_mqtt_action()
 {
-  // 1. Sprawdź, czy w ogóle jesteśmy połączeni z MQTT
   if (!mqtt_client.connected())
   {
-    Serial.println("MQTT niepołączone, próba rekonakcji...");
     mqtt_reconnect();
     delay(300);
   }
 
-  // 2. Zbuduj topik stanu (taki sam jak w konfiguracji Discovery)
   String topic = "eink_clock/" + String(ha_config.ha_entity_clock_name) + "/state";
 
-  // 3. Wyślij wiadomość "ON"
-  // Parametr 'false' na końcu oznacza, że wiadomość NIE jest typu 'retained'.
-  // Przy akcjach typu przycisk/ruch lepiej nie używać retain,
-  // żeby HA nie odczytał tego starego stanu po swoim restarcie.
-  if (mqtt_client.publish(topic.c_str(), "ON", false))
+  if (!mqtt_client.publish(topic.c_str(), "ON", false))
   {
-    Serial.println("Akcja MQTT 'ON' wysłana do: " + topic);
-  }
-  else
-  {
-    Serial.println("Błąd wysyłania publish! Sprawdź połączenie.");
+    Logger::error("HA-MQTT", "Publish failed (state: " + String(mqtt_client.state()) + ")");
   }
 }
 
@@ -526,7 +507,6 @@ void HttpServer::handleLogsClear()
   {
     SD.remove(Logger::path());
   }
-  Logger::info("LOG", "Log file cleared via web UI");
   server_.sendHeader("Location", "/");
   server_.send(303);
 }
@@ -637,6 +617,7 @@ void HttpServer::handleSave()
     server_.send(500, "text/plain", "Blad zapisu config");
     return;
   }
+  Logger::info("BOOT", "Config saved via web, restarting");
   server_.send(200, "text/plain", "Zapisano, restartuje...");
   delay(500);
   ESP.restart();
@@ -718,26 +699,37 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   doc["weather_from_HA"] = new_weather_from_ha;
 }
 
+static String mqtt_state_description(int state)
+{
+  switch (state)
+  {
+    case -4: return "connection timeout";
+    case -3: return "connection lost";
+    case -2: return "connect failed";
+    case -1: return "disconnected";
+    case  1: return "bad protocol";
+    case  2: return "bad client ID";
+    case  3: return "server unavailable";
+    case  4: return "bad credentials";
+    case  5: return "unauthorized";
+    default: return "unknown";
+  }
+}
+
 void HttpServer::mqtt_reconnect()
 {
   uint8_t attempts = 0;
   while (!mqtt_client.connected() && attempts < 3)
   {
-    Serial.printf("Próba połączenia MQTT (%d/3)...", attempts + 1);
     String clientId = "Eink_Clock_" + String(random(0xffff), HEX);
-    if (mqtt_client.connect(clientId.c_str(), ha_config.ha_user.c_str(), ha_config.ha_pass.c_str()))
+    if (!mqtt_client.connect(clientId.c_str(), ha_config.ha_user.c_str(), ha_config.ha_pass.c_str()))
     {
-      Serial.println("Połączono!");
-    }
-    else
-    {
-      Serial.print("Błąd: ");
-      Serial.print(mqtt_client.state());
-      Serial.println(" ponowna próba za 5 sekund");
+      int state = mqtt_client.state();
+      Logger::error("HA-MQTT", "Connect failed: " + String(state) + " (" + mqtt_state_description(state) + ")");
       delay(5000);
       attempts++;
     }
   }
   if (!mqtt_client.connected())
-    Serial.println("MQTT: przekroczono limit prób, pomijam.");
+    Logger::error("HA-MQTT", "Max attempts reached, skipping");
 }

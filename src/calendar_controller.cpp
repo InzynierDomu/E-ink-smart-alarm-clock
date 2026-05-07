@@ -105,9 +105,8 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
 
     if (is_alarm)
     {
-      alarm_controller->set_alarm(time_start);
-      alarm_controller->enable_alarm();
-      Serial.printf("Alarm set: %02d:%02d\n", time_start.hour, time_start.minutes);
+      alarm_controller->add_alarm(time_start);
+      Serial.printf("Alarm added: %02d:%02d\n", time_start.hour, time_start.minutes);
     }
     else
     {
@@ -118,25 +117,25 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
   }
 }
 
-void Calendar_controller::fetch_calendar()
+void Calendar_controller::fetch_events()
 {
   google_api_config config;
   model->get_config(config);
-
+  if (config.ical_url.length() == 0)
+    return;
   model->clear();
+  fetch_ical(config.ical_url, false);
+}
 
-  if (config.ical_url.length() > 0)
-  {
-    Serial.println("Fetching calendar via proxy...");
-    fetch_ical(config.ical_url, false);
-  }
-
-  if (config.ical_alarm_url.length() > 0)
-  {
-    alarm_controller->set_no_alarm();
-    Serial.println("Fetching alarm via proxy...");
-    fetch_ical(config.ical_alarm_url, true);
-  }
+void Calendar_controller::fetch_alarms()
+{
+  google_api_config config;
+  model->get_config(config);
+  if (config.ical_alarm_url.length() == 0)
+    return;
+  alarm_controller->set_no_alarm();
+  fetch_ical(config.ical_alarm_url, true);
+  alarm_controller->sort_alarms();
 }
 
 void Calendar_controller::update_view()

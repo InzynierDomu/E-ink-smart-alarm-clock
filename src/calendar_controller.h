@@ -7,7 +7,8 @@ class Calendar_controller
 {
   public:
   Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller);
-  void fetch_calendar();
+  void fetch_events();
+  void fetch_alarms();
   void update_view();
 
   private:
