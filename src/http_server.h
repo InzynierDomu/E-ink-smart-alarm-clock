@@ -8,6 +8,7 @@
 #include "audio.h"
 #include "calendar_model.h"
 #include "clock_model.h"
+#include "ha_parser.h"
 #include "weather_model.h"
 
 #include <PubSubClient.h>
@@ -70,4 +71,6 @@ private:
   bool saveConfigJson(const JsonDocument& doc);
   void updateConfigFromRequest(JsonDocument& doc);
   void mqtt_reconnect();
+
+  String build_ha_request() const;
 };

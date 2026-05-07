@@ -54,6 +54,22 @@ class String
   bool startsWith(const char* prefix) const { return _s.find(prefix) == 0; }
   bool startsWith(const String& prefix) const { return _s.find(prefix._s) == 0; }
 
+  int indexOf(const char* s, int from = 0) const
+  {
+    auto pos = _s.find(s, from);
+    return pos == std::string::npos ? -1 : (int)pos;
+  }
+  int indexOf(const String& s, int from = 0) const
+  {
+    auto pos = _s.find(s._s, from);
+    return pos == std::string::npos ? -1 : (int)pos;
+  }
+  int indexOf(char c, int from = 0) const
+  {
+    auto pos = _s.find(c, from);
+    return pos == std::string::npos ? -1 : (int)pos;
+  }
+
   const char* c_str() const { return _s.c_str(); }
   size_t length() const { return _s.length(); }
 

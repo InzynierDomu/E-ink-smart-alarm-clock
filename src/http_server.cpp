@@ -116,9 +116,25 @@ void HttpServer::ha_set_config(HA_config& config)
  * @brief Retrieves the current temperature from a Home Assistant weather entity via HTTP.
  * @return Temperature in degrees Celsius, or 0 on error.
  */
+/**
+ * @brief Builds an HTTP GET request string for the HA weather entity.
+ * @return Full HTTP/1.1 GET request string including authorization header.
+ */
+String HttpServer::build_ha_request() const
+{
+  String url = "/api/states/" + String(ha_config.ha_enitty_weather_name);
+  return String("GET ") + url + " HTTP/1.1\r\n" +
+         "Host: " + String(ha_config.ha_host) + "\r\n" +
+         "Authorization: Bearer " + String(ha_config.ha_token) + "\r\n" +
+         "Connection: close\r\n\r\n";
+}
+
+/**
+ * @brief Retrieves the current temperature from a Home Assistant weather entity via HTTP.
+ * @return Temperature in degrees Celsius, or 0 on error.
+ */
 int8_t HttpServer::get_ha_weather()
 {
-  String haTemperature = "--";
   Serial.println("=== updateHaMeasurement ===");
 
   if (ha_config.ha_host.isEmpty())
@@ -137,17 +153,9 @@ int8_t HttpServer::get_ha_weather()
     Logger::error("HA", "Connection failed to " + ha_config.ha_host + ":" + String(ha_config.ha_port));
     return 0;
   }
-  Serial.println("[HA] Connected, sending request");
-
-  String url = "/api/states/" + String(ha_config.ha_enitty_weather_name);
-  String request = String("GET ") + url + " HTTP/1.1\r\n" + "Host: " + String(ha_config.ha_host) + "\r\n" + "Authorization: Bearer " +
-                   String(ha_config.ha_token) + "\r\n" + "Connection: close\r\n\r\n";
-
-  Serial.println("[HA] Request:");
-  Serial.println(request);
 
   client.setTimeout(10);
-  client.print(request);
+  client.print(build_ha_request());
 
   String headers;
   while (client.connected())
@@ -159,13 +167,10 @@ int8_t HttpServer::get_ha_weather()
     }
     headers += line + "\n";
   }
-  Serial.println("[HA] Headers:");
-  Serial.println(headers);
 
-  if (!headers.startsWith("HTTP/1.1 200"))
+  if (!is_ha_response_ok(headers))
   {
-    String status_line = headers.substring(0, headers.indexOf('\n'));
-    Logger::error("HA", "Non-200 response: " + status_line);
+    Logger::error("HA", "Non-200 response: " + headers.substring(0, headers.indexOf('\n')));
     client.stop();
     return 0;
   }
@@ -177,29 +182,7 @@ int8_t HttpServer::get_ha_weather()
   }
   client.stop();
 
-  Serial.println("[HA] Body:");
-  Serial.println(body);
-
-  int idx = body.indexOf("\"state\":");
-  if (idx < 0)
-  {
-    Logger::error("HA", "'state' not found in response body");
-    return 0;
-  }
-
-  int start = body.indexOf("\"", idx + 8);
-  int end = body.indexOf("\"", start + 1);
-  if (start < 0 || end < 0 || end <= start)
-  {
-    Logger::error("HA", "Failed to parse state value from body");
-    return 0;
-  }
-
-  haTemperature = body.substring(start + 1, end);
-  Serial.print("[HA] Parsed state: ");
-  Serial.println(haTemperature);
-
-  return haTemperature.toInt();
+  return parse_ha_state(body);
 }
 
 /**
