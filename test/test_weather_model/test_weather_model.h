@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Arduino.h>
 #include "weather_model.h"
 
 #include "gtest/gtest.h"

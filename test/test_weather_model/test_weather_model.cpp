@@ -1,4 +1,4 @@
-#include "weather_model_test.h"
+#include "test_weather_model.h"
 
 #include "weather_model.cpp"
 

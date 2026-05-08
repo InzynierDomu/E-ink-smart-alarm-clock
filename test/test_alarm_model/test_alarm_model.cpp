@@ -1,4 +1,4 @@
-#include "alarm_model_test.h"
+#include "test_alarm_model.h"
 
 #include "alarm_model.cpp"
 

@@ -4,10 +4,10 @@
  */
 
 #include "calendar_controller.h"
+#include "calendar_parser.h"
 #include "logger.h"
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
@@ -51,21 +51,6 @@ static String url_encode(const String& str)
 }
 
 /**
- * @brief Parses a time string in "HH:MM" format into a Simple_time structure.
- * @param hhmm String containing the time in "HH:MM" format.
- * @return Parsed time as Simple_time; (0,0) on parse error.
- */
-static Simple_time parse_hhmm(const String& hhmm)
-{
-  int colon = hhmm.indexOf(':');
-  if (colon < 0)
-    return Simple_time(0, 0);
-  uint8_t hour    = hhmm.substring(0, colon).toInt();
-  uint8_t minutes = hhmm.substring(colon + 1).toInt();
-  return Simple_time(hour, minutes);
-}
-
-/**
  * @brief Fetches and processes an iCal calendar through the HTTP proxy.
  * @param ical_url URL of the iCal calendar to fetch.
  * @param is_alarm true if the calendar is used for alarm setting, false for regular events.
@@ -100,45 +85,18 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
   String payload = http.getString();
   http.end();
 
-  if (!payload.startsWith("[") && !payload.startsWith("{"))
+  std::vector<Calendar_event> events = parse_ical_json(payload);
+
+  for (auto& ev : events)
   {
-    Logger::error(tag, "Response is not JSON");
-    return;
-  }
-
-  JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, payload);
-  if (err)
-  {
-    Logger::error(tag, "JSON parse error: " + String(err.c_str()));
-    return;
-  }
-
-  if (!doc.is<JsonArray>())
-  {
-    Logger::error(tag, "Expected JSON array from proxy");
-    return;
-  }
-
-  for (JsonObject event : doc.as<JsonArray>())
-  {
-    String summary   = event["summary"].as<String>();
-    String start_str = event["start"].as<String>();
-    String end_str   = event["end"].as<String>();
-
-    Simple_time time_start = parse_hhmm(start_str);
-    Simple_time time_stop  = parse_hhmm(end_str);
-
     if (is_alarm)
     {
-      alarm_controller->set_alarm(time_start);
+      alarm_controller->set_alarm(ev.time_start);
       alarm_controller->enable_alarm();
-      Serial.printf("Alarm set: %02d:%02d\n", time_start.hour, time_start.minutes);
+      Serial.printf("Alarm set: %02d:%02d\n", ev.time_start.hour, ev.time_start.minutes);
     }
     else
     {
-      String calName = "";
-      Calendar_event ev(summary, calName, time_start, time_stop);
       model->update(ev);
     }
   }

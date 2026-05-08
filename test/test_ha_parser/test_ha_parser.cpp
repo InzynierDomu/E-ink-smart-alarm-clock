@@ -1,4 +1,4 @@
-#include "ha_parser_test.h"
+#include "test_ha_parser.h"
 
 #include "ha_parser.cpp"
 

@@ -37,6 +37,13 @@ class String
     return String(_s.substr(start, end - start));
   }
 
+  String substring(int start) const
+  {
+    if (start >= (int)_s.size())
+      return String();
+    return String(_s.substr(start));
+  }
+
   int toInt() const
   {
     try
@@ -73,6 +80,8 @@ class String
   const char* c_str() const { return _s.c_str(); }
   size_t length() const { return _s.length(); }
 
+  char operator[](size_t i) const { return _s[i]; }
+
   String operator+(const String& other) const { return String(_s + other._s); }
   String operator+(const char* other) const { return String(_s + other); }
   String& operator+=(const String& other)
@@ -83,6 +92,11 @@ class String
   String& operator+=(const char* other)
   {
     _s += other;
+    return *this;
+  }
+  String& operator+=(char c)
+  {
+    _s += c;
     return *this;
   }
 
@@ -100,4 +114,9 @@ class String
 inline String operator+(const char* lhs, const String& rhs)
 {
   return String(std::string(lhs) + rhs.c_str());
+}
+
+inline bool isAlphaNumeric(char c)
+{
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }
