@@ -253,23 +253,23 @@ static void update_date(lv_timer_t* timer)
   }
 }
 
-void setup()
+/**
+ * @brief Initializes serial port, SD card, logger, and logs the reset reason.
+ */
+static void init_hardware()
 {
   Serial.begin(115200);
   delay(3000);  // DEBUG: wait for serial monitor
   Serial.println("=== SETUP START ===");
+
   pinMode(config::sd_power_pin, OUTPUT);
   digitalWrite(config::sd_power_pin, HIGH);
   delay(10);
   spi.begin(39, 13, 40);
   if (!SD.begin(config::sd_cs_pin, spi, 80000000))
-  {
     Serial.println("no SD card");
-  }
   else
-  {
     Serial.println("SD card ok");
-  }
 
   Logger::setup("/logs.txt", 50);
 
@@ -288,64 +288,67 @@ void setup()
     default: break;
   }
   Logger::info("BOOT", String("Reset reason: ") + reset_str + " | version: " + config::version);
+}
 
-  if (checkAndPerformUpdateFromSD())
-  {
-    return;
-  }
+/**
+ * @brief Starts the device as a Wi-Fi access point with a fixed SSID and password.
+ */
+static void start_ap_mode()
+{
+  WiFi.mode(WIFI_AP);
+  delay(100);
+  bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
+  WiFi.setSleep(false);
+  Serial.print("AP started: ");
+  Serial.println(ap_ok ? "YES" : "NO");
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
+  state = State::AP;
+}
 
-  read_config();
-
+/**
+ * @brief Connects to Wi-Fi in STA mode using stored credentials, or falls back to AP mode on timeout or missing SSID.
+ */
+static void init_wifi()
+{
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
+
   if (wifi_config.ssid.length() == 0)
   {
     Serial.println("Brak SSID, uruchamiam AP");
-    WiFi.mode(WIFI_AP);
-    delay(100);
-    bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
-    WiFi.setSleep(false);
-    Serial.print("AP started: ");
-    Serial.println(ap_ok ? "YES" : "NO");
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP());
-    state = State::AP;
-  }
-  else
-  {
-    Serial.println("SSID ustawione, lacze jako STA");
-    WiFi.mode(WIFI_STA);
-    // WiFi.setHostname("EInkClock");
-    WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
-    unsigned long wifi_start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - wifi_start < 60000)
-    {
-      delay(500);
-      Serial.print(".");
-    }
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      Serial.println("WiFi connected");
-      state = State::welcome_screen;
-      Serial.print("IP:");
-      Serial.println(WiFi.localIP());
-    }
-    else
-    {
-      Logger::warn("WIFI", "Connection timeout, falling back to AP mode");
-      WiFi.mode(WIFI_AP);
-      delay(100);
-      bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
-      WiFi.setSleep(false);
-      Serial.print("AP started: ");
-      Serial.println(ap_ok ? "YES" : "NO");
-      Serial.print("AP IP: ");
-      Serial.println(WiFi.softAPIP());
-      state = State::AP;
-    }
+    start_ap_mode();
+    return;
   }
 
-  // Generate and set device ID for pairing and calendar fetching
+  Serial.println("SSID ustawione, lacze jako STA");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
+  unsigned long wifi_start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - wifi_start < 60000)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("WiFi connected");
+    Serial.print("IP:");
+    Serial.println(WiFi.localIP());
+    state = State::welcome_screen;
+    return;
+  }
+
+  Logger::warn("WIFI", "Connection timeout, falling back to AP mode");
+  start_ap_mode();
+}
+
+/**
+ * @brief Derives the device ID from the MAC address and propagates it to the HTTP server and calendar model.
+ */
+static void apply_device_id()
+{
   String deviceId = get_device_id();
   httpServer.set_device_id(deviceId);
 
@@ -356,7 +359,13 @@ void setup()
 
   Serial.print("Device ID: ");
   Serial.println(deviceId);
+}
 
+/**
+ * @brief Initializes the clock, screen, calendar and clock views, and registers LVGL periodic timers.
+ */
+static void init_subsystems()
+{
   clock_controller.setup_clock();
   screen.setup_screen();
   calendar_view.setup_calendar_list();
@@ -365,11 +374,18 @@ void setup()
   lv_timer_create(update_date, 60000, NULL);
   lv_timer_create(wifi_watchdog, 120000, NULL);
   delay(1000);
+}
 
+/**
+ * @brief Configures GPIO pins for the alarm button, main button, and LED; initialises debounce state variables.
+ */
+static void init_gpio()
+{
   pinMode(config::alarm_enable_button_pin, INPUT);
   pinMode(config::btn_pin, INPUT_PULLDOWN);
   pinMode(config::led_pin, OUTPUT);
   digitalWrite(config::led_pin, LOW);
+
   btn_stable_state = digitalRead(config::btn_pin);
   btn_raw_state = btn_stable_state;
   btn_change_time = millis();
@@ -377,16 +393,32 @@ void setup()
   reset_window_start = 0;
   boot_time = millis();
   update_counter = 8;
+}
 
+/**
+ * @brief Initializes the audio driver and launches the audio playback task on Core 1.
+ */
+static void init_audio()
+{
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
+}
 
+/**
+ * @brief Registers the HA clock entity (when not in AP mode) and starts the HTTP server.
+ */
+static void init_http_server()
+{
   if (state != State::AP)
-  {
     httpServer.entity_clock_setup();
-  }
   httpServer.begin();
+}
 
+/**
+ * @brief Sets the initial Wi-Fi status label, flushes the LVGL frame, and turns on the boot LED.
+ */
+static void init_ui_status()
+{
   if (state == State::welcome_screen)
   {
     String ip = "IP: " + WiFi.localIP().toString();
@@ -398,8 +430,24 @@ void setup()
   }
 
   lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
-
   digitalWrite(config::led_pin, HIGH);
+}
+
+void setup()
+{
+  init_hardware();
+
+  if (checkAndPerformUpdateFromSD())
+    return;
+
+  read_config();
+  init_wifi();
+  apply_device_id();
+  init_subsystems();
+  init_gpio();
+  init_audio();
+  init_http_server();
+  init_ui_status();
 }
 
 /**

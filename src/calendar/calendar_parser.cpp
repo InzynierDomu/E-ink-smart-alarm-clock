@@ -7,6 +7,11 @@
 #include "logger.h"
 #include <ArduinoJson.h>
 
+/**
+ * @brief Parses a time string in "HH:MM" format into a Simple_time structure.
+ * @param hhmm String containing the time in "HH:MM" format.
+ * @return Parsed time as Simple_time; (0,0) on parse error.
+ */
 Simple_time parse_hhmm(const String& hhmm)
 {
   int colon = hhmm.indexOf(':');
@@ -17,6 +22,11 @@ Simple_time parse_hhmm(const String& hhmm)
   return Simple_time(h, m);
 }
 
+/**
+ * @brief Parses a JSON array of calendar events returned by the iCal proxy.
+ * @param json JSON string — expected to be an array of objects with "summary", "start", "end" fields.
+ * @return Vector of parsed Calendar_event; empty on any error or if input is empty.
+ */
 std::vector<Calendar_event> parse_ical_json(const String& json)
 {
   std::vector<Calendar_event> events;

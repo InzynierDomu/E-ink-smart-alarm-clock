@@ -9,14 +9,20 @@
 #include <Arduino.h>
 #include <vector>
 
+/**
+ * @brief Configuration for fetching calendar data via the iCal proxy.
+ */
 struct google_api_config
 {
-  String api_base_url;
-  String device_id;
-  String ical_url;        // Google Calendar iCal URL (main calendar)
-  String ical_alarm_url;  // Google Calendar iCal URL (Alarm calendar)
+  String api_base_url;   ///< Base URL of the iCal proxy API.
+  String device_id;      ///< Unique device identifier used for pairing with the proxy.
+  String ical_url;       ///< iCal URL of the main Google Calendar.
+  String ical_alarm_url; ///< iCal URL of the alarm Google Calendar.
 };
 
+/**
+ * @brief Represents a single calendar event with a name, source calendar, and time range.
+ */
 struct Calendar_event
 {
   Calendar_event() {}
@@ -31,10 +37,10 @@ struct Calendar_event
     String label = time_start.to_string() + " " + name;
     return label;
   }
-  String name;
-  String calendar;
-  Simple_time time_start;
-  Simple_time time_stop;
+  String name;            ///< Event title / summary.
+  String calendar;        ///< Source calendar name.
+  Simple_time time_start; ///< Event start time.
+  Simple_time time_stop;  ///< Event end time.
 };
 
 class Calendar_model
