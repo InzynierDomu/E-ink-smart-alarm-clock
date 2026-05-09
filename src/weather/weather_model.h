@@ -31,7 +31,7 @@ struct Simple_weather
   uint8_t precipitation;
 };
 
-static constexpr uint8_t WEATHER_DAYS = 4;
+static constexpr uint8_t WEATHER_DAYS = 3;
 
 class Weather_model
 {

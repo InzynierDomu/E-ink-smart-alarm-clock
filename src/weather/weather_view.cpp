@@ -24,11 +24,12 @@ void Weather_view::show(const Weather_model& data)
   static lv_obj_t* tempLabelsEvening[] = {nullptr, ui_labTempEveningDay1, ui_labTempEveningDay2, ui_labTempEveningDay3};
   static lv_obj_t* weatherIcons[] = {ui_labWeatherIcon, ui_labWeatherIconDay1, ui_labWeatherIconDay2, ui_labWeatherIconDay3};
 
+  static const uint8_t forecast_index[] = {0, 0, 1, 2};
   char temp_str[10];
   Simple_weather forecast;
   for (size_t i = 0; i < 4; ++i)
   {
-    data.get_forecast(forecast, i);
+    data.get_forecast(forecast, forecast_index[i]);
     lv_label_set_text(weatherIcons[i], weather_icon_change(forecast.cloud_cover, forecast.precipitation));
     if (i == 0)
     { 

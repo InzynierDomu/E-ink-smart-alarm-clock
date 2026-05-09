@@ -38,15 +38,7 @@ void Weather_controller::fetch_weather(DateTime& now)
 
   for (size_t i = 0; i < WEATHER_DAYS; i++)
   {
-    String dateStr;
-    if (i == 0)
-    {
-      dateStr = get_date_string(now, i);
-    }
-    else
-    {
-      dateStr = get_date_string(now, i - 1);
-    }
+    String dateStr = get_date_string(now, i);
 
     Open_weather_config config;
     model->get_config(config);

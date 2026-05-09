@@ -21,6 +21,9 @@ class Logger
   static void warn(const String& tag, const String& msg);
   static void error(const String& tag, const String& msg);
   static const String& path();
+  static void mute();
+  static void unmute();
+  static bool is_muted();
 
   private:
   static void write(LogLevel level, const String& tag, const String& msg);
@@ -29,4 +32,5 @@ class Logger
 
   static String _path;
   static size_t _max_bytes;
+  static bool _muted;
 };

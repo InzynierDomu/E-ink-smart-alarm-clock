@@ -10,6 +10,7 @@
 
 String Logger::_path;
 size_t Logger::_max_bytes;
+bool Logger::_muted = false;
 
 /**
  * @brief Initializes the logger — sets the file path and maximum file size.
@@ -29,6 +30,31 @@ void Logger::setup(const String& path, size_t max_kb)
 const String& Logger::path()
 {
   return _path;
+}
+
+/**
+ * @brief Suppresses SD card writes — Serial output continues unaffected.
+ */
+void Logger::mute()
+{
+  _muted = true;
+}
+
+/**
+ * @brief Re-enables SD card writes after a previous mute() call.
+ */
+void Logger::unmute()
+{
+  _muted = false;
+}
+
+/**
+ * @brief Returns true when SD card writes are currently suppressed.
+ * @return true if muted, false otherwise.
+ */
+bool Logger::is_muted()
+{
+  return _muted;
 }
 
 /**
@@ -119,7 +145,7 @@ void Logger::write(LogLevel level, const String& tag, const String& msg)
   Serial.print("[LOG] ");
   Serial.print(line);
 
-  if (_path.isEmpty())
+  if (_path.isEmpty() || _muted)
     return;
 
   rotate_if_needed();

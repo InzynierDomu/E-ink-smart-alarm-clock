@@ -197,6 +197,8 @@ void update_clock()
       httpServer.send_mqtt_action();
       delay(200);
     }
+    Logger::info("ALARM", "Alarm triggered");
+    Logger::mute();
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
     audio.start();
@@ -534,6 +536,8 @@ void loop()
       audio.stop();
       startAlarmAudio = false;
       digitalWrite(config::led_pin, LOW);
+      Logger::unmute();
+      Logger::info("ALARM", "Alarm stopped");
     }
   }
   else if (state == State::welcome_screen)

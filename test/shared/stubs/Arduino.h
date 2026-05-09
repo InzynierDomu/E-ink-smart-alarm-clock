@@ -1,6 +1,15 @@
 #pragma once
 
 #include <cstdint>
+#include <ctime>
+
+#ifdef _WIN32
+inline struct tm* localtime_r(const time_t* timep, struct tm* result)
+{
+  localtime_s(result, timep);
+  return result;
+}
+#endif
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -120,3 +129,14 @@ inline bool isAlphaNumeric(char c)
 {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }
+
+inline unsigned long millis() { return 0; }
+
+struct Serial_Stub
+{
+  template<typename T> void print(const T&) {}
+  template<typename T> void println(const T&) {}
+  void println() {}
+  template<typename... Args> void printf(const char*, Args...) {}
+};
+inline Serial_Stub Serial;
