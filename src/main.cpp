@@ -7,6 +7,7 @@
 #include "alarm_model.h"
 #include "logger.h"
 #include "alarm_view.h"
+#include "alarm_trigger.h"
 #include "audio.h"
 #include "calendar_controller.h"
 #include "calendar_model.h"
@@ -85,6 +86,21 @@ static unsigned long boot_time = 0;           ///< Timestamp recorded at end of 
 
 TaskHandle_t audioTaskHandle = nullptr;       ///< Handle for the FreeRTOS audio playback task.
 volatile bool startAlarmAudio = false;        ///< Flag set by the main task to start/stop audio playback on Core 1.
+
+struct Check_adapter : Alarm_check {
+  bool check(DateTime& now) override { return alarm_controller.check_alarm(now); }
+} alarm_check_adapter;                        ///< Bridges Alarm_controller into the Alarm_trigger interface.
+
+struct Mqtt_adapter : Alarm_mqtt {
+  void send_action() override { httpServer.send_mqtt_action(); }
+} alarm_mqtt_adapter;                         ///< Bridges HttpServer MQTT call into the Alarm_trigger interface.
+
+struct Audio_adapter : Alarm_audio {
+  void start() override { audio.start(); }
+  void stop()  override { audio.stop();  }
+} alarm_audio_adapter;                        ///< Bridges Audio into the Alarm_trigger interface.
+
+Alarm_trigger alarm_trigger(alarm_check_adapter, alarm_mqtt_adapter, alarm_audio_adapter, startAlarmAudio); ///< Orchestrates the full alarm trigger sequence.
 
 /**
  * @brief FreeRTOS task that continuously plays alarm audio when the startAlarmAudio flag is set.
@@ -190,19 +206,10 @@ void update_clock()
   DateTime now;
   clock_controller.get_time(now);
 
-  if (alarm_controller.check_alarm(now) && state != State::alarm)
+  if (alarm_trigger.try_trigger(now, state == State::AP))
   {
-    if (state != State::AP)
-    {
-      httpServer.send_mqtt_action();
-      delay(200);
-    }
-    Logger::info("ALARM", "Alarm triggered");
-    Logger::mute();
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
-    audio.start();
-    startAlarmAudio = true;
   }
 }
 
@@ -533,11 +540,8 @@ void loop()
     if (btn_edge)
     {
       state = State::normal;
-      audio.stop();
-      startAlarmAudio = false;
+      alarm_trigger.stop();
       digitalWrite(config::led_pin, LOW);
-      Logger::unmute();
-      Logger::info("ALARM", "Alarm stopped");
     }
   }
   else if (state == State::welcome_screen)

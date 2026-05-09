@@ -131,6 +131,7 @@ inline bool isAlphaNumeric(char c)
 }
 
 inline unsigned long millis() { return 0; }
+inline void delay(unsigned long) {}
 
 struct Serial_Stub
 {
