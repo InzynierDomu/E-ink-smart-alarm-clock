@@ -35,7 +35,7 @@ constexpr unsigned long btn_debounce_ms = 75;          ///< Button debounce time
 constexpr uint8_t reset_press_count_threshold = 5;     ///< Number of presses required to trigger a config reset.
 constexpr unsigned long reset_window_ms = 10000;       ///< Time window in ms within which reset presses must occur.
 
-const String version = "1.2.12";                       ///< Firmware version string.
+const String version = "1.2.13";                       ///< Firmware version string.
 
 constexpr uint8_t day_part_morning_from = 6;     ///< Hour from which morning starts; before this hour the night part is shown.
 constexpr uint8_t day_part_morning_until = 10;   ///< Hour (exclusive) until which the morning weather part is shown.
