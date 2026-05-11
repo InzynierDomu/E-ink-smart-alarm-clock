@@ -54,8 +54,9 @@ static String url_encode(const String& str)
  * @brief Fetches and processes an iCal calendar through the HTTP proxy.
  * @param ical_url URL of the iCal calendar to fetch.
  * @param is_alarm true if the calendar is used for alarm setting, false for regular events.
+ * @param now Current time used to find the next upcoming alarm (ignored when is_alarm is false).
  */
-void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
+void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, const DateTime& now)
 {
   WiFiClientSecure wifiClient;
   wifiClient.setInsecure();
@@ -87,25 +88,27 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm)
 
   std::vector<Calendar_event> events = parse_ical_json(payload);
 
-  for (auto& ev : events)
+  if (is_alarm)
   {
-    if (is_alarm)
+    Simple_time next_alarm(0, 0);
+    if (select_next_alarm(events, now, next_alarm))
     {
-      alarm_controller->set_alarm(ev.time_start);
+      alarm_controller->set_alarm(next_alarm);
       alarm_controller->enable_alarm();
-      Serial.printf("Alarm set: %02d:%02d\n", ev.time_start.hour, ev.time_start.minutes);
     }
-    else
-    {
+  }
+  else
+  {
+    for (auto& ev : events)
       model->update(ev);
-    }
   }
 }
 
 /**
  * @brief Fetches data from iCal calendars (events and alarms) and updates the model.
+ * @param now Current time used to select the next upcoming alarm from the alarm calendar.
  */
-void Calendar_controller::fetch_calendar()
+void Calendar_controller::fetch_calendar(const DateTime& now)
 {
   google_api_config config;
   model->get_config(config);
@@ -115,14 +118,14 @@ void Calendar_controller::fetch_calendar()
   if (config.ical_url.length() > 0)
   {
     Serial.println("Fetching calendar via proxy...");
-    fetch_ical(config.ical_url, false);
+    fetch_ical(config.ical_url, false, now);
   }
 
   if (config.ical_alarm_url.length() > 0)
   {
     alarm_controller->set_no_alarm();
     Serial.println("Fetching alarm via proxy...");
-    fetch_ical(config.ical_alarm_url, true);
+    fetch_ical(config.ical_alarm_url, true, now);
   }
 }
 

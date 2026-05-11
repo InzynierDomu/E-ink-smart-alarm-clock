@@ -241,13 +241,15 @@ static void update_date(lv_timer_t* timer)
     return;
   }
   update_clock();
+  if (state == State::alarm)
+    return;
   if (update_counter >= 10)
   {
     DateTime now;
     clock_controller.get_time(now);
     weather_controller.fetch_weather(now);
     weather_controller.update_view();
-    calendar_controller.fetch_calendar();
+    calendar_controller.fetch_calendar(now);
     calendar_controller.update_view();
     alarm_controller.update_view();
     if (httpServer.is_weather_from_ha())

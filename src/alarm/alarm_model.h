@@ -5,6 +5,7 @@
 
 #pragma once
 #include "clock_model.h"
+#include "RTClib.h"
 
 #include <Arduino.h>
 
@@ -28,6 +29,7 @@ class Alarm_model
   bool get_is_alarm() const;
   void toggle_alarm();
   void enable_alarm();
+  bool check_alarm(const DateTime& now) const;
 
   private:
   Clock_alarm alarm;

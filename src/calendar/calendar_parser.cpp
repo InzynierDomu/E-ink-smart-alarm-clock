@@ -71,3 +71,21 @@ std::vector<Calendar_event> parse_ical_json(const String& json)
 
   return events;
 }
+
+bool select_next_alarm(const std::vector<Calendar_event>& events, const DateTime& now, Simple_time& out)
+{
+  int now_total  = now.hour() * 60 + now.minute();
+  int best_total = -1;
+
+  for (const auto& ev : events)
+  {
+    int ev_total = ev.time_start.hour * 60 + ev.time_start.minutes;
+    if (ev_total > now_total && (best_total < 0 || ev_total < best_total))
+    {
+      best_total = ev_total;
+      out = ev.time_start;
+    }
+  }
+
+  return best_total >= 0;
+}

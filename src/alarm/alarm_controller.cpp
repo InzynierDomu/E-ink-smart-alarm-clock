@@ -33,16 +33,7 @@ void Alarm_controller::set_alarm(Simple_time time)
  */
 bool Alarm_controller::check_alarm(const DateTime& now)
 {
-  Clock_alarm alarm;
-  model->get_alarm(alarm);
-  if (alarm.enable)
-  {
-    if (now.hour() == alarm.time.hour && now.minute() == alarm.time.minutes)
-    {
-      return true;
-    }
-  }
-  return false;
+  return model->check_alarm(now);
 }
 
 /**

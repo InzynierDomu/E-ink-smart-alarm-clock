@@ -5,6 +5,7 @@
 
 #pragma once
 #include "calendar_model.h"
+#include <RTClib.h>
 #include <vector>
 
 /**
@@ -20,3 +21,12 @@ Simple_time parse_hhmm(const String& hhmm);
  * @return Vector of parsed Calendar_event; empty on any error or if input is empty.
  */
 std::vector<Calendar_event> parse_ical_json(const String& json);
+
+/**
+ * @brief Selects the earliest upcoming alarm from a list of events.
+ * @param events Parsed calendar events representing alarm times.
+ * @param now Current time; only alarms strictly after this moment are considered.
+ * @param out Set to the selected alarm time when returning true.
+ * @return true if a future alarm was found, false if all events are in the past.
+ */
+bool select_next_alarm(const std::vector<Calendar_event>& events, const DateTime& now, Simple_time& out);

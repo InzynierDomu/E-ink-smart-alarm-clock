@@ -60,3 +60,15 @@ void Alarm_model::enable_alarm()
 {
   alarm.enable = true;
 }
+
+/**
+ * @brief Returns true when the alarm is enabled and the current time matches the configured time.
+ * @param now Current RTC time.
+ * @return true if alarm is enabled and hour/minute match, false otherwise.
+ */
+bool Alarm_model::check_alarm(const DateTime& now) const
+{
+  if (!alarm.enable)
+    return false;
+  return now.hour() == alarm.time.hour && now.minute() == alarm.time.minutes;
+}
