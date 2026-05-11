@@ -11,7 +11,7 @@
 struct Alarm_check_stub : Alarm_check
 {
   bool result = false;
-  bool check(DateTime&) override { return result; }
+  bool check(const DateTime&) override { return result; }
 };
 
 struct Mqtt_stub : Alarm_mqtt

@@ -88,7 +88,7 @@ TaskHandle_t audioTaskHandle = nullptr;       ///< Handle for the FreeRTOS audio
 volatile bool startAlarmAudio = false;        ///< Flag set by the main task to start/stop audio playback on Core 1.
 
 struct Check_adapter : Alarm_check {
-  bool check(DateTime& now) override { return alarm_controller.check_alarm(now); }
+  bool check(const DateTime& now) override { return alarm_controller.check_alarm(now); }
 } alarm_check_adapter;                        ///< Bridges Alarm_controller into the Alarm_trigger interface.
 
 struct Mqtt_adapter : Alarm_mqtt {

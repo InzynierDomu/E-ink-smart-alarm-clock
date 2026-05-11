@@ -14,7 +14,7 @@ class Alarm_controller
   public:
   Alarm_controller(Alarm_model* _model, Alarm_view* _view);
   void set_alarm(Simple_time time);
-  bool check_alarm(DateTime& now);
+  bool check_alarm(const DateTime& now);
   void set_no_alarm();
   void toggle_alarm();
   void enable_alarm();

@@ -31,13 +31,12 @@ void Alarm_controller::set_alarm(Simple_time time)
  * @param now Reference to the current RTC time.
  * @return true if the alarm is enabled and the current time matches, false otherwise.
  */
-bool Alarm_controller::check_alarm(DateTime& now)
+bool Alarm_controller::check_alarm(const DateTime& now)
 {
   Clock_alarm alarm;
   model->get_alarm(alarm);
   if (alarm.enable)
   {
-    Serial.println(alarm.time.hour);
     if (now.hour() == alarm.time.hour && now.minute() == alarm.time.minutes)
     {
       return true;

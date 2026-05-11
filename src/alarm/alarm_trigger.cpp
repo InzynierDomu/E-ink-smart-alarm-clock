@@ -6,8 +6,6 @@
 #include "alarm_trigger.h"
 #include "logger.h"
 
-#include <Arduino.h>
-
 /**
  * @brief Initializes the trigger with all injectable dependencies.
  * @param chk   Alarm time check interface.
@@ -22,16 +20,13 @@ Alarm_trigger::Alarm_trigger(Alarm_check& chk, Alarm_mqtt& mq, Alarm_audio& aud,
 , start_flag(flag)
 {}
 
-bool Alarm_trigger::try_trigger(DateTime& now, bool is_ap_mode)
+bool Alarm_trigger::try_trigger(const DateTime& now, bool is_ap_mode)
 {
   if (active || !check_iface.check(now))
     return false;
 
   if (!is_ap_mode)
-  {
     mqtt.send_action();
-    delay(200);
-  }
 
   Logger::info("ALARM", "Alarm triggered");
   Logger::mute();
@@ -43,6 +38,9 @@ bool Alarm_trigger::try_trigger(DateTime& now, bool is_ap_mode)
 
 void Alarm_trigger::stop()
 {
+  if (!active)
+    return;
+
   audio_ctrl.stop();
   start_flag = false;
   active     = false;

@@ -11,7 +11,7 @@
  */
 struct Alarm_check
 {
-  virtual bool check(DateTime& now) = 0;
+  virtual bool check(const DateTime& now) = 0;
   virtual ~Alarm_check() = default;
 };
 
@@ -48,7 +48,7 @@ public:
    * @param is_ap_mode When true, MQTT notification is skipped.
    * @return true if the alarm just activated.
    */
-  bool try_trigger(DateTime& now, bool is_ap_mode);
+  bool try_trigger(const DateTime& now, bool is_ap_mode);
 
   /**
    * @brief Stops the alarm: halts audio, unmutes logger, clears the active flag.
