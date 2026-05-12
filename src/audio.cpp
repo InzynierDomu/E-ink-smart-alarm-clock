@@ -9,13 +9,15 @@
 
 #include <SD.h>
 #include <driver/i2s.h>
+#include <freertos/semphr.h>
+
+extern SemaphoreHandle_t g_sd_mutex;
 
 /**
  * @brief Initializes the I2S driver with the current audio configuration.
  */
 void Audio::setup()
 {
-  Serial.println("audio cofing start");
   i2s_config_t i2s_config = {.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
                              .sample_rate = config.sample_rate,
                              .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
@@ -29,11 +31,8 @@ void Audio::setup()
                                  .ws_io_num = config::speaker_ws_pin,
                                  .data_out_num = config::speaker_dout_pin,
                                  .data_in_num = I2S_PIN_NO_CHANGE};
-  esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
-  Serial.println(esp_err_to_name(err));
-  err = i2s_set_pin(I2S_NUM_1, &pin_config);
-  Serial.println(esp_err_to_name(err));
-  Serial.println("audio cofing end");
+  i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
+  i2s_set_pin(I2S_NUM_1, &pin_config);
 }
 
 /**
@@ -41,17 +40,16 @@ void Audio::setup()
  */
 void Audio::play_audio()
 {
-  File audioFile;
-  Serial.println("playing audio...");
-  audioFile = SD.open(config::audio_path, FILE_READ);
+  // Hold the SD mutex for the entire playback so the logger cannot access SD concurrently.
+  // Logger::write() uses a 100 ms timeout and drops writes while we hold the mutex.
+  xSemaphoreTake(g_sd_mutex, portMAX_DELAY);
+
+  File audioFile = SD.open(config::audio_path, FILE_READ);
   if (!audioFile)
   {
-    Serial.println("error with audio file");
+    xSemaphoreGive(g_sd_mutex);
     return;
   }
-
-  Serial.printf("[AUDIO] file size: %u bytes, volume: %u, volFactor: %.3f\n",
-                (unsigned)audioFile.size(), config.volume, config.volume / 100.0f);
 
   i2s_start(I2S_NUM_1);
   size_t bytesRead;
@@ -68,7 +66,6 @@ void Audio::play_audio()
     {
       int32_t sample = buffer[i];
       sample = (int32_t)(sample * volFactor);
-
       buffer[i] = (int16_t)sample;
     }
 
@@ -77,10 +74,8 @@ void Audio::play_audio()
   }
 
   audioFile.close();
-
   i2s_stop(I2S_NUM_1);
-
-  Serial.println("playing end.");
+  xSemaphoreGive(g_sd_mutex);
 }
 
 /**
@@ -90,13 +85,9 @@ void Audio::play_audio()
 void Audio::set_config(Audio_config& _config)
 {
   if (_config.sample_rate > 0)
-  {
     config.sample_rate = _config.sample_rate;
-  }
   if (_config.volume > 0)
-  {
     config.volume = (_config.volume > 100) ? 100 : _config.volume;
-  }
 }
 
 /**

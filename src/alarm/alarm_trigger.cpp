@@ -29,7 +29,6 @@ bool Alarm_trigger::try_trigger(const DateTime& now, bool is_ap_mode)
     mqtt.send_action();
 
   Logger::info("ALARM", "Alarm triggered");
-  Logger::mute();
   audio_ctrl.start();
   start_flag = true;
   active     = true;
@@ -44,7 +43,6 @@ void Alarm_trigger::stop()
   audio_ctrl.stop();
   start_flag = false;
   active     = false;
-  Logger::unmute();
   Logger::info("ALARM", "Alarm stopped");
 }
 

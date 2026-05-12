@@ -133,6 +133,15 @@ inline bool isAlphaNumeric(char c)
 inline unsigned long millis() { return 0; }
 inline void delay(unsigned long) {}
 
+// FreeRTOS stubs for native tests
+using SemaphoreHandle_t = void*;
+#define portMAX_DELAY 0xFFFFFFFFUL
+#define pdTRUE 1
+#define pdMS_TO_TICKS(ms) (ms)
+inline SemaphoreHandle_t xSemaphoreCreateMutex() { return nullptr; }
+inline int xSemaphoreTake(SemaphoreHandle_t, unsigned long) { return pdTRUE; }
+inline void xSemaphoreGive(SemaphoreHandle_t) {}
+
 struct Serial_Stub
 {
   template<typename T> void print(const T&) {}

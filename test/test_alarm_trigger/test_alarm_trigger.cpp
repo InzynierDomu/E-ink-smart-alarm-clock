@@ -44,7 +44,6 @@ struct Alarm_trigger_test : public ::testing::Test
 
   void SetUp() override
   {
-    Logger::unmute();
     start_flag           = false;
     alarm_check.result   = false;
     mqtt.call_count      = 0;
@@ -101,13 +100,6 @@ TEST_F(Alarm_trigger_test, sets_start_flag_in_normal_mode)
   EXPECT_TRUE(start_flag);
 }
 
-TEST_F(Alarm_trigger_test, mutes_logger_in_normal_mode)
-{
-  alarm_check.result = true;
-  trigger->try_trigger(dummy_now, false);
-  EXPECT_TRUE(Logger::is_muted());
-}
-
 TEST_F(Alarm_trigger_test, is_active_after_trigger)
 {
   alarm_check.result = true;
@@ -137,13 +129,6 @@ TEST_F(Alarm_trigger_test, ap_mode_starts_audio)
   alarm_check.result = true;
   trigger->try_trigger(dummy_now, true);
   EXPECT_EQ(audio.start_count, 1);
-}
-
-TEST_F(Alarm_trigger_test, ap_mode_mutes_logger)
-{
-  alarm_check.result = true;
-  trigger->try_trigger(dummy_now, true);
-  EXPECT_TRUE(Logger::is_muted());
 }
 
 // ---------------------------------------------------------------------------
@@ -193,14 +178,6 @@ TEST_F(Alarm_trigger_test, stop_clears_start_flag)
   EXPECT_FALSE(start_flag);
 }
 
-TEST_F(Alarm_trigger_test, stop_unmutes_logger)
-{
-  alarm_check.result = true;
-  trigger->try_trigger(dummy_now, false);
-  trigger->stop();
-  EXPECT_FALSE(Logger::is_muted());
-}
-
 TEST_F(Alarm_trigger_test, stop_clears_active_flag)
 {
   alarm_check.result = true;
@@ -220,13 +197,4 @@ TEST_F(Alarm_trigger_test, can_retrigger_after_stop)
   trigger->stop();
   EXPECT_TRUE(trigger->try_trigger(dummy_now, false));
   EXPECT_EQ(audio.start_count, 2);
-}
-
-TEST_F(Alarm_trigger_test, logger_muted_again_after_retrigger)
-{
-  alarm_check.result = true;
-  trigger->try_trigger(dummy_now, false);
-  trigger->stop();
-  trigger->try_trigger(dummy_now, false);
-  EXPECT_TRUE(Logger::is_muted());
 }

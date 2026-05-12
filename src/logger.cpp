@@ -10,10 +10,13 @@
 
 String Logger::_path;
 size_t Logger::_max_bytes;
-bool Logger::_muted = false;
+SemaphoreHandle_t Logger::_sd_mutex = nullptr;
+
+// Exposed so the audio task can hold the mutex during playback.
+SemaphoreHandle_t g_sd_mutex = nullptr;
 
 /**
- * @brief Initializes the logger — sets the file path and maximum file size.
+ * @brief Initializes the logger — sets the file path, maximum file size, and creates the SD mutex.
  * @param path Path to the log file on the SD card.
  * @param max_kb Maximum log file size in kilobytes.
  */
@@ -21,6 +24,11 @@ void Logger::setup(const String& path, size_t max_kb)
 {
   _path      = path;
   _max_bytes = max_kb * 1024;
+  if (!_sd_mutex)
+  {
+    _sd_mutex  = xSemaphoreCreateMutex();
+    g_sd_mutex = _sd_mutex;
+  }
 }
 
 /**
@@ -33,34 +41,7 @@ const String& Logger::path()
 }
 
 /**
- * @brief Suppresses SD card writes — Serial output continues unaffected.
- */
-void Logger::mute()
-{
-  _muted = true;
-}
-
-/**
- * @brief Re-enables SD card writes after a previous mute() call.
- */
-void Logger::unmute()
-{
-  _muted = false;
-}
-
-/**
- * @brief Returns true when SD card writes are currently suppressed.
- * @return true if muted, false otherwise.
- */
-bool Logger::is_muted()
-{
-  return _muted;
-}
-
-/**
  * @brief Writes an INFO level message to the log.
- * @param tag Source tag of the message.
- * @param msg Message content.
  */
 void Logger::info(const String& tag, const String& msg)
 {
@@ -69,8 +50,6 @@ void Logger::info(const String& tag, const String& msg)
 
 /**
  * @brief Writes a WARN level message to the log.
- * @param tag Source tag of the message.
- * @param msg Message content.
  */
 void Logger::warn(const String& tag, const String& msg)
 {
@@ -79,8 +58,6 @@ void Logger::warn(const String& tag, const String& msg)
 
 /**
  * @brief Writes an ERROR level message to the log.
- * @param tag Source tag of the message.
- * @param msg Message content.
  */
 void Logger::error(const String& tag, const String& msg)
 {
@@ -89,12 +66,10 @@ void Logger::error(const String& tag, const String& msg)
 
 /**
  * @brief Generates a timestamp in "YYYY-MM-DD HH:MM:SS" format, or uptime after a reset.
- * @return String containing the current timestamp.
  */
 String Logger::timestamp()
 {
   time_t now = time(nullptr);
-  // time() returns seconds since epoch; before NTP sync it is near 0
   if (now < 1700000000UL)
   {
     char buf[16];
@@ -124,38 +99,35 @@ void Logger::rotate_if_needed()
   size_t size = f.size();
   f.close();
   if (size > _max_bytes)
-  {
     SD.remove(_path);
-    Serial.println("[LOG] rotated (file too large)");
-  }
 }
 
 /**
- * @brief Writes a formatted log entry to serial output and to the SD file.
- * @param level Severity level of the log entry.
- * @param tag Source tag of the message.
- * @param msg Message content.
+ * @brief Writes a formatted log entry to the SD file.
+ *        Acquires the SD mutex with a short timeout — drops the write if audio holds the bus.
  */
 void Logger::write(LogLevel level, const String& tag, const String& msg)
 {
   const char* lvl_str = level == LogLevel::ERROR ? "ERROR" : level == LogLevel::WARN ? "WARN" : "INFO";
-
   String line = "[" + timestamp() + "] " + lvl_str + " [" + tag + "] " + msg + "\n";
 
   Serial.print("[LOG] ");
   Serial.print(line);
 
-  if (_path.isEmpty() || _muted)
+  if (_path.isEmpty())
+    return;
+
+  if (xSemaphoreTake(_sd_mutex, pdMS_TO_TICKS(100)) != pdTRUE)
     return;
 
   rotate_if_needed();
 
   File f = SD.open(_path, FILE_APPEND);
-  if (!f)
+  if (f)
   {
-    Serial.println("[LOG] cannot open log file");
-    return;
+    f.print(line);
+    f.close();
   }
-  f.print(line);
-  f.close();
+
+  xSemaphoreGive(_sd_mutex);
 }
