@@ -89,3 +89,21 @@ bool select_next_alarm(const std::vector<Calendar_event>& events, const DateTime
 
   return best_total >= 0;
 }
+
+void apply_event_response(Calendar_model& model, const std::vector<Calendar_event>& events)
+{
+  model.clear();
+  for (const auto& ev : events)
+    model.update(ev);
+}
+
+void apply_alarm_response(Alarm_setter& alarm, const std::vector<Calendar_event>& events, const DateTime& now)
+{
+  alarm.set_no_alarm();
+  Simple_time next(0, 0);
+  if (select_next_alarm(events, now, next))
+  {
+    alarm.set_alarm(next);
+    alarm.enable_alarm();
+  }
+}

@@ -4,6 +4,7 @@
  */
 
 #pragma once
+#include "alarm_setter.h"
 #include "calendar_model.h"
 #include <RTClib.h>
 #include <vector>
@@ -30,3 +31,15 @@ std::vector<Calendar_event> parse_ical_json(const String& json);
  * @return true if a future alarm was found, false if all events are in the past.
  */
 bool select_next_alarm(const std::vector<Calendar_event>& events, const DateTime& now, Simple_time& out);
+
+/**
+ * @brief Clears the model and populates it with the given events.
+ *        Only call this after a successful HTTP response.
+ */
+void apply_event_response(Calendar_model& model, const std::vector<Calendar_event>& events);
+
+/**
+ * @brief Resets the alarm and sets the next upcoming one from the given events.
+ *        Only call this after a successful HTTP response.
+ */
+void apply_alarm_response(Alarm_setter& alarm, const std::vector<Calendar_event>& events, const DateTime& now);

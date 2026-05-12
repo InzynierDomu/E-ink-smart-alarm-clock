@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "calendar_model.cpp"
 #include "calendar_parser.cpp"
 
 struct Calendar_alarm_test : public ::testing::Test

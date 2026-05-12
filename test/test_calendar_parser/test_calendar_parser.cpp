@@ -1,5 +1,6 @@
 #include "test_calendar_parser.h"
 
+#include "calendar_model.cpp"
 #include "calendar_parser.cpp"
 
 // --- parse_hhmm ---

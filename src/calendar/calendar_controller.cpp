@@ -5,6 +5,7 @@
 
 #include "calendar_controller.h"
 #include "calendar_parser.h"
+#include "calendar_view.h"
 #include "logger.h"
 
 #include <Arduino.h>
@@ -19,7 +20,7 @@ static const char* PROXY_BASE_URL = "https://inzynierdomu.pl/calendar_proxy/cale
  * @param _view Pointer to the calendar view.
  * @param _alarm_controller Pointer to the alarm controller.
  */
-Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller)
+Calendar_controller::Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_setter* _alarm_controller)
 : model(_model)
 , view(_view)
 , alarm_controller(_alarm_controller)
@@ -58,7 +59,7 @@ static String url_encode(const String& str)
  */
 void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, const DateTime& now)
 {
-  WiFiClientSecure wifiClient;
+  static WiFiClientSecure wifiClient;
   wifiClient.setInsecure();
   HTTPClient http;
   http.setConnectTimeout(10000);
@@ -89,19 +90,9 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
   std::vector<Calendar_event> events = parse_ical_json(payload);
 
   if (is_alarm)
-  {
-    Simple_time next_alarm(0, 0);
-    if (select_next_alarm(events, now, next_alarm))
-    {
-      alarm_controller->set_alarm(next_alarm);
-      alarm_controller->enable_alarm();
-    }
-  }
+    apply_alarm_response(*alarm_controller, events, now);
   else
-  {
-    for (auto& ev : events)
-      model->update(ev);
-  }
+    apply_event_response(*model, events);
 }
 
 /**
@@ -113,20 +104,11 @@ void Calendar_controller::fetch_calendar(const DateTime& now)
   google_api_config config;
   model->get_config(config);
 
-  model->clear();
-
   if (config.ical_url.length() > 0)
-  {
-    Serial.println("Fetching calendar via proxy...");
     fetch_ical(config.ical_url, false, now);
-  }
 
   if (config.ical_alarm_url.length() > 0)
-  {
-    alarm_controller->set_no_alarm();
-    Serial.println("Fetching alarm via proxy...");
     fetch_ical(config.ical_alarm_url, true, now);
-  }
 }
 
 /**

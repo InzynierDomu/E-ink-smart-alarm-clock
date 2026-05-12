@@ -4,14 +4,16 @@
  */
 
 #pragma once
-#include "alarm_controller.h"
+#include "alarm_setter.h"
 #include "calendar_model.h"
-#include "calendar_view.h"
+#include <RTClib.h>
+
+class Calendar_view;
 
 class Calendar_controller
 {
   public:
-  Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_controller* _alarm_controller);
+  Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_setter* _alarm_controller);
   void fetch_calendar(const DateTime& now);
   void update_view();
 
@@ -19,5 +21,5 @@ class Calendar_controller
   void fetch_ical(const String& url, bool is_alarm, const DateTime& now);
   Calendar_model* model;
   Calendar_view* view;
-  Alarm_controller* alarm_controller;
+  Alarm_setter* alarm_controller;
 };

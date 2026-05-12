@@ -7,17 +7,18 @@
 
 #include "RTClib.h"
 #include "alarm_model.h"
+#include "alarm_setter.h"
 #include "alarm_view.h"
 
-class Alarm_controller
+class Alarm_controller : public Alarm_setter
 {
   public:
   Alarm_controller(Alarm_model* _model, Alarm_view* _view);
-  void set_alarm(Simple_time time);
+  void set_alarm(Simple_time time) override;
   bool check_alarm(const DateTime& now);
-  void set_no_alarm();
+  void set_no_alarm() override;
   void toggle_alarm();
-  void enable_alarm();
+  void enable_alarm() override;
   void update_view();
 
   private:

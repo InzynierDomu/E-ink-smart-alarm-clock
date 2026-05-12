@@ -4,6 +4,7 @@
  */
 
 #include "RTClib.h"
+#include "alarm_controller.h"
 #include "alarm_model.h"
 #include "logger.h"
 #include "alarm_view.h"
