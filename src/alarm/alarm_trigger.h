@@ -39,7 +39,7 @@ struct Alarm_audio
  */
 class Alarm_trigger
 {
-public:
+  public:
   Alarm_trigger(Alarm_check& check, Alarm_mqtt& mqtt, Alarm_audio& audio, volatile bool& start_flag);
 
   /**
@@ -60,10 +60,10 @@ public:
    */
   bool is_active() const;
 
-private:
-  Alarm_check& check_iface;  ///< Alarm time check dependency.
-  Alarm_mqtt& mqtt;          ///< MQTT notification dependency.
-  Alarm_audio& audio_ctrl;   ///< Audio control dependency.
+  private:
+  Alarm_check& check_iface; ///< Alarm time check dependency.
+  Alarm_mqtt& mqtt; ///< MQTT notification dependency.
+  Alarm_audio& audio_ctrl; ///< Audio control dependency.
   volatile bool& start_flag; ///< FreeRTOS task flag driving audio playback.
-  bool active = false;       ///< True while alarm is sounding.
+  bool active = false; ///< True while alarm is sounding.
 };

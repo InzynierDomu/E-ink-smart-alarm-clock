@@ -4,8 +4,11 @@
  */
 
 #include "calendar_parser.h"
+
 #include "logger.h"
+
 #include <ArduinoJson.h>
+
 
 /**
  * @brief Parses a time string in "HH:MM" format into a Simple_time structure.
@@ -54,8 +57,8 @@ std::vector<Calendar_event> parse_ical_json(const String& json)
   for (JsonObject ev_obj : doc.as<JsonArray>())
   {
     const char* sum = ev_obj["summary"] | "";
-    const char* st  = ev_obj["start"]   | "";
-    const char* en  = ev_obj["end"]     | "";
+    const char* st = ev_obj["start"] | "";
+    const char* en = ev_obj["end"] | "";
 
     String summary(sum);
     String start_str(st);
@@ -63,7 +66,7 @@ std::vector<Calendar_event> parse_ical_json(const String& json)
     String cal_name("");
 
     Simple_time time_start = parse_hhmm(start_str);
-    Simple_time time_stop  = parse_hhmm(end_str);
+    Simple_time time_stop = parse_hhmm(end_str);
 
     Calendar_event event(summary, cal_name, time_start, time_stop);
     events.push_back(event);
@@ -74,7 +77,7 @@ std::vector<Calendar_event> parse_ical_json(const String& json)
 
 bool select_next_alarm(const std::vector<Calendar_event>& events, const DateTime& now, Simple_time& out)
 {
-  int now_total  = now.hour() * 60 + now.minute();
+  int now_total = now.hour() * 60 + now.minute();
   int best_total = -1;
 
   for (const auto& ev : events)

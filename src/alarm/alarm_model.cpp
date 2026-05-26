@@ -36,11 +36,11 @@ void Alarm_model::advance_alarm()
 
 void Alarm_model::drop_past(uint8_t hour, uint8_t minute)
 {
-  alarms.erase(
-    std::remove_if(alarms.begin(), alarms.end(), [hour, minute](const Clock_alarm& a) {
-      return a.time.hour < hour || (a.time.hour == hour && a.time.minutes < minute);
-    }),
-    alarms.end());
+  alarms.erase(std::remove_if(
+                   alarms.begin(),
+                   alarms.end(),
+                   [hour, minute](const Clock_alarm& a) { return a.time.hour < hour || (a.time.hour == hour && a.time.minutes < minute); }),
+               alarms.end());
   if (alarms.empty())
     is_alarm = false;
 }

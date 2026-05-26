@@ -24,11 +24,11 @@ SemaphoreHandle_t g_sd_mutex = nullptr;
  */
 void Logger::setup(const String& path, size_t max_kb)
 {
-  _path      = path;
+  _path = path;
   _max_bytes = max_kb * 1024;
   if (!_sd_mutex)
   {
-    _sd_mutex  = xSemaphoreCreateMutex();
+    _sd_mutex = xSemaphoreCreateMutex();
     g_sd_mutex = _sd_mutex;
   }
 }
@@ -82,9 +82,7 @@ String Logger::timestamp()
   struct tm t;
   localtime_r(&now, &t);
   char buf[20];
-  snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
-           t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-           t.tm_hour, t.tm_min, t.tm_sec);
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
   return String(buf);
 }
 

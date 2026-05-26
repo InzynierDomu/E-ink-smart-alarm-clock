@@ -38,8 +38,6 @@
 #include <time.h>
 #include <vector>
 
-
-
 enum class State
 {
   alarm,
@@ -81,10 +79,10 @@ State state; ///< Current application state.
 static bool btn_stable_state = false; ///< Debounced (stable) button state.
 static bool btn_raw_state = false; ///< Raw (non-debounced) button reading.
 static unsigned long btn_change_time = 0; ///< Timestamp of the last raw button state change (ms).
-static int cal_counter       =  9; ///< Counter for calendar events fetch (fires at >= 10).
-static int alarm_cal_counter =  8; ///< Counter for alarm calendar fetch, offset 1 tick from events.
-static int owm_counter       =  7; ///< Counter for OpenWeatherMap fetch, offset 2 ticks from events.
-static int ha_counter        =  6; ///< Counter for Home Assistant weather fetch, offset 3 ticks from events.
+static int cal_counter = 9; ///< Counter for calendar events fetch (fires at >= 10).
+static int alarm_cal_counter = 8; ///< Counter for alarm calendar fetch, offset 1 tick from events.
+static int owm_counter = 7; ///< Counter for OpenWeatherMap fetch, offset 2 ticks from events.
+static int ha_counter = 6; ///< Counter for Home Assistant weather fetch, offset 3 ticks from events.
 
 static uint8_t reset_press_count = 0; ///< Number of button presses counted within the reset window.
 static unsigned long reset_window_start = 0; ///< Timestamp when the current reset press window started (ms).
@@ -342,19 +340,35 @@ static void init_hardware()
     const char* reset_str = "UNKNOWN";
     switch (reset_reason)
     {
-      case ESP_RST_POWERON:   reset_str = "POWERON";   break;
-      case ESP_RST_SW:        reset_str = "SW_RESET";  break;
-      case ESP_RST_PANIC:     reset_str = "PANIC";     break;
-      case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
-      case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
-      case ESP_RST_WDT:       reset_str = "WDT";       break;
-      case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
-      case ESP_RST_SDIO:      reset_str = "SDIO";      break;
-      default: break;
+      case ESP_RST_POWERON:
+        reset_str = "POWERON";
+        break;
+      case ESP_RST_SW:
+        reset_str = "SW_RESET";
+        break;
+      case ESP_RST_PANIC:
+        reset_str = "PANIC";
+        break;
+      case ESP_RST_INT_WDT:
+        reset_str = "INT_WDT";
+        break;
+      case ESP_RST_TASK_WDT:
+        reset_str = "TASK_WDT";
+        break;
+      case ESP_RST_WDT:
+        reset_str = "WDT";
+        break;
+      case ESP_RST_BROWNOUT:
+        reset_str = "BROWNOUT";
+        break;
+      case ESP_RST_SDIO:
+        reset_str = "SDIO";
+        break;
+      default:
+        break;
     }
-    bool is_error = (reset_reason == ESP_RST_PANIC || reset_reason == ESP_RST_INT_WDT ||
-                     reset_reason == ESP_RST_TASK_WDT || reset_reason == ESP_RST_WDT ||
-                     reset_reason == ESP_RST_BROWNOUT);
+    bool is_error = (reset_reason == ESP_RST_PANIC || reset_reason == ESP_RST_INT_WDT || reset_reason == ESP_RST_TASK_WDT ||
+                     reset_reason == ESP_RST_WDT || reset_reason == ESP_RST_BROWNOUT);
     String msg = String(reset_str) + " | version: " + config::version;
     if (is_error)
       Logger::error("BOOT", msg);
@@ -465,10 +479,10 @@ static void init_gpio()
   reset_press_count = 0;
   reset_window_start = 0;
   boot_time = millis();
-  cal_counter       = 8;
+  cal_counter = 8;
   alarm_cal_counter = 7;
-  owm_counter       = 6;
-  ha_counter        = 5;
+  owm_counter = 6;
+  ha_counter = 5;
 }
 
 /**

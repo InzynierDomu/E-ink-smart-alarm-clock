@@ -14,9 +14,9 @@
  */
 struct google_api_config
 {
-  String api_base_url;   ///< Base URL of the iCal proxy API.
-  String device_id;      ///< Unique device identifier used for pairing with the proxy.
-  String ical_url;       ///< iCal URL of the main Google Calendar.
+  String api_base_url; ///< Base URL of the iCal proxy API.
+  String device_id; ///< Unique device identifier used for pairing with the proxy.
+  String ical_url; ///< iCal URL of the main Google Calendar.
   String ical_alarm_url; ///< iCal URL of the alarm Google Calendar.
 };
 
@@ -37,15 +37,15 @@ struct Calendar_event
     String label = time_start.to_string() + " " + name;
     return label;
   }
-  String name;            ///< Event title / summary.
-  String calendar;        ///< Source calendar name.
+  String name; ///< Event title / summary.
+  String calendar; ///< Source calendar name.
   Simple_time time_start; ///< Event start time.
-  Simple_time time_stop;  ///< Event end time.
+  Simple_time time_stop; ///< Event end time.
 };
 
 class Calendar_model
 {
-public:
+  public:
   void clear();
   void update(const Calendar_event& calendar_event);
   uint8_t get_event_count() const;
@@ -53,7 +53,7 @@ public:
   void set_config(google_api_config& _config);
   void get_config(google_api_config& _config) const;
 
-private:
+  private:
   google_api_config config;
   std::vector<Calendar_event> calendar_events;
 };

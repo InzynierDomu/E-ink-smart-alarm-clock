@@ -4,14 +4,15 @@
  */
 
 #include "http_server.h"
-#include "logger.h"
 
 #include "config.h"
 #include "config_page_style.h"
+#include "logger.h"
 
 #include <ArduinoJson.h>
 #include <SD.h>
 #include <freertos/semphr.h>
+
 
 extern SemaphoreHandle_t g_sd_mutex;
 
@@ -126,10 +127,8 @@ void HttpServer::ha_set_config(HA_config& config)
 String HttpServer::build_ha_request() const
 {
   String url = "/api/states/" + String(ha_config.ha_enitty_weather_name);
-  return String("GET ") + url + " HTTP/1.1\r\n" +
-         "Host: " + String(ha_config.ha_host) + "\r\n" +
-         "Authorization: Bearer " + String(ha_config.ha_token) + "\r\n" +
-         "Connection: close\r\n\r\n";
+  return String("GET ") + url + " HTTP/1.1\r\n" + "Host: " + String(ha_config.ha_host) + "\r\n" + "Authorization: Bearer " +
+         String(ha_config.ha_token) + "\r\n" + "Connection: close\r\n\r\n";
 }
 
 /**
@@ -624,53 +623,44 @@ void HttpServer::handleRoot()
   server_.send(200, "text/html; charset=utf-8", "");
 
   // chunk 1: head + CSS
-  server_.sendContent(
-    "<!DOCTYPE html><html lang=\"pl\"><head>"
-    "<meta charset=\"UTF-8\">"
-    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-    "<title>Konfiguracja - Inteligentny alarm na e-ink</title>"
-    "<style>");
+  server_.sendContent("<!DOCTYPE html><html lang=\"pl\"><head>"
+                      "<meta charset=\"UTF-8\">"
+                      "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+                      "<title>Konfiguracja - Inteligentny alarm na e-ink</title>"
+                      "<style>");
   server_.sendContent(config_page_style_css);
 
   // chunk 2: body open + loading overlay + form header
-  server_.sendContent(
-    "</style></head><body>"
-    "<div id=\"loading-overlay\" class=\"loading-overlay\">"
-    "<div class=\"spinner\"></div>"
-    "<div class=\"overlay-text\">Ładowanie&hellip;</div>"
-    "</div>"
-    "<div class=\"container\">"
-    "<div class=\"top-bar\"><div class=\"logo-section\">"
-    "<div class=\"logo-text\"><h1>Konfiguracja urządzenia</h1></div>"
-    "</div><div class=\"header-spacer\"></div></div>"
-    "<form method=\"POST\" action=\"/save\">");
+  server_.sendContent("</style></head><body>"
+                      "<div id=\"loading-overlay\" class=\"loading-overlay\">"
+                      "<div class=\"spinner\"></div>"
+                      "<div class=\"overlay-text\">Ładowanie&hellip;</div>"
+                      "</div>"
+                      "<div class=\"container\">"
+                      "<div class=\"top-bar\"><div class=\"logo-section\">"
+                      "<div class=\"logo-text\"><h1>Konfiguracja urządzenia</h1></div>"
+                      "</div><div class=\"header-spacer\"></div></div>"
+                      "<form method=\"POST\" action=\"/save\">");
 
   // chunk 3: all config sections + save button in one go
-  server_.sendContent(
-    buildWifiSection() +
-    buildWeatherSection() +
-    buildGoogleCalendarSection() +
-    buildHaSection() +
-    "<div class=\"button-group\">"
-    "<button type=\"submit\">Zapisz konfigurację</button>"
-    "</div></form>");
+  server_.sendContent(buildWifiSection() + buildWeatherSection() + buildGoogleCalendarSection() + buildHaSection() +
+                      "<div class=\"button-group\">"
+                      "<button type=\"submit\">Zapisz konfigurację</button>"
+                      "</div></form>");
 
   // chunk 4: firmware + logs + footer + scripts
-  server_.sendContent(
-    buildFirmwareUpdateSection() +
-    buildLogsSection() +
-    buildFooter() +
-    "<div id=\"upload-overlay\" class=\"upload-overlay\">"
-    "<div class=\"spinner\"></div>"
-    "<div class=\"overlay-text\">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>"
-    "</div>"
-    "<script>"
-    "document.getElementById('loading-overlay').classList.add('hidden');"
-    "document.getElementById('firmware-form').addEventListener('submit',function(){"
-    "document.getElementById('upload-overlay').classList.add('active');"
-    "});"
-    "</script>"
-    "</body></html>");
+  server_.sendContent(buildFirmwareUpdateSection() + buildLogsSection() + buildFooter() +
+                      "<div id=\"upload-overlay\" class=\"upload-overlay\">"
+                      "<div class=\"spinner\"></div>"
+                      "<div class=\"overlay-text\">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>"
+                      "</div>"
+                      "<script>"
+                      "document.getElementById('loading-overlay').classList.add('hidden');"
+                      "document.getElementById('firmware-form').addEventListener('submit',function(){"
+                      "document.getElementById('upload-overlay').classList.add('active');"
+                      "});"
+                      "</script>"
+                      "</body></html>");
 
   server_.sendContent("");
 }
@@ -793,16 +783,26 @@ static String mqtt_state_description(int state)
 {
   switch (state)
   {
-    case -4: return "connection timeout";
-    case -3: return "connection lost";
-    case -2: return "connect failed";
-    case -1: return "disconnected";
-    case  1: return "bad protocol";
-    case  2: return "bad client ID";
-    case  3: return "server unavailable";
-    case  4: return "bad credentials";
-    case  5: return "unauthorized";
-    default: return "unknown";
+    case -4:
+      return "connection timeout";
+    case -3:
+      return "connection lost";
+    case -2:
+      return "connect failed";
+    case -1:
+      return "disconnected";
+    case 1:
+      return "bad protocol";
+    case 2:
+      return "bad client ID";
+    case 3:
+      return "server unavailable";
+    case 4:
+      return "bad credentials";
+    case 5:
+      return "unauthorized";
+    default:
+      return "unknown";
   }
 }
 

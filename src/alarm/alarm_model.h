@@ -4,11 +4,12 @@
  */
 
 #pragma once
-#include "clock_model.h"
 #include "RTClib.h"
+#include "clock_model.h"
 
 #include <Arduino.h>
 #include <vector>
+
 
 struct Clock_alarm
 {

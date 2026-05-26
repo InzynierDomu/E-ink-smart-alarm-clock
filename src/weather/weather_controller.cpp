@@ -117,8 +117,8 @@ void Weather_controller::fetch_weather(DateTime& now)
     if (!config.api_key.isEmpty())
     {
       String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
-                          "&lon=" + String(config.lon, 4) + "&date=" + get_date_string(now, -1) +
-                          "&appid=" + config.api_key + "&units=metric";
+                          "&lon=" + String(config.lon, 4) + "&date=" + get_date_string(now, -1) + "&appid=" + config.api_key +
+                          "&units=metric";
 
       HTTPClient http;
       http.setConnectTimeout(8000);

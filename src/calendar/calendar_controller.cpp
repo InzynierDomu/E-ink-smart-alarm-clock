@@ -4,6 +4,7 @@
  */
 
 #include "calendar_controller.h"
+
 #include "calendar_parser.h"
 #include "calendar_view.h"
 #include "logger.h"
@@ -11,6 +12,7 @@
 #include <Arduino.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+
 
 static const char* PROXY_BASE_URL = "https://inzynierdomu.pl/calendar_proxy/calendar.php";
 

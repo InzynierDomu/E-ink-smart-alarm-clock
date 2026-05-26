@@ -4,7 +4,9 @@
  */
 
 #include "alarm_trigger.h"
+
 #include "logger.h"
+
 
 /**
  * @brief Initializes the trigger with all injectable dependencies.
@@ -31,7 +33,7 @@ bool Alarm_trigger::try_trigger(const DateTime& now, bool is_ap_mode)
   Logger::info("ALARM", "Alarm triggered");
   audio_ctrl.start();
   start_flag = true;
-  active     = true;
+  active = true;
   return true;
 }
 
@@ -42,7 +44,7 @@ void Alarm_trigger::stop()
 
   audio_ctrl.stop();
   start_flag = false;
-  active     = false;
+  active = false;
   Logger::info("ALARM", "Alarm stopped");
 }
 

@@ -4,7 +4,9 @@
  */
 
 #include "ha_parser.h"
+
 #include "logger.h"
+
 
 bool is_ha_response_ok(const String& headers)
 {
