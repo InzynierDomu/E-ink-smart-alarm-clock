@@ -6,9 +6,8 @@
 #include "RTClib.h"
 #include "alarm_controller.h"
 #include "alarm_model.h"
-#include "logger.h"
-#include "alarm_view.h"
 #include "alarm_trigger.h"
+#include "alarm_view.h"
 #include "audio.h"
 #include "calendar_controller.h"
 #include "calendar_model.h"
@@ -19,6 +18,7 @@
 #include "config.h"
 #include "firmware_update.h"
 #include "http_server.h"
+#include "logger.h"
 #include "lvgl.h"
 #include "screen.h"
 #include "ui/ui.h"
@@ -39,6 +39,7 @@
 #include <vector>
 
 
+
 enum class State
 {
   alarm,
@@ -47,61 +48,81 @@ enum class State
   welcome_screen
 };
 
-Screen screen;                                                                          ///< E-ink screen driver instance.
-DateTime screen_reffresh_time(2000, 1, 1, 3, 0);                                       ///< Time of day at which a full screen clear is triggered (03:00).
+Screen screen; ///< E-ink screen driver instance.
+DateTime screen_reffresh_time(2000, 1, 1, 3, 0); ///< Time of day at which a full screen clear is triggered (03:00).
 
-SPIClass spi = SPIClass(HSPI);                                                          ///< HSPI bus instance used by the SD card.
+SPIClass spi = SPIClass(HSPI); ///< HSPI bus instance used by the SD card.
 
-Audio audio;                                                                            ///< Audio playback driver instance.
-DynamicJsonDocument docs(19508);                                                        ///< Shared JSON document buffer.
+Audio audio; ///< Audio playback driver instance.
+DynamicJsonDocument docs(19508); ///< Shared JSON document buffer.
 
-Alarm_model alarm_model;                                                                ///< Data model for alarm state.
-Alarm_view alarm_view(&screen);                                                         ///< View responsible for rendering alarm information.
-Alarm_controller alarm_controller(&alarm_model, &alarm_view);                           ///< Controller managing alarm logic.
+Alarm_model alarm_model; ///< Data model for alarm state.
+Alarm_view alarm_view(&screen); ///< View responsible for rendering alarm information.
+Alarm_controller alarm_controller(&alarm_model, &alarm_view); ///< Controller managing alarm logic.
 
-Calendar_model calendar_model;                                                          ///< Data model for calendar events.
-Calendar_view calendar_view(&screen);                                                   ///< View responsible for rendering calendar events.
-Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_controller); ///< Controller managing calendar fetching and display.
+Calendar_model calendar_model; ///< Data model for calendar events.
+Calendar_view calendar_view(&screen); ///< View responsible for rendering calendar events.
+Calendar_controller calendar_controller(&calendar_model, &calendar_view,
+                                        &alarm_controller); ///< Controller managing calendar fetching and display.
 
-Clock_model clock_model;                                                                ///< Data model for time and Wi-Fi configuration.
-Clock_view clock_view(&screen);                                                         ///< View responsible for rendering the clock.
-Clock_controller clock_controller(&clock_view, &clock_model);                           ///< Controller managing clock synchronization and display.
+Clock_model clock_model; ///< Data model for time and Wi-Fi configuration.
+Clock_view clock_view(&screen); ///< View responsible for rendering the clock.
+Clock_controller clock_controller(&clock_view, &clock_model); ///< Controller managing clock synchronization and display.
 
-Weather_model weather_model;                                                            ///< Data model for weather forecast.
-WebServer server(80);                                                                   ///< HTTP server listening on port 80.
-HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);       ///< Application-level HTTP/MQTT server wrapper.
+Weather_model weather_model; ///< Data model for weather forecast.
+WebServer server(80); ///< HTTP server listening on port 80.
+HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio); ///< Application-level HTTP/MQTT server wrapper.
 
-Weather_view weather_view(&screen);                                                     ///< View responsible for rendering weather data.
-Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);      ///< Controller managing weather fetching and display.
+Weather_view weather_view(&screen); ///< View responsible for rendering weather data.
+Weather_controller weather_controller(&weather_model, &weather_view, &httpServer); ///< Controller managing weather fetching and display.
 
-State state;                                                                            ///< Current application state.
+State state; ///< Current application state.
 
-static bool btn_stable_state = false;         ///< Debounced (stable) button state.
-static bool btn_raw_state = false;            ///< Raw (non-debounced) button reading.
-static unsigned long btn_change_time = 0;     ///< Timestamp of the last raw button state change (ms).
-static int update_counter = 10;               ///< Counter driving periodic data refresh ticks.
+static bool btn_stable_state = false; ///< Debounced (stable) button state.
+static bool btn_raw_state = false; ///< Raw (non-debounced) button reading.
+static unsigned long btn_change_time = 0; ///< Timestamp of the last raw button state change (ms).
+static int cal_counter       =  9; ///< Counter for calendar events fetch (fires at >= 10).
+static int alarm_cal_counter =  8; ///< Counter for alarm calendar fetch, offset 1 tick from events.
+static int owm_counter       =  7; ///< Counter for OpenWeatherMap fetch, offset 2 ticks from events.
+static int ha_counter        =  6; ///< Counter for Home Assistant weather fetch, offset 3 ticks from events.
 
-static uint8_t reset_press_count = 0;         ///< Number of button presses counted within the reset window.
-static unsigned long reset_window_start = 0;  ///< Timestamp when the current reset press window started (ms).
-static unsigned long boot_time = 0;           ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
+static uint8_t reset_press_count = 0; ///< Number of button presses counted within the reset window.
+static unsigned long reset_window_start = 0; ///< Timestamp when the current reset press window started (ms).
+static unsigned long boot_time = 0; ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
 
-TaskHandle_t audioTaskHandle = nullptr;       ///< Handle for the FreeRTOS audio playback task.
-volatile bool startAlarmAudio = false;        ///< Flag set by the main task to start/stop audio playback on Core 1.
+TaskHandle_t audioTaskHandle = nullptr; ///< Handle for the FreeRTOS audio playback task.
+volatile bool startAlarmAudio = false; ///< Flag set by the main task to start/stop audio playback on Core 1.
 
-struct Check_adapter : Alarm_check {
-  bool check(const DateTime& now) override { return alarm_controller.check_alarm(now); }
-} alarm_check_adapter;                        ///< Bridges Alarm_controller into the Alarm_trigger interface.
+struct Check_adapter : Alarm_check
+{
+  bool check(const DateTime& now) override
+  {
+    return alarm_controller.check_alarm(now);
+  }
+} alarm_check_adapter; ///< Bridges Alarm_controller into the Alarm_trigger interface.
 
-struct Mqtt_adapter : Alarm_mqtt {
-  void send_action() override { httpServer.send_mqtt_action(); }
-} alarm_mqtt_adapter;                         ///< Bridges HttpServer MQTT call into the Alarm_trigger interface.
+struct Mqtt_adapter : Alarm_mqtt
+{
+  void send_action() override
+  {
+    httpServer.send_mqtt_action();
+  }
+} alarm_mqtt_adapter; ///< Bridges HttpServer MQTT call into the Alarm_trigger interface.
 
-struct Audio_adapter : Alarm_audio {
-  void start() override { audio.start(); }
-  void stop()  override { audio.stop();  }
-} alarm_audio_adapter;                        ///< Bridges Audio into the Alarm_trigger interface.
+struct Audio_adapter : Alarm_audio
+{
+  void start() override
+  {
+    audio.start();
+  }
+  void stop() override
+  {
+    audio.stop();
+  }
+} alarm_audio_adapter; ///< Bridges Audio into the Alarm_trigger interface.
 
-Alarm_trigger alarm_trigger(alarm_check_adapter, alarm_mqtt_adapter, alarm_audio_adapter, startAlarmAudio); ///< Orchestrates the full alarm trigger sequence.
+Alarm_trigger alarm_trigger(alarm_check_adapter, alarm_mqtt_adapter, alarm_audio_adapter,
+                            startAlarmAudio); ///< Orchestrates the full alarm trigger sequence.
 
 /**
  * @brief FreeRTOS task that continuously plays alarm audio when the startAlarmAudio flag is set.
@@ -244,24 +265,51 @@ static void update_date(lv_timer_t* timer)
   update_clock();
   if (state == State::alarm)
     return;
-  if (update_counter >= 10)
+
+  DateTime now;
+  clock_controller.get_time(now);
+
+  if (cal_counter >= 10)
   {
-    DateTime now;
-    clock_controller.get_time(now);
-    weather_controller.fetch_weather(now);
-    weather_controller.update_view();
-    calendar_controller.fetch_calendar(now);
+    calendar_controller.fetch_events(now);
     calendar_controller.update_view();
-    alarm_controller.update_view();
-    if (httpServer.is_weather_from_ha())
-    {
-      httpServer.get_ha_weather();
-    }
-    update_counter = 0;
+    cal_counter = 0;
   }
   else
   {
-    update_counter++;
+    cal_counter++;
+  }
+
+  if (alarm_cal_counter >= 10)
+  {
+    calendar_controller.fetch_alarms(now);
+    alarm_controller.update_view();
+    alarm_cal_counter = 0;
+  }
+  else
+  {
+    alarm_cal_counter++;
+  }
+
+  if (owm_counter >= 10)
+  {
+    weather_controller.fetch_weather(now);
+    weather_controller.update_view();
+    owm_counter = 0;
+  }
+  else
+  {
+    owm_counter++;
+  }
+
+  if (ha_counter >= 10 && httpServer.is_weather_from_ha())
+  {
+    httpServer.get_ha_weather();
+    ha_counter = 0;
+  }
+  else
+  {
+    ha_counter++;
   }
 }
 
@@ -271,7 +319,7 @@ static void update_date(lv_timer_t* timer)
 static void init_hardware()
 {
   Serial.begin(115200);
-  delay(3000);  // DEBUG: wait for serial monitor
+  delay(3000); // DEBUG: wait for serial monitor
   Serial.println("=== SETUP START ===");
 
   pinMode(config::sd_power_pin, OUTPUT);
@@ -289,15 +337,32 @@ static void init_hardware()
   const char* reset_str = "UNKNOWN";
   switch (reset_reason)
   {
-    case ESP_RST_POWERON:   reset_str = "POWERON";   break;
-    case ESP_RST_SW:        reset_str = "SW_RESET";  break;
-    case ESP_RST_PANIC:     reset_str = "PANIC";     break;
-    case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
-    case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
-    case ESP_RST_WDT:       reset_str = "WDT";       break;
-    case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
-    case ESP_RST_SDIO:      reset_str = "SDIO";      break;
-    default: break;
+    case ESP_RST_POWERON:
+      reset_str = "POWERON";
+      break;
+    case ESP_RST_SW:
+      reset_str = "SW_RESET";
+      break;
+    case ESP_RST_PANIC:
+      reset_str = "PANIC";
+      break;
+    case ESP_RST_INT_WDT:
+      reset_str = "INT_WDT";
+      break;
+    case ESP_RST_TASK_WDT:
+      reset_str = "TASK_WDT";
+      break;
+    case ESP_RST_WDT:
+      reset_str = "WDT";
+      break;
+    case ESP_RST_BROWNOUT:
+      reset_str = "BROWNOUT";
+      break;
+    case ESP_RST_SDIO:
+      reset_str = "SDIO";
+      break;
+    default:
+      break;
   }
   Logger::info("BOOT", String("Reset reason: ") + reset_str + " | version: " + config::version);
 }
@@ -365,7 +430,7 @@ static void apply_device_id()
   httpServer.set_device_id(deviceId);
 
   google_api_config calendar_config;
-  calendar_model.get_config(calendar_config);  // preserve ical_url from read_config()
+  calendar_model.get_config(calendar_config); // preserve ical_url from read_config()
   calendar_config.device_id = deviceId;
   calendar_model.set_config(calendar_config);
 
@@ -404,7 +469,10 @@ static void init_gpio()
   reset_press_count = 0;
   reset_window_start = 0;
   boot_time = millis();
-  update_counter = 8;
+  cal_counter       = 8;
+  alarm_cal_counter = 7;
+  owm_counter       = 6;
+  ha_counter        = 5;
 }
 
 /**
@@ -441,7 +509,7 @@ static void init_ui_status()
     lv_label_set_text(ui_labwifistatus, "Access point");
   }
 
-  lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
+  lv_timer_handler(); // flush pending lv_screen_load(ui_Screen2) before loop starts
   digitalWrite(config::led_pin, HIGH);
 }
 

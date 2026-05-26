@@ -11,6 +11,9 @@
 
 #include <ArduinoJson.h>
 #include <SD.h>
+#include <freertos/semphr.h>
+
+extern SemaphoreHandle_t g_sd_mutex;
 
 
 /**
@@ -346,13 +349,13 @@ String HttpServer::buildWeatherSection()
             <div class="form-row">
                 <label class="form-label">Szerokość (lat)</label>
                 <input type="text" name="lat" value=")rawHTML";
-  html += String(weather.lat);
+  html += String(weather.lat, 5);
   html += R"rawHTML(">
             </div>
             <div class="form-row">
                 <label class="form-label">Długość (lon)</label>
                 <input type="text" name="lon" value=")rawHTML";
-  html += String(weather.lon);
+  html += String(weather.lon, 5);
   html += R"rawHTML(">
             </div>
         </div>
@@ -557,15 +560,27 @@ void HttpServer::handleLogs()
     server_.send(404, "text/plain; charset=utf-8", "Brak pliku logów.");
     return;
   }
-  File f = SD.open(Logger::path(), "r");
-  if (!f)
+
+  String content;
+  if (xSemaphoreTake(g_sd_mutex, pdMS_TO_TICKS(5000)) == pdTRUE)
   {
-    server_.send(500, "text/plain; charset=utf-8", "Nie można otworzyć pliku logów.");
+    File f = SD.open(Logger::path(), "r");
+    if (f)
+    {
+      content = f.readString();
+      f.close();
+    }
+    xSemaphoreGive(g_sd_mutex);
+  }
+
+  if (content.isEmpty())
+  {
+    server_.send(500, "text/plain; charset=utf-8", "Nie można odczytać pliku logów.");
     return;
   }
+
   server_.sendHeader("Content-Disposition", "attachment; filename=\"logs.txt\"");
-  server_.streamFile(f, "text/plain; charset=utf-8");
-  f.close();
+  server_.send(200, "text/plain; charset=utf-8", content);
 }
 
 /**

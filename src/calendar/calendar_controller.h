@@ -14,7 +14,8 @@ class Calendar_controller
 {
   public:
   Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_setter* _alarm_controller);
-  void fetch_calendar(const DateTime& now);
+  void fetch_events(const DateTime& now);
+  void fetch_alarms(const DateTime& now);
   void update_view();
 
   private:

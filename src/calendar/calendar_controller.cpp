@@ -62,8 +62,8 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
   static WiFiClientSecure wifiClient;
   wifiClient.setInsecure();
   HTTPClient http;
-  http.setConnectTimeout(10000);
-  http.setTimeout(15000);
+  http.setConnectTimeout(8000);
+  http.setTimeout(9000);
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 
   String proxy_url = String(PROXY_BASE_URL) + "?url=" + url_encode(ical_url);
@@ -96,17 +96,25 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
 }
 
 /**
- * @brief Fetches data from iCal calendars (events and alarms) and updates the model.
- * @param now Current time used to select the next upcoming alarm from the alarm calendar.
+ * @brief Fetches calendar events and updates the model.
+ * @param now Current time (unused for events, kept for interface consistency).
  */
-void Calendar_controller::fetch_calendar(const DateTime& now)
+void Calendar_controller::fetch_events(const DateTime& now)
 {
   google_api_config config;
   model->get_config(config);
-
   if (config.ical_url.length() > 0)
     fetch_ical(config.ical_url, false, now);
+}
 
+/**
+ * @brief Fetches alarm calendar and sets the next upcoming alarm.
+ * @param now Current time used to select the next upcoming alarm.
+ */
+void Calendar_controller::fetch_alarms(const DateTime& now)
+{
+  google_api_config config;
+  model->get_config(config);
   if (config.ical_alarm_url.length() > 0)
     fetch_ical(config.ical_alarm_url, true, now);
 }
