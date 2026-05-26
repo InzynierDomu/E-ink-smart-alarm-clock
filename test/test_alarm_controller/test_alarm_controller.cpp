@@ -16,7 +16,7 @@ protected:
     Clock_alarm alarm;
     alarm.time   = Simple_time(hour, minute);
     alarm.enable = true;
-    uut.set_alarm(alarm, true);
+    uut.add_alarm(alarm);
   }
 
   DateTime at(uint8_t hour, uint8_t minute)
@@ -40,7 +40,7 @@ TEST_F(Alarm_check_test, disabled_alarm_does_not_trigger_at_alarm_time)
   Clock_alarm alarm;
   alarm.time   = Simple_time(7, 0);
   alarm.enable = false;
-  uut.set_alarm(alarm, true);
+  uut.add_alarm(alarm);
 
   EXPECT_FALSE(uut.check_alarm(at(7, 0)));
 }
