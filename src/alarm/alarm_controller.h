@@ -19,6 +19,7 @@ class Alarm_controller : public Alarm_setter
   void set_no_alarm() override;
   void toggle_alarm();
   void enable_alarm() override;
+  void advance_alarm();
   void update_view();
 
   private:

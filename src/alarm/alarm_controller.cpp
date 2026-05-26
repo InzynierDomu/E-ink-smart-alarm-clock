@@ -23,7 +23,8 @@ void Alarm_controller::set_alarm(Simple_time time)
 {
   Clock_alarm alarm;
   alarm.time = time;
-  model->set_alarm(alarm, true);
+  alarm.enable = true;
+  model->add_alarm(alarm);
 }
 
 /**
@@ -61,6 +62,14 @@ void Alarm_controller::toggle_alarm()
 void Alarm_controller::enable_alarm()
 {
   model->enable_alarm();
+}
+
+/**
+ * @brief Removes the first (active) alarm and advances to the next one if available.
+ */
+void Alarm_controller::advance_alarm()
+{
+  model->advance_alarm();
 }
 
 /**
