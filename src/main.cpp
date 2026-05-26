@@ -1,6 +1,12 @@
+/**
+ * @file main.cpp
+ * @brief Application entry point — initializes all subsystems and runs the main event loop.
+ */
+
 #include "RTClib.h"
+#include "alarm_controller.h"
 #include "alarm_model.h"
-#include "logger.h"
+#include "alarm_trigger.h"
 #include "alarm_view.h"
 #include "audio.h"
 #include "calendar_controller.h"
@@ -12,6 +18,7 @@
 #include "config.h"
 #include "firmware_update.h"
 #include "http_server.h"
+#include "logger.h"
 #include "lvgl.h"
 #include "screen.h"
 #include "ui/ui.h"
@@ -32,6 +39,7 @@
 #include <vector>
 
 
+
 enum class State
 {
   alarm,
@@ -40,52 +48,86 @@ enum class State
   welcome_screen
 };
 
-SemaphoreHandle_t sd_mutex = nullptr;
+Screen screen; ///< E-ink screen driver instance.
+DateTime screen_reffresh_time(2000, 1, 1, 3, 0); ///< Time of day at which a full screen clear is triggered (03:00).
 
-Screen screen;
-DateTime screen_reffresh_time(2000, 1, 1, 3, 0);
+SPIClass spi = SPIClass(HSPI); ///< HSPI bus instance used by the SD card.
 
-SPIClass spi = SPIClass(HSPI);
+Audio audio; ///< Audio playback driver instance.
+DynamicJsonDocument docs(19508); ///< Shared JSON document buffer.
 
-Audio audio;
-DynamicJsonDocument docs(19508);
+Alarm_model alarm_model; ///< Data model for alarm state.
+Alarm_view alarm_view(&screen); ///< View responsible for rendering alarm information.
+Alarm_controller alarm_controller(&alarm_model, &alarm_view); ///< Controller managing alarm logic.
 
-Alarm_model alarm_model;
-Alarm_view alarm_view(&screen);
-Alarm_controller alarm_controller(&alarm_model, &alarm_view);
+Calendar_model calendar_model; ///< Data model for calendar events.
+Calendar_view calendar_view(&screen); ///< View responsible for rendering calendar events.
+Calendar_controller calendar_controller(&calendar_model, &calendar_view,
+                                        &alarm_controller); ///< Controller managing calendar fetching and display.
 
-Calendar_model calendar_model;
-Calendar_view calendar_view(&screen);
-Calendar_controller calendar_controller(&calendar_model, &calendar_view, &alarm_controller);
+Clock_model clock_model; ///< Data model for time and Wi-Fi configuration.
+Clock_view clock_view(&screen); ///< View responsible for rendering the clock.
+Clock_controller clock_controller(&clock_view, &clock_model); ///< Controller managing clock synchronization and display.
 
-Clock_model clock_model;
-Clock_view clock_view(&screen);
-Clock_controller clock_controller(&clock_view, &clock_model);
+Weather_model weather_model; ///< Data model for weather forecast.
+WebServer server(80); ///< HTTP server listening on port 80.
+HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio); ///< Application-level HTTP/MQTT server wrapper.
 
-Weather_model weather_model;
-WebServer server(80);
-HttpServer httpServer(server, clock_model, weather_model, calendar_model, audio);
+Weather_view weather_view(&screen); ///< View responsible for rendering weather data.
+Weather_controller weather_controller(&weather_model, &weather_view, &httpServer); ///< Controller managing weather fetching and display.
 
-Weather_view weather_view(&screen);
-Weather_controller weather_controller(&weather_model, &weather_view, &httpServer);
+State state; ///< Current application state.
 
-State state;
+static bool btn_stable_state = false; ///< Debounced (stable) button state.
+static bool btn_raw_state = false; ///< Raw (non-debounced) button reading.
+static unsigned long btn_change_time = 0; ///< Timestamp of the last raw button state change (ms).
+static int cal_counter       =  9; ///< Counter for calendar events fetch (fires at >= 10).
+static int alarm_cal_counter =  8; ///< Counter for alarm calendar fetch, offset 1 tick from events.
+static int owm_counter       =  7; ///< Counter for OpenWeatherMap fetch, offset 2 ticks from events.
+static int ha_counter        =  6; ///< Counter for Home Assistant weather fetch, offset 3 ticks from events.
 
-static bool btn_stable_state = false;
-static bool btn_raw_state = false;
-static unsigned long btn_change_time = 0;
-static int cal_counter       = 9;
-static int alarm_cal_counter = 8;
-static int owm_counter       = 7;
-static int ha_counter        = 6;
+static uint8_t reset_press_count = 0; ///< Number of button presses counted within the reset window.
+static unsigned long reset_window_start = 0; ///< Timestamp when the current reset press window started (ms).
+static unsigned long boot_time = 0; ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
 
-static uint8_t reset_press_count = 0;
-static unsigned long reset_window_start = 0;
-static unsigned long boot_time = 0;
+TaskHandle_t audioTaskHandle = nullptr; ///< Handle for the FreeRTOS audio playback task.
+volatile bool startAlarmAudio = false; ///< Flag set by the main task to start/stop audio playback on Core 1.
 
-TaskHandle_t audioTaskHandle = nullptr;
-volatile bool startAlarmAudio = false;
+struct Check_adapter : Alarm_check
+{
+  bool check(const DateTime& now) override
+  {
+    return alarm_controller.check_alarm(now);
+  }
+} alarm_check_adapter; ///< Bridges Alarm_controller into the Alarm_trigger interface.
 
+struct Mqtt_adapter : Alarm_mqtt
+{
+  void send_action() override
+  {
+    httpServer.send_mqtt_action();
+  }
+} alarm_mqtt_adapter; ///< Bridges HttpServer MQTT call into the Alarm_trigger interface.
+
+struct Audio_adapter : Alarm_audio
+{
+  void start() override
+  {
+    audio.start();
+  }
+  void stop() override
+  {
+    audio.stop();
+  }
+} alarm_audio_adapter; ///< Bridges Audio into the Alarm_trigger interface.
+
+Alarm_trigger alarm_trigger(alarm_check_adapter, alarm_mqtt_adapter, alarm_audio_adapter,
+                            startAlarmAudio); ///< Orchestrates the full alarm trigger sequence.
+
+/**
+ * @brief FreeRTOS task that continuously plays alarm audio when the startAlarmAudio flag is set.
+ * @param pvParameters Unused task parameter.
+ */
 void audioTask(void* pvParameters)
 {
   for (;;)
@@ -102,6 +144,9 @@ void audioTask(void* pvParameters)
   }
 }
 
+/**
+ * @brief Reads the JSON configuration file from the SD card and applies settings to all subsystem models.
+ */
 void read_config()
 {
   File file = SD.open(config::config_path, "r");
@@ -163,6 +208,10 @@ void read_config()
   // audio.set_config(audio_config);
 }
 
+/**
+ * @brief Generates a unique device ID string derived from the ESP32 MAC address.
+ * @return Twelve-character hexadecimal string representing the device ID.
+ */
 String get_device_id()
 {
   uint8_t mac[6];
@@ -174,26 +223,26 @@ String get_device_id()
   return String(id);
 }
 
+/**
+ * @brief Updates the clock view and triggers alarm state if the alarm time is reached.
+ */
 void update_clock()
 {
   clock_controller.update_view();
   DateTime now;
   clock_controller.get_time(now);
 
-  if (alarm_controller.check_alarm(now) && state != State::alarm)
+  if (alarm_trigger.try_trigger(now, state == State::AP))
   {
-    if (state != State::AP)
-    {
-      httpServer.send_mqtt_action();
-      delay(200);
-    }
     digitalWrite(config::led_pin, HIGH);
     state = State::alarm;
-    audio.start();
-    startAlarmAudio = true;
   }
 }
 
+/**
+ * @brief LVGL timer callback that checks WiFi connectivity and triggers reconnection if lost.
+ * @param timer Pointer to the LVGL timer that fired this callback.
+ */
 static void wifi_watchdog(lv_timer_t* timer)
 {
   if (state == State::AP || state == State::welcome_screen)
@@ -207,6 +256,10 @@ static void wifi_watchdog(lv_timer_t* timer)
   }
 }
 
+/**
+ * @brief LVGL timer callback that updates the clock and periodically fetches weather and calendar data.
+ * @param timer Pointer to the LVGL timer that fired this callback.
+ */
 static void update_date(lv_timer_t* timer)
 {
   if (state == State::welcome_screen || state == State::AP)
@@ -214,12 +267,15 @@ static void update_date(lv_timer_t* timer)
     return;
   }
   update_clock();
+  if (state == State::alarm)
+    return;
+
   DateTime now;
   clock_controller.get_time(now);
 
   if (cal_counter >= 10)
   {
-    calendar_controller.fetch_events();
+    calendar_controller.fetch_events(now);
     calendar_controller.update_view();
     cal_counter = 0;
   }
@@ -230,8 +286,7 @@ static void update_date(lv_timer_t* timer)
 
   if (alarm_cal_counter >= 10)
   {
-    calendar_controller.fetch_alarms();
-    alarm_controller.drop_past(now);
+    calendar_controller.fetch_alarms(now);
     alarm_controller.update_view();
     alarm_cal_counter = 0;
   }
@@ -262,25 +317,24 @@ static void update_date(lv_timer_t* timer)
   }
 }
 
-void setup()
+/**
+ * @brief Initializes serial port, SD card, logger, and logs the reset reason.
+ */
+static void init_hardware()
 {
   Serial.begin(115200);
-  delay(3000);  // DEBUG: wait for serial monitor
+  delay(3000); // DEBUG: wait for serial monitor
   Serial.println("=== SETUP START ===");
+
   pinMode(config::sd_power_pin, OUTPUT);
   digitalWrite(config::sd_power_pin, HIGH);
   delay(10);
   spi.begin(39, 13, 40);
   if (!SD.begin(config::sd_cs_pin, spi, 80000000))
-  {
     Serial.println("no SD card");
-  }
   else
-  {
     Serial.println("SD card ok");
-  }
 
-  sd_mutex = xSemaphoreCreateMutex();
   Logger::setup("/logs.txt", 50);
 
   esp_reset_reason_t reset_reason = esp_reset_reason();
@@ -307,75 +361,84 @@ void setup()
     else
       Logger::info("BOOT", msg);
   }
+}
 
-  if (checkAndPerformUpdateFromSD())
-  {
-    return;
-  }
+/**
+ * @brief Starts the device as a Wi-Fi access point with a fixed SSID and password.
+ */
+static void start_ap_mode()
+{
+  WiFi.mode(WIFI_AP);
+  delay(100);
+  bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
+  WiFi.setSleep(false);
+  Serial.print("AP started: ");
+  Serial.println(ap_ok ? "YES" : "NO");
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
+  state = State::AP;
+}
 
-  read_config();
-
+/**
+ * @brief Connects to Wi-Fi in STA mode using stored credentials, or falls back to AP mode on timeout or missing SSID.
+ */
+static void init_wifi()
+{
   Wifi_Config wifi_config;
   clock_model.get_wifi_config(wifi_config);
+
   if (wifi_config.ssid.length() == 0)
   {
     Serial.println("Brak SSID, uruchamiam AP");
-    WiFi.mode(WIFI_AP);
-    delay(100);
-    bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
-    WiFi.setSleep(false);
-    Serial.print("AP started: ");
-    Serial.println(ap_ok ? "YES" : "NO");
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP());
-    state = State::AP;
-  }
-  else
-  {
-    Serial.println("SSID ustawione, lacze jako STA");
-    WiFi.mode(WIFI_STA);
-    // WiFi.setHostname("EInkClock");
-    WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
-    unsigned long wifi_start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - wifi_start < 60000)
-    {
-      delay(500);
-      Serial.print(".");
-    }
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      Serial.println("WiFi connected");
-      state = State::welcome_screen;
-      Serial.print("IP:");
-      Serial.println(WiFi.localIP());
-    }
-    else
-    {
-      Logger::warn("WIFI", "Connection timeout, falling back to AP mode");
-      WiFi.mode(WIFI_AP);
-      delay(100);
-      bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
-      WiFi.setSleep(false);
-      Serial.print("AP started: ");
-      Serial.println(ap_ok ? "YES" : "NO");
-      Serial.print("AP IP: ");
-      Serial.println(WiFi.softAPIP());
-      state = State::AP;
-    }
+    start_ap_mode();
+    return;
   }
 
-  // Generate and set device ID for pairing and calendar fetching
+  Serial.println("SSID ustawione, lacze jako STA");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(wifi_config.ssid.c_str(), wifi_config.pass.c_str());
+  unsigned long wifi_start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - wifi_start < 60000)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("WiFi connected");
+    Serial.print("IP:");
+    Serial.println(WiFi.localIP());
+    state = State::welcome_screen;
+    return;
+  }
+
+  Logger::warn("WIFI", "Connection timeout, falling back to AP mode");
+  start_ap_mode();
+}
+
+/**
+ * @brief Derives the device ID from the MAC address and propagates it to the HTTP server and calendar model.
+ */
+static void apply_device_id()
+{
   String deviceId = get_device_id();
   httpServer.set_device_id(deviceId);
 
   google_api_config calendar_config;
-  calendar_model.get_config(calendar_config);  // preserve ical_url from read_config()
+  calendar_model.get_config(calendar_config); // preserve ical_url from read_config()
   calendar_config.device_id = deviceId;
   calendar_model.set_config(calendar_config);
 
   Serial.print("Device ID: ");
   Serial.println(deviceId);
+}
 
+/**
+ * @brief Initializes the clock, screen, calendar and clock views, and registers LVGL periodic timers.
+ */
+static void init_subsystems()
+{
   clock_controller.setup_clock();
   screen.setup_screen();
   calendar_view.setup_calendar_list();
@@ -384,11 +447,18 @@ void setup()
   lv_timer_create(update_date, 60000, NULL);
   lv_timer_create(wifi_watchdog, 120000, NULL);
   delay(1000);
+}
 
+/**
+ * @brief Configures GPIO pins for the alarm button, main button, and LED; initialises debounce state variables.
+ */
+static void init_gpio()
+{
   pinMode(config::alarm_enable_button_pin, INPUT);
   pinMode(config::btn_pin, INPUT_PULLDOWN);
   pinMode(config::led_pin, OUTPUT);
   digitalWrite(config::led_pin, LOW);
+
   btn_stable_state = digitalRead(config::btn_pin);
   btn_raw_state = btn_stable_state;
   btn_change_time = millis();
@@ -399,16 +469,32 @@ void setup()
   alarm_cal_counter = 7;
   owm_counter       = 6;
   ha_counter        = 5;
+}
 
+/**
+ * @brief Initializes the audio driver and launches the audio playback task on Core 1.
+ */
+static void init_audio()
+{
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
+}
 
+/**
+ * @brief Registers the HA clock entity (when not in AP mode) and starts the HTTP server.
+ */
+static void init_http_server()
+{
   if (state != State::AP)
-  {
     httpServer.entity_clock_setup();
-  }
   httpServer.begin();
+}
 
+/**
+ * @brief Sets the initial Wi-Fi status label, flushes the LVGL frame, and turns on the boot LED.
+ */
+static void init_ui_status()
+{
   if (state == State::welcome_screen)
   {
     String ip = "IP: " + WiFi.localIP().toString();
@@ -419,11 +505,31 @@ void setup()
     lv_label_set_text(ui_labwifistatus, "Access point");
   }
 
-  lv_timer_handler();  // flush pending lv_screen_load(ui_Screen2) before loop starts
-
+  lv_timer_handler(); // flush pending lv_screen_load(ui_Screen2) before loop starts
   digitalWrite(config::led_pin, HIGH);
 }
 
+void setup()
+{
+  init_hardware();
+
+  if (checkAndPerformUpdateFromSD())
+    return;
+
+  read_config();
+  init_wifi();
+  apply_device_id();
+  init_subsystems();
+  init_gpio();
+  init_audio();
+  init_http_server();
+  init_ui_status();
+}
+
+/**
+ * @brief Reads the button state with debounce filtering and reports a stable edge.
+ * @return true when a debounced button edge is detected, false otherwise.
+ */
 bool check_button()
 {
   bool reading = digitalRead(config::btn_pin);
@@ -441,6 +547,10 @@ bool check_button()
   return false;
 }
 
+/**
+ * @brief Checks whether the button has been pressed enough times within the reset window to trigger a config reset.
+ * @return true if the reset threshold was reached, false otherwise.
+ */
 bool check_reset_sequence()
 {
   if (millis() - boot_time < 3000)
@@ -468,6 +578,9 @@ bool check_reset_sequence()
   return false;
 }
 
+/**
+ * @brief Overwrites the configuration file on the SD card with an empty JSON object.
+ */
 void clear_config()
 {
   File file = SD.open(config::config_path, "w");
@@ -496,8 +609,7 @@ void loop()
       alarm_controller.advance_alarm();
       alarm_controller.update_view();
       state = State::normal;
-      audio.stop();
-      startAlarmAudio = false;
+      alarm_trigger.stop();
       digitalWrite(config::led_pin, LOW);
     }
   }

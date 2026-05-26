@@ -1,3 +1,8 @@
+/**
+ * @file audio.h
+ * @brief Interface of the Audio class handling sound playback over I2S from an SD card.
+ */
+
 #pragma once
 #include <Arduino.h>
 

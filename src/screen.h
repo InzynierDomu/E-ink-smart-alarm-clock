@@ -1,3 +1,8 @@
+/**
+ * @file screen.h
+ * @brief Screen class managing the e-ink display initialization and LVGL integration.
+ */
+
 #pragma once
 #include "config.h"
 #include "ui/ui.h"

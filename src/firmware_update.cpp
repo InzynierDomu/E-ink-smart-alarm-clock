@@ -1,3 +1,8 @@
+/**
+ * @file firmware_update.cpp
+ * @brief Implementation of ESP32 firmware update from a firmware.bin file on the SD card.
+ */
+
 #include <Arduino.h>
 #include <Update.h>
 #include <SD.h>
@@ -5,6 +10,10 @@
 
 static const char *kUpdateFilePath = "/firmware.bin";
 
+/**
+ * @brief Checks for a firmware.bin file on the SD card and performs an OTA update if the file is present.
+ * @return true if the update succeeded and the device restarted, false in all other cases.
+ */
 bool checkAndPerformUpdateFromSD()
 {
     if (!SD.begin()) {

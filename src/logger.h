@@ -1,3 +1,8 @@
+/**
+ * @file logger.h
+ * @brief Logger interface for writing messages to an SD card with INFO/WARN/ERROR levels.
+ */
+
 #pragma once
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
@@ -27,8 +32,5 @@ class Logger
 
   static String _path;
   static size_t _max_bytes;
-
-  static constexpr uint8_t LOG_BUF_SIZE = 8;
-  static String _buf[LOG_BUF_SIZE];
-  static uint8_t _buf_count;
+  static SemaphoreHandle_t _sd_mutex;
 };

@@ -1,3 +1,8 @@
+/**
+ * @file audio.cpp
+ * @brief Implementation of WAV file playback over the I2S interface on ESP32.
+ */
+
 #include "audio.h"
 
 #include "config.h"
@@ -6,11 +11,13 @@
 #include <driver/i2s.h>
 #include <freertos/semphr.h>
 
-extern SemaphoreHandle_t sd_mutex;
+extern SemaphoreHandle_t g_sd_mutex;
 
+/**
+ * @brief Initializes the I2S driver with the current audio configuration.
+ */
 void Audio::setup()
 {
-  Serial.println("audio cofing start");
   i2s_config_t i2s_config = {.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
                              .sample_rate = config.sample_rate,
                              .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
@@ -24,24 +31,21 @@ void Audio::setup()
                                  .ws_io_num = config::speaker_ws_pin,
                                  .data_out_num = config::speaker_dout_pin,
                                  .data_in_num = I2S_PIN_NO_CHANGE};
-  esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
-  Serial.println(esp_err_to_name(err));
-  err = i2s_set_pin(I2S_NUM_1, &pin_config);
-  Serial.println(esp_err_to_name(err));
-  Serial.println("audio cofing end");
+  i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
+  i2s_set_pin(I2S_NUM_1, &pin_config);
 }
 
+/**
+ * @brief Plays an audio file from the SD card over I2S with volume scaling applied.
+ */
 void Audio::play_audio()
 {
-  if (sd_mutex != nullptr)
-    xSemaphoreTake(sd_mutex, portMAX_DELAY);
+  xSemaphoreTake(g_sd_mutex, portMAX_DELAY);
 
   File audioFile = SD.open(config::audio_path, FILE_READ);
   if (!audioFile)
   {
-    Serial.println("error with audio file");
-    if (sd_mutex != nullptr)
-      xSemaphoreGive(sd_mutex);
+    xSemaphoreGive(g_sd_mutex);
     return;
   }
 
@@ -67,33 +71,41 @@ void Audio::play_audio()
 
   audioFile.close();
   i2s_stop(I2S_NUM_1);
-
-  if (sd_mutex != nullptr)
-    xSemaphoreGive(sd_mutex);
+  xSemaphoreGive(g_sd_mutex);
 }
 
+/**
+ * @brief Sets the audio configuration — sample rate and volume (range 1–100).
+ * @param _config Reference to the structure with the new configuration.
+ */
 void Audio::set_config(Audio_config& _config)
 {
   if (_config.sample_rate > 0)
-  {
     config.sample_rate = _config.sample_rate;
-  }
   if (_config.volume > 0)
-  {
     config.volume = (_config.volume > 100) ? 100 : _config.volume;
-  }
 }
 
+/**
+ * @brief Copies the current audio configuration into the provided structure.
+ * @param _config Reference to the structure that will receive the configuration.
+ */
 void Audio::get_config(Audio_config& _config)
 {
   _config = config;
 }
 
+/**
+ * @brief Requests audio playback to stop.
+ */
 void Audio::stop()
 {
   stop_requested = true;
 }
 
+/**
+ * @brief Allows audio playback to proceed by clearing the stop flag.
+ */
 void Audio::start()
 {
   stop_requested = false;

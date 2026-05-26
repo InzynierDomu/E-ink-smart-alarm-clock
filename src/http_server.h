@@ -1,8 +1,14 @@
+/**
+ * @file http_server.h
+ * @brief HTTP configuration server and Home Assistant integration via MQTT.
+ */
+
 // http_server.h
 #pragma once
 #include "audio.h"
 #include "calendar_model.h"
 #include "clock_model.h"
+#include "ha_parser.h"
 #include "weather_model.h"
 
 #include <PubSubClient.h>
@@ -65,4 +71,6 @@ private:
   bool saveConfigJson(const JsonDocument& doc);
   void updateConfigFromRequest(JsonDocument& doc);
   void mqtt_reconnect();
+
+  String build_ha_request() const;
 };

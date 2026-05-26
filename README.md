@@ -87,7 +87,17 @@ The device fetches today's events directly from Google Calendar using a private 
 
 **Home Assistant** *(optional)*
 - Enter your HA host IP, port (`8123`), and a long-lived access token (HA → Profile → Long-Lived Access Tokens).
-- Provide the weather entity name (e.g. `weather.home`) to pull temperature from HA instead of OpenWeatherMap.
+- Provide the weather entity name (e.g. `sensor.temperature`) to pull temperature from HA instead of OpenWeatherMap.
+
+**MQTT (required for alarm notifications in HA)**
+
+The device sends an MQTT message to Home Assistant each time the alarm rings, which lets you trigger automations (e.g. turn on lights, send a phone notification).
+
+For this to work, the **MQTT integration must be enabled in Home Assistant**:
+1. Go to **Settings → Devices & Services → Add Integration** and search for **MQTT**.
+2. Configure it with your broker address — if you use the **Mosquitto** add-on, the host is the HA IP and port is `1883`.
+3. Enter the same broker host, port, username and password in the device configuration form.
+4. After saving, the device registers itself automatically as a binary sensor in HA via MQTT Discovery.
 
 ## Usage
 

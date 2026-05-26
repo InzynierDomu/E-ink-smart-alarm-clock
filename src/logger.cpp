@@ -1,3 +1,8 @@
+/**
+ * @file logger.cpp
+ * @brief Logger implementation — writing messages to an SD file with rotation and timestamps.
+ */
+
 #include "logger.h"
 
 #include <SD.h>
@@ -7,35 +12,63 @@ extern SemaphoreHandle_t sd_mutex;
 
 String Logger::_path;
 size_t Logger::_max_bytes;
-String Logger::_buf[Logger::LOG_BUF_SIZE];
-uint8_t Logger::_buf_count = 0;
+SemaphoreHandle_t Logger::_sd_mutex = nullptr;
 
+// Exposed so the audio task can hold the mutex during playback.
+SemaphoreHandle_t g_sd_mutex = nullptr;
+
+/**
+ * @brief Initializes the logger — sets the file path, maximum file size, and creates the SD mutex.
+ * @param path Path to the log file on the SD card.
+ * @param max_kb Maximum log file size in kilobytes.
+ */
 void Logger::setup(const String& path, size_t max_kb)
 {
   _path      = path;
   _max_bytes = max_kb * 1024;
+  if (!_sd_mutex)
+  {
+    _sd_mutex  = xSemaphoreCreateMutex();
+    g_sd_mutex = _sd_mutex;
+  }
 }
 
+/**
+ * @brief Returns the path to the log file.
+ * @return Reference to the string containing the log file path.
+ */
 const String& Logger::path()
 {
   return _path;
 }
 
+/**
+ * @brief Writes an INFO level message to the log.
+ */
 void Logger::info(const String& tag, const String& msg)
 {
   write(LogLevel::INFO, tag, msg);
 }
 
+/**
+ * @brief Writes a WARN level message to the log.
+ */
 void Logger::warn(const String& tag, const String& msg)
 {
   write(LogLevel::WARN, tag, msg);
 }
 
+/**
+ * @brief Writes an ERROR level message to the log.
+ */
 void Logger::error(const String& tag, const String& msg)
 {
   write(LogLevel::ERROR, tag, msg);
 }
 
+/**
+ * @brief Generates a timestamp in "YYYY-MM-DD HH:MM:SS" format, or uptime after a reset.
+ */
 String Logger::timestamp()
 {
   time_t now = time(nullptr);
@@ -55,6 +88,9 @@ String Logger::timestamp()
   return String(buf);
 }
 
+/**
+ * @brief Deletes the log file if it exceeds the maximum allowed size.
+ */
 void Logger::rotate_if_needed()
 {
   if (!SD.exists(_path))
@@ -64,43 +100,14 @@ void Logger::rotate_if_needed()
     return;
   size_t size = f.size();
   f.close();
-  if (size <= _max_bytes)
-    return;
-
-  time_t now = time(nullptr);
-  char dated[28];
-  if (now < 1700000000UL)
-  {
-    snprintf(dated, sizeof(dated), "/logs_unknown.txt");
-  }
-  else
-  {
-    struct tm t;
-    localtime_r(&now, &t);
-    snprintf(dated, sizeof(dated), "/logs_%04d%02d%02d.txt",
-             t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-  }
-  if (SD.exists(dated))
-    SD.remove(dated);
-  SD.rename(_path.c_str(), dated);
-  Serial.printf("[LOG] rotated to %s\n", dated);
+  if (size > _max_bytes)
+    SD.remove(_path);
 }
 
-void Logger::flush_buffer()
-{
-  for (uint8_t i = 0; i < _buf_count; i++)
-  {
-    rotate_if_needed();
-    File f = SD.open(_path, FILE_APPEND);
-    if (f)
-    {
-      f.print(_buf[i]);
-      f.close();
-    }
-  }
-  _buf_count = 0;
-}
-
+/**
+ * @brief Writes a formatted log entry to the SD file.
+ *        Acquires the SD mutex with a short timeout — drops the write if audio holds the bus.
+ */
 void Logger::write(LogLevel level, const String& tag, const String& msg)
 {
   const char* lvl_str = level == LogLevel::ERROR ? "ERROR" : level == LogLevel::WARN ? "WARN" : "INFO";
@@ -112,26 +119,17 @@ void Logger::write(LogLevel level, const String& tag, const String& msg)
   if (_path.isEmpty())
     return;
 
-  bool got_mutex = (sd_mutex == nullptr) || (xSemaphoreTake(sd_mutex, 0) == pdTRUE);
+  if (xSemaphoreTake(_sd_mutex, pdMS_TO_TICKS(100)) != pdTRUE)
+    return;
 
-  if (got_mutex)
+  rotate_if_needed();
+
+  File f = SD.open(_path, FILE_APPEND);
+  if (f)
   {
-    flush_buffer();
-    rotate_if_needed();
-    File f = SD.open(_path, FILE_APPEND);
-    if (f)
-    {
-      f.print(line);
-      f.close();
-    }
-    if (sd_mutex != nullptr)
-      xSemaphoreGive(sd_mutex);
+    f.print(line);
+    f.close();
   }
-  else
-  {
-    if (_buf_count < LOG_BUF_SIZE)
-      _buf[_buf_count++] = line;
-    else
-      Serial.println("[LOG] buffer full, entry dropped");
-  }
+
+  xSemaphoreGive(_sd_mutex);
 }

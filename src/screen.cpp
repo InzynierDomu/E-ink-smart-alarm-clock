@@ -1,10 +1,22 @@
+/**
+ * @file screen.cpp
+ * @brief Implementation of e-ink display setup, LVGL flush callback, and display helpers.
+ */
+
 #include "screen.h"
 
 uint8_t Screen::lvBuffer[2][config::lv_buffer] = {0};
 
+/**
+ * @brief Initializes the display driver with the e-ink panel SPI pins.
+ */
 Screen::Screen()
 : display(GxEPD2_579_GDEY0579T93(45, 46, 47, 48))
 {}
+
+/**
+ * @brief Sets up the e-ink display, LVGL, and the UI layout.
+ */
 void Screen::setup_screen()
 {
   pinMode(config::screen_power_pin, OUTPUT);
@@ -25,6 +37,12 @@ void Screen::setup_screen()
   lv_obj_set_style_text_color(ui_Screen2, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
+/**
+ * @brief LVGL flush callback that transfers rendered bitmap data to the e-ink display.
+ * @param disp Pointer to the LVGL display object.
+ * @param area Area of the screen to update.
+ * @param data Pointer to the pixel data buffer.
+ */
 void Screen::my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned char* data)
 {
   Screen* screen = static_cast<Screen*>(lv_display_get_user_data(disp));
@@ -47,6 +65,12 @@ void Screen::my_disp_flush(lv_display_t* disp, const lv_area_t* area, unsigned c
   lv_display_flush_ready(disp);
 }
 
+/**
+ * @brief Rotates a 1-bit-per-pixel bitmap 180 degrees in place.
+ * @param buffer Pointer to the bitmap data buffer.
+ * @param width Width of the bitmap in pixels.
+ * @param height Height of the bitmap in pixels.
+ */
 void Screen::rotate_bitmap_180(uint8_t* buffer, int16_t width, int16_t height)
 {
   int16_t bytesPerRow = (width + 7) / 8;
@@ -81,6 +105,9 @@ void Screen::rotate_bitmap_180(uint8_t* buffer, int16_t width, int16_t height)
 }
 
 
+/**
+ * @brief Initializes the e-ink display SPI bus and performs an initial full white fill.
+ */
 void Screen::epd_setup()
 {
   SPI.begin(12, -1, 11, 45);
@@ -95,11 +122,18 @@ void Screen::epd_setup()
 }
 
 
+/**
+ * @brief Returns the current system tick in milliseconds for the LVGL tick source.
+ * @return Current millisecond uptime.
+ */
 uint32_t Screen::my_tick(void)
 {
   return millis();
 }
 
+/**
+ * @brief Performs a full white refresh of the e-ink display and invalidates the LVGL screen.
+ */
 void Screen::full_clear()
 {
   display.setFullWindow();
