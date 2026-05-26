@@ -135,8 +135,12 @@ void audioTask(void* pvParameters)
     if (startAlarmAudio)
     {
       audio.play_audio();
+      vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    else
+    {
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
   }
 }
 
@@ -334,37 +338,29 @@ static void init_hardware()
   Logger::setup("/logs.txt", 50);
 
   esp_reset_reason_t reset_reason = esp_reset_reason();
-  const char* reset_str = "UNKNOWN";
-  switch (reset_reason)
   {
-    case ESP_RST_POWERON:
-      reset_str = "POWERON";
-      break;
-    case ESP_RST_SW:
-      reset_str = "SW_RESET";
-      break;
-    case ESP_RST_PANIC:
-      reset_str = "PANIC";
-      break;
-    case ESP_RST_INT_WDT:
-      reset_str = "INT_WDT";
-      break;
-    case ESP_RST_TASK_WDT:
-      reset_str = "TASK_WDT";
-      break;
-    case ESP_RST_WDT:
-      reset_str = "WDT";
-      break;
-    case ESP_RST_BROWNOUT:
-      reset_str = "BROWNOUT";
-      break;
-    case ESP_RST_SDIO:
-      reset_str = "SDIO";
-      break;
-    default:
-      break;
+    const char* reset_str = "UNKNOWN";
+    switch (reset_reason)
+    {
+      case ESP_RST_POWERON:   reset_str = "POWERON";   break;
+      case ESP_RST_SW:        reset_str = "SW_RESET";  break;
+      case ESP_RST_PANIC:     reset_str = "PANIC";     break;
+      case ESP_RST_INT_WDT:   reset_str = "INT_WDT";  break;
+      case ESP_RST_TASK_WDT:  reset_str = "TASK_WDT"; break;
+      case ESP_RST_WDT:       reset_str = "WDT";       break;
+      case ESP_RST_BROWNOUT:  reset_str = "BROWNOUT";  break;
+      case ESP_RST_SDIO:      reset_str = "SDIO";      break;
+      default: break;
+    }
+    bool is_error = (reset_reason == ESP_RST_PANIC || reset_reason == ESP_RST_INT_WDT ||
+                     reset_reason == ESP_RST_TASK_WDT || reset_reason == ESP_RST_WDT ||
+                     reset_reason == ESP_RST_BROWNOUT);
+    String msg = String(reset_str) + " | version: " + config::version;
+    if (is_error)
+      Logger::error("BOOT", msg);
+    else
+      Logger::info("BOOT", msg);
   }
-  Logger::info("BOOT", String("Reset reason: ") + reset_str + " | version: " + config::version);
 }
 
 /**
@@ -610,6 +606,8 @@ void loop()
   {
     if (btn_edge)
     {
+      alarm_controller.advance_alarm();
+      alarm_controller.update_view();
       state = State::normal;
       alarm_trigger.stop();
       digitalWrite(config::led_pin, LOW);
@@ -621,6 +619,7 @@ void loop()
     {
       if (check_reset_sequence())
       {
+        Logger::warn("BOOT", "Config cleared by button");
         clear_config();
         ESP.restart();
       }
@@ -638,6 +637,7 @@ void loop()
     {
       if (check_reset_sequence())
       {
+        Logger::warn("BOOT", "Config cleared by button");
         clear_config();
         ESP.restart();
       }

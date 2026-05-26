@@ -40,8 +40,6 @@ void Audio::setup()
  */
 void Audio::play_audio()
 {
-  // Hold the SD mutex for the entire playback so the logger cannot access SD concurrently.
-  // Logger::write() uses a 100 ms timeout and drops writes while we hold the mutex.
   xSemaphoreTake(g_sd_mutex, portMAX_DELAY);
 
   File audioFile = SD.open(config::audio_path, FILE_READ);
@@ -54,7 +52,6 @@ void Audio::play_audio()
   i2s_start(I2S_NUM_1);
   size_t bytesRead;
   int16_t buffer[audio_buffer_size];
-
   float volFactor = config.volume / 100.0f;
 
   while (audioFile.available() && !stop_requested)
@@ -64,13 +61,12 @@ void Audio::play_audio()
     size_t samples = bytesRead / sizeof(int16_t);
     for (size_t i = 0; i < samples; i++)
     {
-      int32_t sample = buffer[i];
-      sample = (int32_t)(sample * volFactor);
+      int32_t sample = (int32_t)(buffer[i] * volFactor);
       buffer[i] = (int16_t)sample;
     }
 
     i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesRead, pdMS_TO_TICKS(500));
-    vTaskDelay(1); // oddaj CPU żeby IDLE0 mógł zasilić WDT
+    vTaskDelay(1);
   }
 
   audioFile.close();

@@ -5,6 +5,8 @@
 
 #pragma once
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 enum class LogLevel
 {
@@ -25,6 +27,7 @@ class Logger
   private:
   static void write(LogLevel level, const String& tag, const String& msg);
   static void rotate_if_needed();
+  static void flush_buffer();
   static String timestamp();
 
   static String _path;

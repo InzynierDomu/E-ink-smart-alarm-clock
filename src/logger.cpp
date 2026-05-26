@@ -8,6 +8,8 @@
 #include <SD.h>
 #include <time.h>
 
+extern SemaphoreHandle_t sd_mutex;
+
 String Logger::_path;
 size_t Logger::_max_bytes;
 SemaphoreHandle_t Logger::_sd_mutex = nullptr;

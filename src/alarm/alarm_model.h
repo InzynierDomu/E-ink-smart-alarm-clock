@@ -8,6 +8,7 @@
 #include "RTClib.h"
 
 #include <Arduino.h>
+#include <vector>
 
 struct Clock_alarm
 {
@@ -23,7 +24,10 @@ class Alarm_model
 {
   public:
   Alarm_model();
-  void set_alarm(Clock_alarm& alarm, bool is_alarm);
+  void add_alarm(const Clock_alarm& alarm);
+  void sort_alarms();
+  void advance_alarm();
+  void drop_past(uint8_t hour, uint8_t minute);
   void get_alarm(Clock_alarm& alarm) const;
   void set_no_alarm();
   bool get_is_alarm() const;
@@ -32,6 +36,6 @@ class Alarm_model
   bool check_alarm(const DateTime& now) const;
 
   private:
-  Clock_alarm alarm;
+  std::vector<Clock_alarm> alarms;
   bool is_alarm;
 };
