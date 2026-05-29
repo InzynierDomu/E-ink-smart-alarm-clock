@@ -117,6 +117,10 @@ struct Audio_adapter : Alarm_audio
   {
     audio.stop();
   }
+  void wait_until_idle() override
+  {
+    audio.wait_until_idle();
+  }
 } alarm_audio_adapter; ///< Bridges Audio into the Alarm_trigger interface.
 
 Alarm_trigger alarm_trigger(alarm_check_adapter, alarm_mqtt_adapter, alarm_audio_adapter,
@@ -243,7 +247,7 @@ void update_clock()
  */
 static void wifi_watchdog(lv_timer_t* timer)
 {
-  if (state == State::AP || state == State::welcome_screen)
+  if (state == State::AP || state == State::welcome_screen || state == State::alarm)
   {
     return;
   }

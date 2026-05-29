@@ -22,6 +22,7 @@ class Audio
   void get_config(Audio_config& config);
   void stop();
   void start();
+  void wait_until_idle();
 
   private:
   volatile bool stop_requested = true;

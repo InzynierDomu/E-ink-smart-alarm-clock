@@ -27,10 +27,9 @@ bool Alarm_trigger::try_trigger(const DateTime& now, bool is_ap_mode)
   if (active || !check_iface.check(now))
     return false;
 
+  Logger::info("ALARM", "Alarm triggered");
   if (!is_ap_mode)
     mqtt.send_action();
-
-  Logger::info("ALARM", "Alarm triggered");
   audio_ctrl.start();
   start_flag = true;
   active = true;
@@ -45,6 +44,7 @@ void Alarm_trigger::stop()
   audio_ctrl.stop();
   start_flag = false;
   active = false;
+  audio_ctrl.wait_until_idle();
   Logger::info("ALARM", "Alarm stopped");
 }
 

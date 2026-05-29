@@ -22,10 +22,12 @@ struct Mqtt_stub : Alarm_mqtt
 
 struct Audio_stub : Alarm_audio
 {
-  int start_count = 0;
-  int stop_count  = 0;
-  void start() override { start_count++; }
-  void stop()  override { stop_count++;  }
+  int start_count        = 0;
+  int stop_count         = 0;
+  int wait_idle_count    = 0;
+  void start() override            { start_count++;      }
+  void stop()  override            { stop_count++;       }
+  void wait_until_idle() override  { wait_idle_count++;  }
 };
 
 // ---------------------------------------------------------------------------

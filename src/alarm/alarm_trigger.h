@@ -31,6 +31,7 @@ struct Alarm_audio
 {
   virtual void start() = 0;
   virtual void stop() = 0;
+  virtual void wait_until_idle() = 0;
   virtual ~Alarm_audio() = default;
 };
 

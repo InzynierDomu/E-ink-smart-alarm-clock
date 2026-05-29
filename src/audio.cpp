@@ -110,3 +110,12 @@ void Audio::start()
 {
   stop_requested = false;
 }
+
+/**
+ * @brief Blocks until the audio task has released the SD mutex (i.e. finished the current file read).
+ */
+void Audio::wait_until_idle()
+{
+  if (xSemaphoreTake(g_sd_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
+    xSemaphoreGive(g_sd_mutex);
+}
