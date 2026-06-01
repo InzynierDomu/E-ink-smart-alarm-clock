@@ -107,6 +107,6 @@ const char* Clock_controller::get_date_string(DateTime dt, uint8_t offset)
 {
   static char dateStr[11];
   DateTime dt_sum = dt + TimeSpan(offset, 0, 0, 0);
-  snprintf(dateStr, sizeof(dateStr), "%02d-%02d", dt_sum.day(), dt_sum.month());
+  snprintf(dateStr, sizeof(dateStr), "%02d.%02d", dt_sum.day(), dt_sum.month());
   return dateStr;
 }

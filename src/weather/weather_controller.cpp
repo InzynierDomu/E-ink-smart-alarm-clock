@@ -90,12 +90,14 @@ void Weather_controller::fetch_weather(DateTime& now)
         }
         else
         {
-          temp = doc["temperature"]["afternoon"];
-          forecast_weather.temperature_afternoon = (int)round(temp);
+          temp = doc["temperature"]["night"];
+          forecast_weather.temperature_night = (int8_t)round(temp);
           temp = doc["temperature"]["morning"];
-          forecast_weather.temperature_morning = (int)round(temp);
+          forecast_weather.temperature_morning = (int8_t)round(temp);
+          temp = doc["temperature"]["afternoon"];
+          forecast_weather.temperature_afternoon = (int8_t)round(temp);
           temp = doc["temperature"]["evening"];
-          forecast_weather.temperature_evening = (int)round(temp);
+          forecast_weather.temperature_evening = (int8_t)round(temp);
         }
         forecast_weather.precipitation = doc["precipitation"]["total"];
         forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
@@ -104,51 +106,6 @@ void Weather_controller::fetch_weather(DateTime& now)
     }
 
     http.end();
-  }
-
-  if (now.hour() >= config::day_part_morning_from)
-  {
-    night_fetched = false;
-  }
-  else if (!night_fetched && !http_server->is_weather_from_ha())
-  {
-    Open_weather_config config;
-    model->get_config(config);
-    if (!config.api_key.isEmpty())
-    {
-      String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
-                          "&lon=" + String(config.lon, 4) + "&date=" + get_date_string(now, -1) + "&appid=" + config.api_key +
-                          "&units=metric";
-
-      HTTPClient http;
-      http.setConnectTimeout(8000);
-      http.setTimeout(9000);
-      http.begin(serverPath.c_str());
-      int code = http.GET();
-
-      if (code == HTTP_CODE_OK)
-      {
-        String response = http.getString();
-        if (response.startsWith("{"))
-        {
-          StaticJsonDocument<4096> doc;
-          if (!deserializeJson(doc, response))
-          {
-            Simple_weather today;
-            model->get_forecast(today, 0);
-            float temp = doc["temperature"]["night"];
-            today.temperature_night = (int8_t)round(temp);
-            model->update_at(0, today);
-            night_fetched = true;
-          }
-        }
-      }
-      else
-      {
-        Logger::error("OWM", "HTTP " + String(code) + " for yesterday night");
-      }
-      http.end();
-    }
   }
 
   check_day_part(now);
@@ -183,19 +140,13 @@ String Weather_controller::get_date_string(DateTime dt, int offset)
 void Weather_controller::check_day_part(DateTime& now)
 {
   if (now.hour() < config::day_part_morning_from)
-  {
     model->set_day_part(Day_part::night);
-  }
+  else if (now.hour() >= config::day_part_night_next_from)
+    model->set_day_part(Day_part::night_next_day);
   else if (now.hour() > config::day_part_afternoon_until)
-  {
     model->set_day_part(Day_part::evening);
-  }
   else if (now.hour() > config::day_part_morning_until)
-  {
     model->set_day_part(Day_part::afternoon);
-  }
   else
-  {
     model->set_day_part(Day_part::morning);
-  }
 }

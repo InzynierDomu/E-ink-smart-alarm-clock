@@ -41,4 +41,8 @@ constexpr uint8_t day_part_morning_from = 6; ///< Hour from which morning starts
 constexpr uint8_t day_part_morning_until = 10; ///< Hour (exclusive) until which the morning weather part is shown.
 constexpr uint8_t day_part_afternoon_until = 16; ///< Hour (exclusive) until which the afternoon weather part is shown.
                                                  ///< After this hour the evening part is shown.
+constexpr uint8_t day_part_night_next_from = 22; ///< Hour from which tomorrow's night temperature is shown.
+
+constexpr uint8_t weather_icon_cloud_threshold = 30;       ///< Cloud cover % above which the cloudy icon is shown.
+constexpr uint8_t weather_icon_precip_light_threshold = 5; ///< Precipitation below this (and > 0) = light rain icon.
 } // namespace config

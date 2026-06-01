@@ -23,5 +23,4 @@ class Weather_controller
   Weather_model* model;
   Weather_view* view;
   HttpServer* http_server;
-  bool night_fetched = false; ///< True once yesterday's night temperature has been fetched in the current night window.
 };
