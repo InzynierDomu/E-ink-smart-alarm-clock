@@ -58,7 +58,7 @@ void ui_Screen1_screen_init(void)
     ui_labtime = lv_label_create(ui_Screen1);
     lv_obj_set_width(ui_labtime, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labtime, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labtime, -268);
+    lv_obj_set_x(ui_labtime, -269);
     lv_obj_set_y(ui_labtime, -6);
     lv_obj_set_align(ui_labtime, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labtime, "00:00");
@@ -68,7 +68,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container2);
     lv_obj_set_width(ui_Container2, 1);
     lv_obj_set_height(ui_Container2, 261);
-    lv_obj_set_x(ui_Container2, -140);
+    lv_obj_set_x(ui_Container2, -142);
     lv_obj_set_y(ui_Container2, 0);
     lv_obj_set_align(ui_Container2, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_Container2, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -80,7 +80,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container3);
     lv_obj_set_width(ui_Container3, 122);
     lv_obj_set_height(ui_Container3, 1);
-    lv_obj_set_x(ui_Container3, -69);
+    lv_obj_set_x(ui_Container3, -70);
     lv_obj_set_y(ui_Container3, -43);
     lv_obj_set_align(ui_Container3, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_Container3, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -105,7 +105,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container4);
     lv_obj_set_width(ui_Container4, 122);
     lv_obj_set_height(ui_Container4, 1);
-    lv_obj_set_x(ui_Container4, -69);
+    lv_obj_set_x(ui_Container4, -70);
     lv_obj_set_y(ui_Container4, 41);
     lv_obj_set_align(ui_Container4, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_Container4, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -385,7 +385,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container11);
     lv_obj_set_width(ui_Container11, 37);
     lv_obj_set_height(ui_Container11, 255);
-    lv_obj_set_x(ui_Container11, -62);
+    lv_obj_set_x(ui_Container11, -65);
     lv_obj_set_y(ui_Container11, 0);
     lv_obj_set_align(ui_Container11, LV_ALIGN_CENTER);
     lv_obj_set_flex_flow(ui_Container11, LV_FLEX_FLOW_COLUMN);
@@ -423,7 +423,7 @@ void ui_Screen1_screen_init(void)
     lv_obj_remove_style_all(ui_Container12);
     lv_obj_set_width(ui_Container12, 41);
     lv_obj_set_height(ui_Container12, 255);
-    lv_obj_set_x(ui_Container12, -114);
+    lv_obj_set_x(ui_Container12, -115);
     lv_obj_set_y(ui_Container12, 0);
     lv_obj_set_align(ui_Container12, LV_ALIGN_CENTER);
     lv_obj_set_flex_flow(ui_Container12, LV_FLEX_FLOW_COLUMN);
@@ -433,7 +433,7 @@ void ui_Screen1_screen_init(void)
     ui_labDateDay1 = lv_label_create(ui_Container12);
     lv_obj_set_width(ui_labDateDay1, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_labDateDay1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_labDateDay1, -109);
+    lv_obj_set_x(ui_labDateDay1, -110);
     lv_obj_set_y(ui_labDateDay1, -88);
     lv_obj_set_align(ui_labDateDay1, LV_ALIGN_CENTER);
     lv_label_set_text(ui_labDateDay1, "10.09");

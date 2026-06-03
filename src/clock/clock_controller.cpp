@@ -4,6 +4,7 @@
  */
 
 #include "clock_controller.h"
+#include "../logger.h"
 
 /**
  * @brief Initializes the controller with pointers to the view and model.
@@ -65,11 +66,24 @@ void Clock_controller::get_time(DateTime& dt)
 }
 
 /**
+ * @brief Returns true if the DateTime contains plausible RTC values.
+ */
+bool Clock_controller::is_valid_time(const DateTime& dt)
+{
+  return dt.hour() <= 23 && dt.minute() <= 59 && dt.second() <= 59 && dt.year() >= 2024;
+}
+
+/**
  * @brief Updates the clock view — time and date (on day change).
  */
 void Clock_controller::update_view()
 {
   DateTime now = rtc.now();
+  if (!is_valid_time(now))
+  {
+    Logger::warn("RTC", "Invalid time read, skipping display update");
+    return;
+  }
   view->show_time(now);
   if (last_day != now.day())
   {
