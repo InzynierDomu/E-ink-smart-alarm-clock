@@ -29,6 +29,19 @@ extern lv_obj_t * ui_labCalendarEvent4;
 extern lv_obj_t * ui_labCalendarEvent5;
 extern lv_obj_t * ui_labCalendarEvent6;
 extern lv_obj_t * ui_labCalendarEvent7;
+extern lv_obj_t * ui_Container10;
+extern lv_obj_t * ui_labDate;
+extern lv_obj_t * ui_labWeatherIcon;
+extern lv_obj_t * ui_labTempMorning;
+extern lv_obj_t * ui_Container13;
+extern lv_obj_t * ui_Container12;
+extern lv_obj_t * ui_labDateDay1;
+extern lv_obj_t * ui_labDateDay2;
+extern lv_obj_t * ui_labDateDay3;
+extern lv_obj_t * ui_Container11;
+extern lv_obj_t * ui_labWeatherIconDay1;
+extern lv_obj_t * ui_labWeatherIconDay2;
+extern lv_obj_t * ui_labWeatherIconDay3;
 extern lv_obj_t * ui_Container9;
 extern lv_obj_t * ui_Container5;
 extern lv_obj_t * ui_labTempMorningDay1;
@@ -42,18 +55,6 @@ extern lv_obj_t * ui_Container7;
 extern lv_obj_t * ui_labTempMorningDay2;
 extern lv_obj_t * ui_labTempAfternoonDay2;
 extern lv_obj_t * ui_labTempEveningDay2;
-extern lv_obj_t * ui_Container10;
-extern lv_obj_t * ui_labDate;
-extern lv_obj_t * ui_labWeatherIcon;
-extern lv_obj_t * ui_labTempMorning;
-extern lv_obj_t * ui_Container11;
-extern lv_obj_t * ui_labWeatherIconDay1;
-extern lv_obj_t * ui_labWeatherIconDay2;
-extern lv_obj_t * ui_labWeatherIconDay3;
-extern lv_obj_t * ui_Container12;
-extern lv_obj_t * ui_labDateDay1;
-extern lv_obj_t * ui_labDateDay2;
-extern lv_obj_t * ui_labDateDay3;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

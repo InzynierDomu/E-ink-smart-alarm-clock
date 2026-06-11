@@ -24,91 +24,104 @@ Weather_controller::Weather_controller(Weather_model* _model, Weather_view* _vie
 {}
 
 /**
- * @brief Fetches weather forecast for multiple days from OpenWeather API or Home Assistant and updates the model.
+ * @brief Fetches weather forecast for a single day from OpenWeather API or Home Assistant and updates the model.
  * @param now Reference to the current RTC time used to calculate forecast dates.
+ * @param day_index Day offset (0 = today, 1 = tomorrow, 2 = day after tomorrow).
  */
-void Weather_controller::fetch_weather(DateTime& now)
+bool Weather_controller::fetch_weather_day(DateTime& now, size_t day_index)
 {
   Open_weather_config cfg_check;
   model->get_config(cfg_check);
   if (cfg_check.api_key.isEmpty() && !http_server->is_weather_from_ha())
+    return true;
+
+  String dateStr = get_date_string(now, day_index);
+
+  Open_weather_config config;
+  model->get_config(config);
+
+  String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
+                      "&lon=" + String(config.lon, 4) + "&date=" + dateStr + "&appid=" + config.api_key + "&units=metric";
+
+  HTTPClient http;
+  http.setConnectTimeout(8000);
+  http.setTimeout(9000);
+  http.begin(serverPath.c_str());
+  int code = http.GET();
+
+  if (code != HTTP_CODE_OK)
   {
-    return;
+    Logger::error("OWM", "HTTP " + String(code) + " for day+" + String(day_index));
+    http.end();
+    if (day_index == 0)
+      check_day_part(now);
+    return false;
   }
 
+  String response = http.getString();
+  http.end();
+
+  if (!response.startsWith("{"))
+  {
+    Logger::error("OWM", "Response is not JSON for day+" + String(day_index));
+    if (day_index == 0)
+      check_day_part(now);
+    return false;
+  }
+
+  StaticJsonDocument<4096> doc;
+  DeserializationError error = deserializeJson(doc, response);
+
+  if (error)
+  {
+    Logger::error("OWM", "JSON parse error: " + String(error.c_str()));
+    if (day_index == 0)
+      check_day_part(now);
+    return false;
+  }
+
+  Simple_weather forecast_weather;
+  float temp;
+  if (http_server->is_weather_from_ha() && day_index == 0)
+  {
+    forecast_weather.temperature_morning = http_server->get_ha_weather();
+    forecast_weather.temperature_afternoon = http_server->get_ha_weather();
+    forecast_weather.temperature_evening = http_server->get_ha_weather();
+  }
+  else
+  {
+    temp = doc["temperature"]["night"];
+    forecast_weather.temperature_night = (int8_t)round(temp);
+    temp = doc["temperature"]["morning"];
+    forecast_weather.temperature_morning = (int8_t)round(temp);
+    temp = doc["temperature"]["afternoon"];
+    forecast_weather.temperature_afternoon = (int8_t)round(temp);
+    temp = doc["temperature"]["evening"];
+    forecast_weather.temperature_evening = (int8_t)round(temp);
+  }
+  forecast_weather.precipitation = doc["precipitation"]["total"];
+  forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
+  model->update_at(day_index, forecast_weather);
+
+  if (day_index == 0)
+    check_day_part(now);
+
+  return true;
+}
+
+/**
+ * @brief Fetches weather forecast for all days from OpenWeather API or Home Assistant and updates the model.
+ * @param now Reference to the current RTC time used to calculate forecast dates.
+ */
+bool Weather_controller::fetch_weather(DateTime& now)
+{
+  bool any_error = false;
   for (size_t i = 0; i < WEATHER_DAYS; i++)
   {
-    String dateStr = get_date_string(now, i);
-
-    Open_weather_config config;
-    model->get_config(config);
-
-    String serverPath = "https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=" + String(config.lat, 4) +
-                        "&lon=" + String(config.lon, 4) + "&date=" + dateStr + "&appid=" + config.api_key + "&units=metric";
-
-    HTTPClient http;
-    http.setConnectTimeout(8000);
-    http.setTimeout(9000);
-    http.begin(serverPath.c_str());
-    int code = http.GET();
-
-    if (code != HTTP_CODE_OK)
-    {
-      Logger::error("OWM", "HTTP " + String(code) + " for day+" + String(i));
-      http.end();
-      continue;
-    }
-
-    {
-      String response = http.getString();
-
-      if (!response.startsWith("{"))
-      {
-        Logger::error("OWM", "Response is not JSON for day+" + String(i));
-        http.end();
-        continue;
-      }
-
-      StaticJsonDocument<4096> doc;
-      DeserializationError error = deserializeJson(doc, response);
-
-      if (error)
-      {
-        Logger::error("OWM", "JSON parse error: " + String(error.c_str()));
-        http.end();
-        continue;
-      }
-      else
-      {
-        Simple_weather forecast_weather;
-        float temp;
-        if (http_server->is_weather_from_ha() && i == 0)
-        {
-          forecast_weather.temperature_morning = http_server->get_ha_weather();
-          forecast_weather.temperature_afternoon = http_server->get_ha_weather();
-          forecast_weather.temperature_evening = http_server->get_ha_weather();
-        }
-        else
-        {
-          temp = doc["temperature"]["night"];
-          forecast_weather.temperature_night = (int8_t)round(temp);
-          temp = doc["temperature"]["morning"];
-          forecast_weather.temperature_morning = (int8_t)round(temp);
-          temp = doc["temperature"]["afternoon"];
-          forecast_weather.temperature_afternoon = (int8_t)round(temp);
-          temp = doc["temperature"]["evening"];
-          forecast_weather.temperature_evening = (int8_t)round(temp);
-        }
-        forecast_weather.precipitation = doc["precipitation"]["total"];
-        forecast_weather.cloud_cover = doc["cloud_cover"]["afternoon"];
-        model->update_at(i, forecast_weather);
-      }
-    }
-
-    http.end();
+    if (!fetch_weather_day(now, i))
+      any_error = true;
   }
-
-  check_day_part(now);
+  return !any_error;
 }
 
 /**

@@ -35,7 +35,7 @@ constexpr unsigned long btn_debounce_ms = 75; ///< Button debounce time in milli
 constexpr uint8_t reset_press_count_threshold = 5; ///< Number of presses required to trigger a config reset.
 constexpr unsigned long reset_window_ms = 10000; ///< Time window in ms within which reset presses must occur.
 
-const String version = "1.2.16"; ///< Firmware version string.
+const String version = "1.2.17"; ///< Firmware version string.
 
 constexpr uint8_t day_part_morning_from = 6; ///< Hour from which morning starts; before this hour the night part is shown.
 constexpr uint8_t day_part_morning_until = 10; ///< Hour (exclusive) until which the morning weather part is shown.
@@ -43,6 +43,6 @@ constexpr uint8_t day_part_afternoon_until = 16; ///< Hour (exclusive) until whi
                                                  ///< After this hour the evening part is shown.
 constexpr uint8_t day_part_night_next_from = 22; ///< Hour from which tomorrow's night temperature is shown.
 
-constexpr uint8_t weather_icon_cloud_threshold = 30;       ///< Cloud cover % above which the cloudy icon is shown.
+constexpr uint8_t weather_icon_cloud_threshold = 30; ///< Cloud cover % above which the cloudy icon is shown.
 constexpr uint8_t weather_icon_precip_light_threshold = 5; ///< Precipitation below this (and > 0) = light rain icon.
 } // namespace config

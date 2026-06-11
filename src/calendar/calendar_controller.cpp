@@ -59,7 +59,7 @@ static String url_encode(const String& str)
  * @param is_alarm true if the calendar is used for alarm setting, false for regular events.
  * @param now Current time used to find the next upcoming alarm (ignored when is_alarm is false).
  */
-void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, const DateTime& now)
+bool Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, const DateTime& now)
 {
   static WiFiClientSecure wifiClient;
   wifiClient.setInsecure();
@@ -75,7 +75,7 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
   if (!http.begin(wifiClient, proxy_url))
   {
     Logger::error(tag, "Cannot connect to proxy");
-    return;
+    return false;
   }
 
   int httpCode = http.GET();
@@ -83,7 +83,7 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
   {
     Logger::error(tag, "Proxy HTTP " + String(httpCode));
     http.end();
-    return;
+    return false;
   }
 
   String payload = http.getString();
@@ -95,30 +95,33 @@ void Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
     apply_alarm_response(*alarm_controller, events, now);
   else
     apply_event_response(*model, events);
+  return true;
 }
 
 /**
  * @brief Fetches calendar events and updates the model.
  * @param now Current time (unused for events, kept for interface consistency).
  */
-void Calendar_controller::fetch_events(const DateTime& now)
+bool Calendar_controller::fetch_events(const DateTime& now)
 {
   google_api_config config;
   model->get_config(config);
   if (config.ical_url.length() > 0)
-    fetch_ical(config.ical_url, false, now);
+    return fetch_ical(config.ical_url, false, now);
+  return true;
 }
 
 /**
  * @brief Fetches alarm calendar and sets the next upcoming alarm.
  * @param now Current time used to select the next upcoming alarm.
  */
-void Calendar_controller::fetch_alarms(const DateTime& now)
+bool Calendar_controller::fetch_alarms(const DateTime& now)
 {
   google_api_config config;
   model->get_config(config);
   if (config.ical_alarm_url.length() > 0)
-    fetch_ical(config.ical_alarm_url, true, now);
+    return fetch_ical(config.ical_alarm_url, true, now);
+  return true;
 }
 
 /**

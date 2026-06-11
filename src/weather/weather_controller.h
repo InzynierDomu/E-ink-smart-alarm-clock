@@ -13,7 +13,8 @@ class Weather_controller
 {
   public:
   Weather_controller(Weather_model* model, Weather_view* view, HttpServer* _http_server);
-  void fetch_weather(DateTime& now);
+  bool fetch_weather(DateTime& now);
+  bool fetch_weather_day(DateTime& now, size_t day_index);
   void update_view();
 
   private:
