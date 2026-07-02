@@ -20,6 +20,7 @@ class Clock_controller
   private:
   const char* get_date_string(DateTime dt, uint8_t offset);
   bool check_date_change();
+  bool is_valid_time(const DateTime& dt);
 
   uint8_t last_day;
   Clock_view* view;

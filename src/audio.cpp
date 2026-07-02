@@ -40,11 +40,16 @@ void Audio::setup()
  */
 void Audio::play_audio()
 {
-  xSemaphoreTake(g_sd_mutex, portMAX_DELAY);
+  if (xSemaphoreTake(g_sd_mutex, pdMS_TO_TICKS(2000)) != pdTRUE)
+  {
+    last_error = Audio_error::mutex_timeout;
+    return;
+  }
 
   File audioFile = SD.open(config::audio_path, FILE_READ);
   if (!audioFile)
   {
+    last_error = Audio_error::file_not_found;
     xSemaphoreGive(g_sd_mutex);
     return;
   }
@@ -109,6 +114,14 @@ void Audio::stop()
 void Audio::start()
 {
   stop_requested = false;
+  last_error = Audio_error::none;
+}
+
+Audio_error Audio::take_last_error()
+{
+  Audio_error err = last_error;
+  last_error = Audio_error::none;
+  return err;
 }
 
 /**

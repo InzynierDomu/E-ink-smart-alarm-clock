@@ -79,10 +79,13 @@ State state; ///< Current application state.
 static bool btn_stable_state = false; ///< Debounced (stable) button state.
 static bool btn_raw_state = false; ///< Raw (non-debounced) button reading.
 static unsigned long btn_change_time = 0; ///< Timestamp of the last raw button state change (ms).
-static int cal_counter = 9; ///< Counter for calendar events fetch (fires at >= 10).
-static int alarm_cal_counter = 8; ///< Counter for alarm calendar fetch, offset 1 tick from events.
-static int owm_counter = 7; ///< Counter for OpenWeatherMap fetch, offset 2 ticks from events.
-static int ha_counter = 6; ///< Counter for Home Assistant weather fetch, offset 3 ticks from events.
+static int cal_counter = 9;         ///< Counter for calendar events fetch (fires at >= 10).
+static int alarm_cal_counter = 8;   ///< Counter for alarm calendar fetch, offset 1 tick from events.
+static int owm_day0_counter = 7;    ///< Counter for OWM day+0 fetch, offset 2 ticks from events.
+static int owm_day1_counter = 6;    ///< Counter for OWM day+1 fetch, offset 3 ticks from events.
+static int owm_day2_counter = 5;    ///< Counter for OWM day+2 fetch, offset 4 ticks from events.
+static int ha_counter = 4;          ///< Counter for Home Assistant weather fetch, offset 5 ticks from events.
+static uint8_t http_fail_counter = 0; ///< Consecutive HTTP fetch failures; triggers WiFi reconnect at threshold.
 
 static uint8_t reset_press_count = 0; ///< Number of button presses counted within the reset window.
 static unsigned long reset_window_start = 0; ///< Timestamp when the current reset press window started (ms).
@@ -275,9 +278,12 @@ static void update_date(lv_timer_t* timer)
   DateTime now;
   clock_controller.get_time(now);
 
+  bool fetch_ok = true;
+
   if (cal_counter >= 10)
   {
-    calendar_controller.fetch_events(now);
+    if (!calendar_controller.fetch_events(now))
+      fetch_ok = false;
     calendar_controller.update_view();
     cal_counter = 0;
   }
@@ -288,7 +294,8 @@ static void update_date(lv_timer_t* timer)
 
   if (alarm_cal_counter >= 10)
   {
-    calendar_controller.fetch_alarms(now);
+    if (!calendar_controller.fetch_alarms(now))
+      fetch_ok = false;
     alarm_controller.update_view();
     alarm_cal_counter = 0;
   }
@@ -297,15 +304,40 @@ static void update_date(lv_timer_t* timer)
     alarm_cal_counter++;
   }
 
-  if (owm_counter >= 10)
+  if (owm_day0_counter >= 10)
   {
-    weather_controller.fetch_weather(now);
+    if (!weather_controller.fetch_weather_day(now, 0))
+      fetch_ok = false;
     weather_controller.update_view();
-    owm_counter = 0;
+    owm_day0_counter = 0;
   }
   else
   {
-    owm_counter++;
+    owm_day0_counter++;
+  }
+
+  if (owm_day1_counter >= 10)
+  {
+    if (!weather_controller.fetch_weather_day(now, 1))
+      fetch_ok = false;
+    weather_controller.update_view();
+    owm_day1_counter = 0;
+  }
+  else
+  {
+    owm_day1_counter++;
+  }
+
+  if (owm_day2_counter >= 10)
+  {
+    if (!weather_controller.fetch_weather_day(now, 2))
+      fetch_ok = false;
+    weather_controller.update_view();
+    owm_day2_counter = 0;
+  }
+  else
+  {
+    owm_day2_counter++;
   }
 
   if (ha_counter >= 10 && httpServer.is_weather_from_ha())
@@ -316,6 +348,21 @@ static void update_date(lv_timer_t* timer)
   else
   {
     ha_counter++;
+  }
+
+  if (!fetch_ok)
+  {
+    http_fail_counter++;
+    if (http_fail_counter >= 5)
+    {
+      Logger::warn("WIFI", "Consecutive HTTP failures, reconnecting...");
+      WiFi.reconnect();
+      http_fail_counter = 0;
+    }
+  }
+  else
+  {
+    http_fail_counter = 0;
   }
 }
 
@@ -485,8 +532,10 @@ static void init_gpio()
   boot_time = millis();
   cal_counter = 8;
   alarm_cal_counter = 7;
-  owm_counter = 6;
-  ha_counter = 5;
+  owm_day0_counter = 6;
+  owm_day1_counter = 5;
+  owm_day2_counter = 4;
+  ha_counter = 3;
 }
 
 /**
@@ -629,6 +678,11 @@ void loop()
       state = State::normal;
       alarm_trigger.stop();
       digitalWrite(config::led_pin, LOW);
+      Audio_error audio_err = audio.take_last_error();
+      if (audio_err == Audio_error::file_not_found)
+        Logger::error("AUDIO", "Alarm file not found on SD");
+      else if (audio_err == Audio_error::mutex_timeout)
+        Logger::error("AUDIO", "SD mutex timeout during alarm");
     }
   }
   else if (state == State::welcome_screen)

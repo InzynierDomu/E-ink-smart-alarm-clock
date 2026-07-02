@@ -32,10 +32,15 @@ struct Calendar_event
   , time_start(_time_start)
   , time_stop(_time_stop)
   {}
+  bool is_all_day() const
+  {
+    return time_start.hour == time_stop.hour && time_start.minutes == time_stop.minutes;
+  }
   String get_calendar_label()
   {
-    String label = time_start.to_string() + " " + name;
-    return label;
+    if (is_all_day())
+      return name;
+    return time_start.to_string() + " " + name;
   }
   String name; ///< Event title / summary.
   String calendar; ///< Source calendar name.

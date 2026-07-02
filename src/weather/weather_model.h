@@ -18,7 +18,8 @@ enum class Day_part
   night,
   morning,
   afternoon,
-  evening
+  evening,
+  night_next_day
 };
 
 struct Simple_weather

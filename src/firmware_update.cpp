@@ -18,7 +18,7 @@ static const char* kUpdateFilePath = "/firmware.bin";
  */
 bool checkAndPerformUpdateFromSD()
 {
-  if (!SD.begin())
+  if (SD.cardType() == CARD_NONE)
   {
     Serial.println("SD not available");
     return false;
