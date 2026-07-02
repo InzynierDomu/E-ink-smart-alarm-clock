@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 24 px
  * Bpp: 1
- * Opts: --bpp 1 --size 24 --font C:/Users/markiszy/SquareLine/assets/JetBrainsMono-Bold.ttf -o C:/Users/markiszy/SquareLine/assets\ui_font_Font2.c --format lvgl -r 0x20-0x7f --symbols ℃°ąćęłńóśźżĄĆĘŁŃÓŚŹŻ --no-compress --no-prefilter
+ * Opts: --bpp 1 --size 24 --font C:/Users/markiszy/SquareLine/assets/JetBrainsMono-Bold_bezkropki.ttf -o C:/Users/markiszy/SquareLine/assets\ui_font_Font2.c --format lvgl -r 0x20-0x7f --symbols ℃°ąćęłńóśźżĄĆĘŁŃÓŚŹŻ --no-compress --no-prefilter
  ******************************************************************************/
 
 #include "ui.h"
@@ -94,7 +94,7 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
 
     /* U+0030 "0" */
     0x1f, 0xf, 0xf9, 0xc7, 0x70, 0x7e, 0xf, 0xc1,
-    0xf8, 0x3f, 0x7, 0xee, 0xfd, 0xdf, 0x83, 0xf0,
+    0xf8, 0x3f, 0x7, 0xe0, 0xfc, 0x1f, 0x83, 0xf0,
     0x7e, 0xf, 0xc1, 0xf8, 0x3b, 0x8e, 0x7f, 0xc3,
     0xe0,
 
