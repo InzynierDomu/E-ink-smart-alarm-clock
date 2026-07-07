@@ -13,6 +13,7 @@
 
 #include <PubSubClient.h>
 #include <WebServer.h>
+#include <WiFi.h>
 
 struct HA_config
 {

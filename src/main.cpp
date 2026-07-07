@@ -28,6 +28,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <esp_mac.h>
 #include <HTTPClient.h>
 #include <SD.h>
 #include <SPI.h>
