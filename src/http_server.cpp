@@ -112,9 +112,14 @@ void HttpServer::begin()
  */
 void HttpServer::setup_captive_portal()
 {
+  server_.on("/redirect", HTTP_GET, [this]() {
+    server_.sendHeader("Location", "http://192.168.4.1/");
+    server_.send(302, "text/html", "<a href='http://192.168.4.1/'>Konfiguracja</a>");
+  });
+
   server_.onNotFound([this]() {
     server_.sendHeader("Location", "http://192.168.4.1/");
-    server_.send(302, "text/plain", "");
+    server_.send(302, "text/html", "<a href='http://192.168.4.1/'>Konfiguracja</a>");
   });
 }
 

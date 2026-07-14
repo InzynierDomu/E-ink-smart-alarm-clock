@@ -677,6 +677,8 @@ void loop()
   {
     dnsServer.processNextRequest();
     server.handleClient();
+    server.handleClient();
+    server.handleClient();
     taskYIELD();
     return;
   }
