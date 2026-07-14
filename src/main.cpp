@@ -544,6 +544,8 @@ static void init_gpio()
  */
 static void init_audio()
 {
+  if (state == State::AP)
+    return;
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
 }
@@ -666,6 +668,13 @@ void clear_config()
 
 void loop()
 {
+  if (state == State::AP)
+  {
+    server.handleClient();
+    taskYIELD();
+    return;
+  }
+
   bool btn_edge = check_button();
 
   lv_timer_handler();
