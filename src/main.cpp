@@ -669,7 +669,7 @@ void loop()
   bool btn_edge = check_button();
 
   lv_timer_handler();
-  delay(10);
+  taskYIELD();
   if (state == State::alarm)
   {
     if (btn_edge)
