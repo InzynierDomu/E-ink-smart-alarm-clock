@@ -28,6 +28,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <DNSServer.h>
 #include <esp_mac.h>
 #include <HTTPClient.h>
 #include <SD.h>
@@ -92,7 +93,9 @@ static uint8_t reset_press_count = 0; ///< Number of button presses counted with
 static unsigned long reset_window_start = 0; ///< Timestamp when the current reset press window started (ms).
 static unsigned long boot_time = 0; ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
 
-TaskHandle_t audioTaskHandle = nullptr; ///< Handle for the FreeRTOS audio playback task.
+TaskHandle_t audioTaskHandle = nullptr;
+static TaskHandle_t ap_task_handle = nullptr;
+DNSServer dnsServer; ///< Handle for the FreeRTOS audio playback task.
 volatile bool startAlarmAudio = false; ///< Flag set by the main task to start/stop audio playback on Core 1.
 
 struct Check_adapter : Alarm_check
@@ -438,6 +441,7 @@ static void start_ap_mode()
   delay(100);
   bool ap_ok = WiFi.softAP("EInkClock-AP", "inzynier_domu");
   WiFi.setSleep(false);
+  dnsServer.start(53, "*", WiFi.softAPIP());
   Serial.print("AP started: ");
   Serial.println(ap_ok ? "YES" : "NO");
   Serial.print("AP IP: ");
@@ -544,8 +548,24 @@ static void init_gpio()
  */
 static void init_audio()
 {
+  if (state == State::AP)
+    return;
   audio.setup();
   xTaskCreatePinnedToCore(audioTask, "audioTask", 4096, nullptr, 1, &audioTaskHandle, 1);
+}
+
+/**
+ * @brief FreeRTOS task that handles DNS and HTTP in AP mode.
+ * Runs independently so the main loop does not need to poll handleClient().
+ */
+static void ap_server_task(void*)
+{
+  for (;;)
+  {
+    dnsServer.processNextRequest();
+    server.handleClient();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
 }
 
 /**
@@ -553,9 +573,17 @@ static void init_audio()
  */
 static void init_http_server()
 {
-  if (state != State::AP)
+  if (state == State::AP)
+  {
+    httpServer.setup_captive_portal();
+    httpServer.begin();
+    xTaskCreatePinnedToCore(ap_server_task, "apTask", 4096, nullptr, 2, &ap_task_handle, 1);
+  }
+  else
+  {
     httpServer.entity_clock_setup();
-  httpServer.begin();
+    httpServer.begin();
+  }
 }
 
 /**
@@ -666,10 +694,16 @@ void clear_config()
 
 void loop()
 {
+  if (state == State::AP)
+  {
+    vTaskDelay(pdMS_TO_TICKS(100)); // ap_server_task handles DNS and HTTP
+    return;
+  }
+
   bool btn_edge = check_button();
 
   lv_timer_handler();
-  delay(10);
+  taskYIELD();
   if (state == State::alarm)
   {
     if (btn_edge)

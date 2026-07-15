@@ -34,6 +34,7 @@ class HttpServer
   HttpServer(WebServer& server, Clock_model& clock_model, Weather_model& weather_model, Calendar_model& calendar_model, Audio& audio);
 
   void begin();
+  void setup_captive_portal();
   void ha_set_config(HA_config& config);
   int8_t get_ha_weather();
   bool is_weather_from_ha();

@@ -108,6 +108,22 @@ void HttpServer::begin()
 }
 
 /**
+ * @brief Registers a catch-all redirect handler for captive portal detection on iOS, Android and Windows.
+ */
+void HttpServer::setup_captive_portal()
+{
+  server_.on("/redirect", HTTP_GET, [this]() {
+    server_.sendHeader("Location", "http://192.168.4.1/");
+    server_.send(302, "text/html", "<a href='http://192.168.4.1/'>Konfiguracja</a>");
+  });
+
+  server_.onNotFound([this]() {
+    server_.sendHeader("Location", "http://192.168.4.1/");
+    server_.send(302, "text/html", "<a href='http://192.168.4.1/'>Konfiguracja</a>");
+  });
+}
+
+/**
  * @brief Stores the Home Assistant configuration in the HTTP server.
  * @param config Reference to the HA_config structure with configuration data.
  */
