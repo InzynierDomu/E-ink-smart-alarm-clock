@@ -94,6 +94,7 @@ static unsigned long reset_window_start = 0; ///< Timestamp when the current res
 static unsigned long boot_time = 0; ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
 
 TaskHandle_t audioTaskHandle = nullptr;
+static TaskHandle_t ap_task_handle = nullptr;
 DNSServer dnsServer; ///< Handle for the FreeRTOS audio playback task.
 volatile bool startAlarmAudio = false; ///< Flag set by the main task to start/stop audio playback on Core 1.
 
@@ -554,15 +555,35 @@ static void init_audio()
 }
 
 /**
+ * @brief FreeRTOS task that handles DNS and HTTP in AP mode.
+ * Runs independently so the main loop does not need to poll handleClient().
+ */
+static void ap_server_task(void*)
+{
+  for (;;)
+  {
+    dnsServer.processNextRequest();
+    server.handleClient();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
+
+/**
  * @brief Registers the HA clock entity (when not in AP mode) and starts the HTTP server.
  */
 static void init_http_server()
 {
   if (state == State::AP)
+  {
     httpServer.setup_captive_portal();
+    httpServer.begin();
+    xTaskCreatePinnedToCore(ap_server_task, "apTask", 4096, nullptr, 2, &ap_task_handle, 1);
+  }
   else
+  {
     httpServer.entity_clock_setup();
-  httpServer.begin();
+    httpServer.begin();
+  }
 }
 
 /**
@@ -675,11 +696,7 @@ void loop()
 {
   if (state == State::AP)
   {
-    dnsServer.processNextRequest();
-    server.handleClient();
-    server.handleClient();
-    server.handleClient();
-    taskYIELD();
+    vTaskDelay(pdMS_TO_TICKS(100)); // ap_server_task handles DNS and HTTP
     return;
   }
 

@@ -59,8 +59,8 @@ Video about device [video](https://youtu.be/p92zGk0prb8)
 
 1. Power the device via USB-C (5V, e.g. phone charger).
 2. On first boot the device starts in **AP (Access Point) mode**.
-3. Connect to the Wi-Fi network **`AlarmClock`** (password: `inzynier_domu`) from your phone or computer.
-4. Open a browser and go to **`http://192.168.4.1`**.
+3. Connect to the Wi-Fi network **`EInkClock-AP`** (password: `inzynier_domu`) from your phone or computer.
+4. A captive portal notification will appear automatically on **iOS, Android, and Windows** — tap/click it to open the configuration page. On **Linux**, open a browser and navigate to `http://192.168.4.1` manually.
 5. Fill in the configuration form (see sections below) and click **Save**.
 6. The device will restart and connect to your home Wi-Fi.
 
