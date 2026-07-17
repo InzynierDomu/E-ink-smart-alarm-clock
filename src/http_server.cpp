@@ -387,14 +387,11 @@ String HttpServer::buildGoogleCalendarSection()
   html += R"rawHTML(">
         </div>
         <div class="form-row">
-            <label class="form-label">Automatyczne wyłączenie alarmu</label>
-            <label style="display:flex;align-items:center;gap:8px;">
-                <input type="checkbox" name="alarm_auto_stop")rawHTML";
+            <label class="form-label">Automatyczne wyłączenie alarmu (5 min.)</label>
+            <input type="checkbox" name="alarm_auto_stop")rawHTML";
   if (alarm_auto_stop_)
     html += " checked";
   html += R"rawHTML(>
-                Po 5 minutach dzwonienia budzik wyłącza się automatycznie
-            </label>
         </div>
     </div>
 )rawHTML";
