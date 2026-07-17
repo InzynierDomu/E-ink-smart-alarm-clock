@@ -386,6 +386,16 @@ String HttpServer::buildGoogleCalendarSection()
   html += cal_config.ical_alarm_url;
   html += R"rawHTML(">
         </div>
+        <div class="form-row">
+            <label class="form-label">Automatyczne wyłączenie alarmu</label>
+            <label style="display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" name="alarm_auto_stop")rawHTML";
+  if (alarm_auto_stop_)
+    html += " checked";
+  html += R"rawHTML(>
+                Po 5 minutach dzwonienia budzik wyłącza się automatycznie
+            </label>
+        </div>
     </div>
 )rawHTML";
   return html;
@@ -422,16 +432,6 @@ String HttpServer::buildAudioSection()
                 <input type="range" name="volume" min="0" max="100" value=")rawHTML";
   html += String(config.volume);
   html += R"rawHTML(" style="width: 100%;">
-            </div>
-            <div class="form-row">
-                <label class="form-label">Automatyczne wyłączenie alarmu</label>
-                <label style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" name="alarm_auto_stop")rawHTML";
-  if (alarm_auto_stop_)
-    html += " checked";
-  html += R"rawHTML(>
-                    Po 5 minutach dzwonienia budzik wyłącza się automatycznie
-                </label>
             </div>
         </div>
 )rawHTML";
