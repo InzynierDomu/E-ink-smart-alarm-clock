@@ -11,5 +11,6 @@ struct Alarm_setter
   virtual void set_no_alarm() = 0;
   virtual void set_alarm(Simple_time time) = 0;
   virtual void enable_alarm() = 0;
+  virtual bool get_alarm(Simple_time& out) const = 0;
   virtual ~Alarm_setter() = default;
 };

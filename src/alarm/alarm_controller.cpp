@@ -65,6 +65,21 @@ void Alarm_controller::enable_alarm()
 }
 
 /**
+ * @brief Returns the time of the first (active) alarm.
+ * @param out Set to the alarm time when returning true.
+ * @return true if an alarm is currently set, false if none.
+ */
+bool Alarm_controller::get_alarm(Simple_time& out) const
+{
+  Clock_alarm a;
+  model->get_alarm(a);
+  if (!model->get_is_alarm())
+    return false;
+  out = a.time;
+  return true;
+}
+
+/**
  * @brief Removes the first (active) alarm and advances to the next one if available.
  */
 void Alarm_controller::advance_alarm()

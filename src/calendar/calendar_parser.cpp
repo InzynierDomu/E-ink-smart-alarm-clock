@@ -102,11 +102,18 @@ void apply_event_response(Calendar_model& model, const std::vector<Calendar_even
 
 void apply_alarm_response(Alarm_setter& alarm, const std::vector<Calendar_event>& events, const DateTime& now)
 {
-  alarm.set_no_alarm();
   Simple_time next(0, 0);
-  if (select_next_alarm(events, now, next))
+  if (!select_next_alarm(events, now, next))
   {
-    alarm.set_alarm(next);
-    alarm.enable_alarm();
+    alarm.set_no_alarm();
+    return;
   }
+
+  Simple_time current(0, 0);
+  bool same_time = alarm.get_alarm(current) && current.hour == next.hour && current.minutes == next.minutes;
+  if (same_time)
+    return; // alarm already set to this time — preserve user's enabled/disabled state
+
+  alarm.set_no_alarm();
+  alarm.set_alarm(next);
 }
