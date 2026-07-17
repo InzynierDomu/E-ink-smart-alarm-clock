@@ -423,6 +423,16 @@ String HttpServer::buildAudioSection()
   html += String(config.volume);
   html += R"rawHTML(" style="width: 100%;">
             </div>
+            <div class="form-row">
+                <label class="form-label">Automatyczne wyłączenie alarmu</label>
+                <label style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" name="alarm_auto_stop")rawHTML";
+  if (alarm_auto_stop_)
+    html += " checked";
+  html += R"rawHTML(>
+                    Po 5 minutach dzwonienia budzik wyłącza się automatycznie
+                </label>
+            </div>
         </div>
 )rawHTML";
   return html;
@@ -774,6 +784,9 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   doc["HA_clock_entity_name"] = new_ha_entity_clock;
   doc["mqtt_port"] = new_mqtt_port;
   doc["weather_from_HA"] = new_weather_from_ha;
+  bool new_alarm_auto_stop = server_.hasArg("alarm_auto_stop");
+  doc["alarm_auto_stop"] = new_alarm_auto_stop;
+  alarm_auto_stop_ = new_alarm_auto_stop;
 }
 
 static String mqtt_state_description(int state)

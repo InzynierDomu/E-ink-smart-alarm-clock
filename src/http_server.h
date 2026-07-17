@@ -48,6 +48,14 @@ class HttpServer
   {
     return device_id_;
   }
+  void set_alarm_auto_stop(bool enabled)
+  {
+    alarm_auto_stop_ = enabled;
+  }
+  bool get_alarm_auto_stop() const
+  {
+    return alarm_auto_stop_;
+  }
 
   private:
   WebServer& server_;
@@ -59,6 +67,7 @@ class HttpServer
   WiFiClient client;
   PubSubClient mqtt_client;
   String device_id_;
+  bool alarm_auto_stop_ = false;
 
   String buildWifiSection();
   // String buildTimezoneSection();

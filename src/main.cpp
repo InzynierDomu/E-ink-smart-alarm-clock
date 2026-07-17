@@ -93,6 +93,10 @@ static uint8_t reset_press_count = 0; ///< Number of button presses counted with
 static unsigned long reset_window_start = 0; ///< Timestamp when the current reset press window started (ms).
 static unsigned long boot_time = 0; ///< Timestamp recorded at end of setup(), used for boot-time guards (ms).
 
+static bool alarm_auto_stop = false;       ///< If true, alarm stops automatically after the configured timeout.
+static unsigned long alarm_start_ms = 0;   ///< millis() when the current alarm started ringing.
+static constexpr unsigned long ALARM_AUTO_STOP_MS = 5UL * 60UL * 1000UL; ///< Auto-stop timeout: 5 minutes.
+
 TaskHandle_t audioTaskHandle = nullptr;
 static TaskHandle_t ap_task_handle = nullptr;
 DNSServer dnsServer; ///< Handle for the FreeRTOS audio playback task.
@@ -210,6 +214,9 @@ void read_config()
   calendar_config.ical_alarm_url = doc["ical_alarm_url"] | "";
   calendar_model.set_config(calendar_config);
 
+  alarm_auto_stop = doc["alarm_auto_stop"] | false;
+  httpServer.set_alarm_auto_stop(alarm_auto_stop);
+
   // Audio config is hard-coded (44100 Hz, 70% volume) — not configurable via web UI
   // Audio_config audio_config;
   // audio_config.sample_rate = doc["sample_rate"];
@@ -244,6 +251,7 @@ void update_clock()
   if (alarm_trigger.try_trigger(now, state == State::AP))
   {
     digitalWrite(config::led_pin, HIGH);
+    alarm_start_ms = millis();
     state = State::alarm;
   }
 }
@@ -706,8 +714,11 @@ void loop()
   taskYIELD();
   if (state == State::alarm)
   {
-    if (btn_edge)
+    bool auto_stop_fired = alarm_auto_stop && (millis() - alarm_start_ms >= ALARM_AUTO_STOP_MS);
+    if (btn_edge || auto_stop_fired)
     {
+      if (auto_stop_fired)
+        Logger::info("ALARM", "Auto-stop after 5 min");
       alarm_controller.advance_alarm();
       alarm_controller.update_view();
       state = State::normal;
