@@ -393,6 +393,13 @@ String HttpServer::buildGoogleCalendarSection()
     html += " checked";
   html += R"rawHTML(>
         </div>
+        <div class="form-row">
+            <label class="form-label">Podświetlenie trwającego wydarzenia</label>
+            <input type="checkbox" name="highlight_ongoing")rawHTML";
+  if (highlight_ongoing_)
+    html += " checked";
+  html += R"rawHTML(>
+        </div>
     </div>
 )rawHTML";
   return html;
@@ -784,6 +791,9 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   bool new_alarm_auto_stop = server_.hasArg("alarm_auto_stop");
   doc["alarm_auto_stop"] = new_alarm_auto_stop;
   alarm_auto_stop_ = new_alarm_auto_stop;
+  bool new_highlight_ongoing = server_.hasArg("highlight_ongoing");
+  doc["highlight_ongoing"] = new_highlight_ongoing;
+  highlight_ongoing_ = new_highlight_ongoing;
 }
 
 static String mqtt_state_description(int state)

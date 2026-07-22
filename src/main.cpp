@@ -216,6 +216,9 @@ void read_config()
 
   alarm_auto_stop = doc["alarm_auto_stop"] | false;
   httpServer.set_alarm_auto_stop(alarm_auto_stop);
+  bool highlight_ongoing = doc["highlight_ongoing"] | false;
+  httpServer.set_highlight_ongoing(highlight_ongoing);
+  calendar_view.set_highlight_ongoing(highlight_ongoing);
 
   // Audio config is hard-coded (44100 Hz, 70% volume) — not configurable via web UI
   // Audio_config audio_config;

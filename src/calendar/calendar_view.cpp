@@ -50,7 +50,7 @@ void Calendar_view::show(const Calendar_model& data, const DateTime& now)
       Calendar_event event;
       data.get_event(event, i);
       lv_label_set_text(label, event.get_calendar_label().c_str());
-      apply_highlight(label, is_ongoing(event, now));
+      apply_highlight(label, highlight_ongoing_ && is_ongoing(event, now));
     }
     else
     {

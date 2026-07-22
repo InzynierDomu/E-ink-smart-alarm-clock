@@ -16,8 +16,10 @@ class Calendar_view
   Calendar_view(Screen* scr);
   void show(const Calendar_model& data, const DateTime& now);
   void setup_calendar_list();
+  void set_highlight_ongoing(bool enabled) { highlight_ongoing_ = enabled; }
 
   private:
   Screen* screen;
   std::vector<lv_obj_t*> calendar_labels;
+  bool highlight_ongoing_ = false;
 };

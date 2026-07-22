@@ -48,14 +48,10 @@ class HttpServer
   {
     return device_id_;
   }
-  void set_alarm_auto_stop(bool enabled)
-  {
-    alarm_auto_stop_ = enabled;
-  }
-  bool get_alarm_auto_stop() const
-  {
-    return alarm_auto_stop_;
-  }
+  void set_alarm_auto_stop(bool enabled) { alarm_auto_stop_ = enabled; }
+  bool get_alarm_auto_stop() const { return alarm_auto_stop_; }
+  void set_highlight_ongoing(bool enabled) { highlight_ongoing_ = enabled; }
+  bool get_highlight_ongoing() const { return highlight_ongoing_; }
 
   private:
   WebServer& server_;
@@ -68,6 +64,7 @@ class HttpServer
   PubSubClient mqtt_client;
   String device_id_;
   bool alarm_auto_stop_ = false;
+  bool highlight_ongoing_ = false;
 
   String buildWifiSection();
   // String buildTimezoneSection();
