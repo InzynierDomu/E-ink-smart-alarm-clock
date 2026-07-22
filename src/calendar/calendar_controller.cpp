@@ -127,7 +127,7 @@ bool Calendar_controller::fetch_alarms(const DateTime& now)
 /**
  * @brief Refreshes the calendar view based on the current model state.
  */
-void Calendar_controller::update_view()
+void Calendar_controller::update_view(const DateTime& now)
 {
-  view->show(*model);
+  view->show(*model, now);
 }

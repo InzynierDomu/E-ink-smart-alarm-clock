@@ -18,7 +18,7 @@ class Calendar_controller
   Calendar_controller(Calendar_model* _model, Calendar_view* _view, Alarm_setter* _alarm_controller);
   bool fetch_events(const DateTime& now);
   bool fetch_alarms(const DateTime& now);
-  void update_view();
+  void update_view(const DateTime& now);
 
   private:
   bool fetch_ical(const String& url, bool is_alarm, const DateTime& now);

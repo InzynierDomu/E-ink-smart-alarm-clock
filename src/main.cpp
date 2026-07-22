@@ -296,7 +296,7 @@ static void update_date(lv_timer_t* timer)
   {
     if (!calendar_controller.fetch_events(now))
       fetch_ok = false;
-    calendar_controller.update_view();
+    calendar_controller.update_view(now);
     cal_counter = 0;
   }
   else
