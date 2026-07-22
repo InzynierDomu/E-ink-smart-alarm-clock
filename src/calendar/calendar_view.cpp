@@ -62,18 +62,11 @@ void Calendar_view::show(const Calendar_model& data, const DateTime& now)
 
 void Calendar_view::setup_calendar_list()
 {
-  lv_obj_t* labels[] = {
-    ui_labCalendarEvent1, ui_labCalendarEvent2, ui_labCalendarEvent3,
-    ui_labCalendarEvent4, ui_labCalendarEvent5, ui_labCalendarEvent6,
-    ui_labCalendarEvent7
-  };
-
-  for (lv_obj_t* label : labels)
-  {
-    lv_obj_set_width(label, lv_pct(100));
-    lv_obj_set_x(label, 0);
-    lv_obj_set_style_pad_left(label, 4, LV_PART_MAIN);
-    lv_obj_set_style_pad_right(label, 4, LV_PART_MAIN);
-    calendar_labels.push_back(label);
-  }
+  calendar_labels.push_back(ui_labCalendarEvent1);
+  calendar_labels.push_back(ui_labCalendarEvent2);
+  calendar_labels.push_back(ui_labCalendarEvent3);
+  calendar_labels.push_back(ui_labCalendarEvent4);
+  calendar_labels.push_back(ui_labCalendarEvent5);
+  calendar_labels.push_back(ui_labCalendarEvent6);
+  calendar_labels.push_back(ui_labCalendarEvent7);
 }

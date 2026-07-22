@@ -17,6 +17,12 @@ struct Alarm_stub : Alarm_setter
   void set_no_alarm() override { ++set_no_alarm_count; }
   void set_alarm(Simple_time t) override { last_alarm = t; ++set_alarm_count; }
   void enable_alarm() override { ++enable_count; }
+  bool get_alarm(Simple_time& out) const override
+  {
+    if (set_alarm_count == 0) return false;
+    out = last_alarm;
+    return true;
+  }
 
   void reset()
   {
