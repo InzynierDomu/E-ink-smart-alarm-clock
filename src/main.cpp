@@ -95,7 +95,6 @@ static unsigned long boot_time = 0; ///< Timestamp recorded at end of setup(), u
 
 static bool alarm_auto_stop = false;       ///< If true, alarm stops automatically after the configured timeout.
 static unsigned long alarm_start_ms = 0;   ///< millis() when the current alarm started ringing.
-static constexpr unsigned long ALARM_AUTO_STOP_MS = 5UL * 60UL * 1000UL; ///< Auto-stop timeout: 5 minutes.
 
 TaskHandle_t audioTaskHandle = nullptr;
 static TaskHandle_t ap_task_handle = nullptr;
@@ -219,6 +218,9 @@ void read_config()
   bool highlight_ongoing = doc["highlight_ongoing"] | false;
   httpServer.set_highlight_ongoing(highlight_ongoing);
   calendar_view.set_highlight_ongoing(highlight_ongoing);
+  bool show_next_day_after_noon = doc["show_next_day_after_noon"] | false;
+  httpServer.set_show_next_day_after_noon(show_next_day_after_noon);
+  calendar_controller.set_show_next_day_after_noon(show_next_day_after_noon);
 
   // Audio config is hard-coded (44100 Hz, 70% volume) — not configurable via web UI
   // Audio_config audio_config;
@@ -717,7 +719,7 @@ void loop()
   taskYIELD();
   if (state == State::alarm)
   {
-    bool auto_stop_fired = alarm_auto_stop && (millis() - alarm_start_ms >= ALARM_AUTO_STOP_MS);
+    bool auto_stop_fired = alarm_auto_stop && (millis() - alarm_start_ms >= config::alarm_auto_stop_ms);
     if (btn_edge || auto_stop_fired)
     {
       if (auto_stop_fired)
@@ -775,6 +777,7 @@ void loop()
   if (clock_controller.is_it_now(screen_reffresh_time))
   {
     screen.full_clear();
+    clock_controller.sync_ntp_to_rtc();
   }
   server.handleClient();
 }

@@ -58,8 +58,9 @@ static String url_encode(const String& str)
  * @param ical_url URL of the iCal calendar to fetch.
  * @param is_alarm true if the calendar is used for alarm setting, false for regular events.
  * @param now Current time used to find the next upcoming alarm (ignored when is_alarm is false).
+ * @param date Optional date string "YYYY-MM-DD" to request events for a specific day; empty = today.
  */
-bool Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, const DateTime& now)
+bool Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, const DateTime& now, const String& date)
 {
   static WiFiClientSecure wifiClient;
   wifiClient.setInsecure();
@@ -69,6 +70,8 @@ bool Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 
   String proxy_url = String(PROXY_BASE_URL) + "?url=" + url_encode(ical_url);
+  if (date.length() > 0)
+    proxy_url += "&date=" + date;
 
   const String tag = is_alarm ? "CAL_ALARM" : "CAL";
 
@@ -100,15 +103,21 @@ bool Calendar_controller::fetch_ical(const String& ical_url, bool is_alarm, cons
 
 /**
  * @brief Fetches calendar events and updates the model.
- * @param now Current time (unused for events, kept for interface consistency).
+ * @param now Current time used to determine which day's events to fetch.
  */
 bool Calendar_controller::fetch_events(const DateTime& now)
 {
   google_api_config config;
   model->get_config(config);
-  if (config.ical_url.length() > 0)
-    return fetch_ical(config.ical_url, false, now);
-  return true;
+  if (config.ical_url.length() == 0)
+    return true;
+
+  DateTime target = (show_next_day_after_noon_ && now.hour() >= 12)
+                    ? now + TimeSpan(1, 0, 0, 0)
+                    : now;
+  char date_buf[11];
+  snprintf(date_buf, sizeof(date_buf), "%04d-%02d-%02d", target.year(), target.month(), target.day());
+  return fetch_ical(config.ical_url, false, now, String(date_buf));
 }
 
 /**

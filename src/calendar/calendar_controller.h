@@ -19,10 +19,12 @@ class Calendar_controller
   bool fetch_events(const DateTime& now);
   bool fetch_alarms(const DateTime& now);
   void update_view(const DateTime& now);
+  void set_show_next_day_after_noon(bool enabled) { show_next_day_after_noon_ = enabled; }
 
   private:
-  bool fetch_ical(const String& url, bool is_alarm, const DateTime& now);
+  bool fetch_ical(const String& url, bool is_alarm, const DateTime& now, const String& date = "");
   Calendar_model* model;
   Calendar_view* view;
   Alarm_setter* alarm_controller;
+  bool show_next_day_after_noon_ = false;
 };

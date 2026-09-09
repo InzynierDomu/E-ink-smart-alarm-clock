@@ -50,10 +50,9 @@ void HttpServer::begin()
       "/upload_firmware",
       HTTP_POST,
       [this]() {
-        server_.send(200,
-                     "text/plain; charset=utf-8",
-                     "Firmware zapisany na SD jako /firmware.bin. Zrestartuj urzadzenie. Po ponownym uruchomieniu, urządzenie spróbuje "
-                     "wykonać aktualizację.");
+        server_.send(200, "text/plain; charset=utf-8", "OK");
+        delay(500);
+        ESP.restart();
       },
       [this]() {
         HTTPUpload& upload = server_.upload();
@@ -400,6 +399,13 @@ String HttpServer::buildGoogleCalendarSection()
     html += " checked";
   html += R"rawHTML(>
         </div>
+        <div class="form-row">
+            <label class="form-label">Pokazuj jutrzejszy kalendarz po 12:00</label>
+            <input type="checkbox" name="show_next_day_after_noon")rawHTML";
+  if (show_next_day_after_noon_)
+    html += " checked";
+  html += R"rawHTML(>
+        </div>
     </div>
 )rawHTML";
   return html;
@@ -522,18 +528,23 @@ String HttpServer::buildFirmwareUpdateSection()
   html += R"rawHTML(
   <br><div class="section">
     <div class="section-title">🛠️ Aktualizacja firmware</div>
-    <div class="form-row">
-      <label class="form-label">Obecna wersja: </label><label class="form-label">)rawHTML";
+    <p style="color:#cbd5e1;font-size:0.95em;margin-bottom:16px;">Obecna wersja: <strong>)rawHTML";
   html += config::version;
-  html +=
-      R"rawHTML(</label></div><div class="form-row"><label class="form-label">Wybierz plik z nowym oprogramowaniem (*<code>.bin</code>).</label>
-    <form id="firmware-form" method="POST" action="/upload_firmware" enctype="multipart/form-data">
-        <input type="file" name="firmware" id="firmware-file">
+  html += R"rawHTML(</strong></p>
+    <div id="ota-drop" onclick="document.getElementById('ota-file').click()" style="border:2px dashed #94a3b8;border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:.2s;user-select:none;box-sizing:border-box;margin-bottom:12px;">
+      <div style="font-size:26px">📦</div>
+      <div style="font-weight:600;margin:8px 0 4px">Kliknij lub przeciągnij plik .bin</div>
+      <div style="font-size:13px;color:#94a3b8">firmware.bin</div>
+      <input type="file" id="ota-file" accept=".bin" style="display:none">
     </div>
-      <div class="form-row">
-        <button type="submit" id="firmware-submit" disabled>Wgraj firmware</button>
+    <div id="ota-fname" style="display:none;font-size:13px;color:#94a3b8;margin-bottom:12px;"></div>
+    <div id="ota-bar" style="display:none;margin-bottom:12px;">
+      <div style="background:#334155;border-radius:6px;height:10px;width:100%;overflow:hidden;">
+        <div id="ota-fill" style="background:#2563eb;height:100%;width:0%;transition:width .2s;"></div>
       </div>
-    </form>
+    </div>
+    <div id="ota-status" style="font-size:14px;color:#94a3b8;margin-bottom:12px;"></div>
+    <button id="ota-btn" onclick="startOta()" disabled style="width:100%;">Wgraj firmware</button>
   </div>
   )rawHTML";
   return html;
@@ -658,18 +669,41 @@ void HttpServer::handleRoot()
 
   // chunk 4: firmware + logs + footer + scripts
   server_.sendContent(buildFirmwareUpdateSection() + buildLogsSection() + buildFooter() +
-                      "<div id=\"upload-overlay\" class=\"upload-overlay\">"
-                      "<div class=\"spinner\"></div>"
-                      "<div class=\"overlay-text\">Wgrywanie firmware&hellip;<br>Proszę czekać, nie zamykaj strony.</div>"
-                      "</div>"
                       "<script>"
                       "document.getElementById('loading-overlay').classList.add('hidden');"
-                      "document.getElementById('firmware-file').addEventListener('change',function(){"
-                      "document.getElementById('firmware-submit').disabled=!this.files.length;"
-                      "});"
-                      "document.getElementById('firmware-form').addEventListener('submit',function(){"
-                      "document.getElementById('upload-overlay').classList.add('active');"
-                      "});"
+                      "var otaFile=null;"
+                      "var drop=document.getElementById('ota-drop');"
+                      "document.getElementById('ota-file').onchange=function(e){setOtaFile(e.target.files[0]);};"
+                      "drop.ondragover=function(e){e.preventDefault();drop.style.borderColor='#2563eb';drop.style.background='#eff6ff';};"
+                      "drop.ondragleave=function(){drop.style.borderColor='#94a3b8';drop.style.background='';};"
+                      "drop.ondrop=function(e){e.preventDefault();drop.style.borderColor='#94a3b8';drop.style.background='';setOtaFile(e.dataTransfer.files[0]);};"
+                      "function setOtaFile(f){"
+                      "if(!f)return;otaFile=f;"
+                      "var fn=document.getElementById('ota-fname');"
+                      "fn.textContent=f.name+' ('+Math.round(f.size/1024)+' KB)';"
+                      "fn.style.display='';"
+                      "document.getElementById('ota-btn').disabled=false;"
+                      "document.getElementById('ota-status').textContent='';"
+                      "}"
+                      "function startOta(){"
+                      "if(!otaFile)return;"
+                      "var btn=document.getElementById('ota-btn'),"
+                      "status=document.getElementById('ota-status'),"
+                      "bar=document.getElementById('ota-bar'),"
+                      "fill=document.getElementById('ota-fill');"
+                      "btn.disabled=true;bar.style.display='';fill.style.width='0%';status.textContent='Wysyłanie...';"
+                      "var form=new FormData();"
+                      "form.append('firmware',otaFile,otaFile.name);"
+                      "var xhr=new XMLHttpRequest();"
+                      "xhr.open('POST','/upload_firmware');"
+                      "xhr.upload.onprogress=function(e){if(e.lengthComputable)fill.style.width=Math.round(e.loaded/e.total*100)+'%';};"
+                      "xhr.onload=function(){"
+                      "if(xhr.status===200){fill.style.width='100%';status.textContent='Sukces! Urządzenie restartuje się...';}"
+                      "else{status.textContent='Błąd: '+xhr.responseText;btn.disabled=false;}"
+                      "};"
+                      "xhr.onerror=function(){status.textContent='Błąd połączenia';btn.disabled=false;};"
+                      "xhr.send(form);"
+                      "}"
                       "</script>"
                       "</body></html>");
 
@@ -794,6 +828,9 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   bool new_highlight_ongoing = server_.hasArg("highlight_ongoing");
   doc["highlight_ongoing"] = new_highlight_ongoing;
   highlight_ongoing_ = new_highlight_ongoing;
+  bool new_show_next_day = server_.hasArg("show_next_day_after_noon");
+  doc["show_next_day_after_noon"] = new_show_next_day;
+  show_next_day_after_noon_ = new_show_next_day;
 }
 
 static String mqtt_state_description(int state)
