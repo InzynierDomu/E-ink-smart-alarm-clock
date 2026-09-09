@@ -13,6 +13,7 @@ class Clock_controller
   public:
   Clock_controller(Clock_view* _view, Clock_model* _model);
   void setup_clock();
+  void sync_ntp_to_rtc();
   void get_time(DateTime& dt);
   void update_view();
   bool is_it_now(DateTime& dt);

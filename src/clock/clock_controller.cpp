@@ -57,6 +57,24 @@ void Clock_controller::setup_clock()
 }
 
 /**
+ * @brief Re-fetches time from NTP and updates the RTC. Assumes Wi-Fi is connected and Wire already initialized.
+ */
+void Clock_controller::sync_ntp_to_rtc()
+{
+  configTime(0, 0, config::time_server);
+  tm time_info;
+  if (!getLocalTime(&time_info))
+  {
+    Logger::warn("NTP", "Failed to get time from NTP during nightly sync");
+    return;
+  }
+  DateTime dt(time_info.tm_year + 1900, time_info.tm_mon + 1, time_info.tm_mday,
+               time_info.tm_hour, time_info.tm_min, time_info.tm_sec);
+  rtc.adjust(dt);
+  Logger::info("NTP", "Nightly sync OK: " + String(time_info.tm_hour) + ":" + String(time_info.tm_min));
+}
+
+/**
  * @brief Reads the current time from the RTC.
  * @param dt Reference to the DateTime structure that will receive the current time.
  */
