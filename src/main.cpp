@@ -688,16 +688,31 @@ bool check_reset_sequence()
 }
 
 /**
- * @brief Overwrites the configuration file on the SD card with an empty JSON object.
+ * @brief Clears only the Wi-Fi credentials (ssid, pass) from the config file, leaving all other
+ *        settings intact. This allows the device to enter AP mode for re-pairing without losing
+ *        calendar URLs, API keys, and other configuration.
  */
 void clear_config()
 {
+  JsonDocument doc;
+  File rf = SD.open(config::config_path, "r");
+  if (rf)
+  {
+    String json;
+    while (rf.available())
+      json += (char)rf.read();
+    rf.close();
+    deserializeJson(doc, json); // ignore parse errors — fields will just be absent
+  }
+  doc["ssid"] = "";
+  doc["pass"] = "";
+
   File file = SD.open(config::config_path, "w");
   if (file)
   {
-    file.print("{}");
+    serializeJson(doc, file);
     file.close();
-    Serial.println("Config cleared");
+    Serial.println("Config cleared (WiFi credentials only)");
   }
   else
   {
