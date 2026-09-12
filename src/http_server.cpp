@@ -671,6 +671,21 @@ void HttpServer::handleRoot()
   server_.sendContent(buildFirmwareUpdateSection() + buildLogsSection() + buildFooter() +
                       "<script>"
                       "document.getElementById('loading-overlay').classList.add('hidden');"
+                      // Password fields: browsers (Chrome, Edge) may blank pre-filled password inputs
+                      // without user interaction. Track which fields the user actually focused; on
+                      // submit, restore the original server value for any untouched-but-now-empty field.
+                      "(function(){"
+                      "var touched={};"
+                      "document.querySelectorAll('input[type=password]').forEach(function(el){"
+                      "el.setAttribute('data-orig',el.value);"
+                      "el.addEventListener('focus',function(){touched[el.name]=true;});"
+                      "});"
+                      "document.querySelector('form').addEventListener('submit',function(){"
+                      "document.querySelectorAll('input[type=password]').forEach(function(el){"
+                      "if(!touched[el.name]&&el.value==='')el.value=el.getAttribute('data-orig');"
+                      "});"
+                      "});"
+                      "})();"
                       "var otaFile=null;"
                       "var drop=document.getElementById('ota-drop');"
                       "document.getElementById('ota-file').onchange=function(e){setOtaFile(e.target.files[0]);};"
@@ -803,25 +818,23 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   String new_ical_url = server_.arg("ical_url");
   String new_ical_alarm_url = server_.arg("ical_alarm_url");
 
-  // Plain-text fields always overwrite.
   doc["ssid"] = new_ssid;
+  doc["pass"] = new_pass;
+  doc["ical_url"] = new_ical_url;
+  doc["ical_alarm_url"] = new_ical_alarm_url;
+  // doc["timezone"] = tz_seconds; TODO fix
+  doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
+  // doc["sample_rate"] = new_sr;  // audio hard-coded
+  // doc["volume"] = new_vol;       // audio hard-coded
   doc["HA_host"] = new_ha_host;
   doc["HA_port"] = new_ha_port;
+  doc["HA_token"] = new_ha_token;
   doc["HA_user"] = new_ha_user;
+  doc["HA_pass"] = new_ha_pass;
   doc["HA_weather_entity_name"] = new_ha_entity_weather;
   doc["HA_clock_entity_name"] = new_ha_entity_clock;
-
-  // Password/secret fields: only overwrite when the browser actually sent a non-empty value.
-  // Browsers (Chrome, Edge) may autocomplete or blank password-type inputs, which would erase
-  // the stored secrets even when the user didn't touch those fields.
-  if (!new_pass.isEmpty())           doc["pass"]                   = new_pass;
-  if (!new_api_key.isEmpty())        doc["openweathermap_api_key"] = new_api_key;
-  if (!new_ical_url.isEmpty())       doc["ical_url"]               = new_ical_url;
-  if (!new_ical_alarm_url.isEmpty()) doc["ical_alarm_url"]         = new_ical_alarm_url;
-  if (!new_ha_token.isEmpty())       doc["HA_token"]               = new_ha_token;
-  if (!new_ha_pass.isEmpty())        doc["HA_pass"]                = new_ha_pass;
   doc["mqtt_port"] = new_mqtt_port;
   doc["weather_from_HA"] = new_weather_from_ha;
   bool new_alarm_auto_stop = server_.hasArg("alarm_auto_stop");
