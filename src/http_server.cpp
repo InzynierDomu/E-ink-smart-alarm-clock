@@ -271,7 +271,7 @@ String HttpServer::buildWifiSection()
             </div>
             <div class="form-row">
                 <label class="form-label">Hasło</label>
-                <input type="password" name="pass" value=")rawHTML";
+                <input type="password" name="pass" autocomplete="new-password" value=")rawHTML";
   html += String(wifi.pass);
   html += R"rawHTML(">
             </div>
@@ -337,7 +337,7 @@ String HttpServer::buildWeatherSection()
             </div>
             <div class="form-row">
                 <label class="form-label">API key</label>
-                <input type="password" name="api_key" value=")rawHTML";
+                <input type="password" name="api_key" autocomplete="new-password" value=")rawHTML";
   html += String(weather.api_key);
   html += R"rawHTML(">
             </div>
@@ -375,13 +375,13 @@ String HttpServer::buildGoogleCalendarSection()
         </div>
         <div class="form-row">
             <label class="form-label">URL kalendarza (wydarzenia)</label>
-            <input type="password" name="ical_url" value=")rawHTML";
+            <input type="password" name="ical_url" autocomplete="new-password" value=")rawHTML";
   html += cal_config.ical_url;
   html += R"rawHTML(">
         </div>
         <div class="form-row">
             <label class="form-label">URL kalendarza alarmów</label>
-            <input type="password" name="ical_alarm_url" value=")rawHTML";
+            <input type="password" name="ical_alarm_url" autocomplete="new-password" value=")rawHTML";
   html += cal_config.ical_alarm_url;
   html += R"rawHTML(">
         </div>
@@ -472,7 +472,7 @@ String HttpServer::buildHaSection()
             </div>
             <div class="form-row">
                 <label class="form-label">Token</label>
-                <input type="password" name="ha_token" value=")rawHTML";
+                <input type="password" name="ha_token" autocomplete="new-password" value=")rawHTML";
   html += ha_config.ha_token;
   html += R"rawHTML("> 
             </div>
@@ -484,7 +484,7 @@ String HttpServer::buildHaSection()
               </div>
             <div class="form-row">
                 <label class="form-label">User pass</label>
-                <input type="password" name="ha_pass" value=")rawHTML";
+                <input type="password" name="ha_pass" autocomplete="new-password" value=")rawHTML";
   html += ha_config.ha_pass;
   html += R"rawHTML(">
             </div>
@@ -803,23 +803,25 @@ void HttpServer::updateConfigFromRequest(JsonDocument& doc)
   String new_ical_url = server_.arg("ical_url");
   String new_ical_alarm_url = server_.arg("ical_alarm_url");
 
+  // Plain-text fields always overwrite.
   doc["ssid"] = new_ssid;
-  doc["pass"] = new_pass;
-  doc["ical_url"] = new_ical_url;
-  doc["ical_alarm_url"] = new_ical_alarm_url;
-  // doc["timezone"] = tz_seconds; TODO fix
-  doc["openweathermap_api_key"] = new_api_key;
   doc["lat"] = new_lat;
   doc["lon"] = new_lon;
-  // doc["sample_rate"] = new_sr;  // audio hard-coded
-  // doc["volume"] = new_vol;       // audio hard-coded
   doc["HA_host"] = new_ha_host;
   doc["HA_port"] = new_ha_port;
-  doc["HA_token"] = new_ha_token;
   doc["HA_user"] = new_ha_user;
-  doc["HA_pass"] = new_ha_pass;
   doc["HA_weather_entity_name"] = new_ha_entity_weather;
   doc["HA_clock_entity_name"] = new_ha_entity_clock;
+
+  // Password/secret fields: only overwrite when the browser actually sent a non-empty value.
+  // Browsers (Chrome, Edge) may autocomplete or blank password-type inputs, which would erase
+  // the stored secrets even when the user didn't touch those fields.
+  if (!new_pass.isEmpty())           doc["pass"]                   = new_pass;
+  if (!new_api_key.isEmpty())        doc["openweathermap_api_key"] = new_api_key;
+  if (!new_ical_url.isEmpty())       doc["ical_url"]               = new_ical_url;
+  if (!new_ical_alarm_url.isEmpty()) doc["ical_alarm_url"]         = new_ical_alarm_url;
+  if (!new_ha_token.isEmpty())       doc["HA_token"]               = new_ha_token;
+  if (!new_ha_pass.isEmpty())        doc["HA_pass"]                = new_ha_pass;
   doc["mqtt_port"] = new_mqtt_port;
   doc["weather_from_HA"] = new_weather_from_ha;
   bool new_alarm_auto_stop = server_.hasArg("alarm_auto_stop");
