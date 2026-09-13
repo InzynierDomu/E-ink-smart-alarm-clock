@@ -62,6 +62,8 @@ void Clock_controller::setup_clock()
 void Clock_controller::sync_ntp_to_rtc()
 {
   configTime(0, 0, config::time_server);
+  setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
+  tzset();
   tm time_info;
   if (!getLocalTime(&time_info))
   {
