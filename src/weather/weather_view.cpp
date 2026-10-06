@@ -7,6 +7,19 @@
 
 #include "weather_icon.h"
 
+static bool is_valid_temp(int8_t t)   { return t > -60 && t < 60; }
+static bool is_valid_cloud(uint8_t c) { return c <= 100; }
+static bool is_valid_precip(uint8_t p){ return p <= 200; }
+
+static void set_temp_label(lv_obj_t* label, int8_t temp)
+{
+  if (!label || !is_valid_temp(temp))
+    return;
+  char buf[8];
+  sprintf(buf, "%d°", temp);
+  lv_label_set_text(label, buf);
+}
+
 /**
  * @brief Initializes the view with a pointer to the screen object.
  * @param scr Pointer to the Screen object.
@@ -27,51 +40,39 @@ void Weather_view::show(const Weather_model& data)
   static lv_obj_t* weatherIcons[] = {ui_labWeatherIcon, ui_labWeatherIconDay1, ui_labWeatherIconDay2, ui_labWeatherIconDay3};
 
   static const uint8_t forecast_index[] = {0, 0, 1, 2};
-  char temp_str[10];
   Simple_weather forecast;
   for (size_t i = 0; i < 4; ++i)
   {
     data.get_forecast(forecast, forecast_index[i]);
     bool is_night = (i == 0) && (data.get_day_part() == Day_part::night || data.get_day_part() == Day_part::night_next_day);
-    lv_label_set_text(weatherIcons[i], weather_icon(forecast.cloud_cover, forecast.precipitation, is_night));
+    if (is_valid_cloud(forecast.cloud_cover) && is_valid_precip(forecast.precipitation))
+      lv_label_set_text(weatherIcons[i], weather_icon(forecast.cloud_cover, forecast.precipitation, is_night));
     if (i == 0)
     {
       Day_part part = data.get_day_part();
+      int8_t temp_val = 0;
       switch (part)
       {
-        case Day_part::night:
-          sprintf(temp_str, "%d°", forecast.temperature_night);
-          break;
-        case Day_part::morning:
-          sprintf(temp_str, "%d°", forecast.temperature_morning);
-          break;
-        case Day_part::afternoon:
-          sprintf(temp_str, "%d°", forecast.temperature_afternoon);
-          break;
-        case Day_part::evening:
-          sprintf(temp_str, "%d°", forecast.temperature_evening);
-          break;
+        case Day_part::night:          temp_val = forecast.temperature_night;     break;
+        case Day_part::morning:        temp_val = forecast.temperature_morning;   break;
+        case Day_part::afternoon:      temp_val = forecast.temperature_afternoon; break;
+        case Day_part::evening:        temp_val = forecast.temperature_evening;   break;
         case Day_part::night_next_day:
         {
           Simple_weather tomorrow;
           data.get_forecast(tomorrow, 1);
-          sprintf(temp_str, "%d°", tomorrow.temperature_night);
+          temp_val = tomorrow.temperature_night;
           break;
         }
-        default:
-          sprintf(temp_str, "%d°", forecast.temperature_afternoon);
-          break;
+        default: temp_val = forecast.temperature_afternoon; break;
       }
-      lv_label_set_text(ui_labTempMorning, temp_str);
+      set_temp_label(ui_labTempMorning, temp_val);
     }
     else
     {
-      sprintf(temp_str, "%d°", forecast.temperature_morning);
-      lv_label_set_text(tempLabelsMorning[i], temp_str);
-      sprintf(temp_str, "%d°", forecast.temperature_afternoon);
-      lv_label_set_text(tempLabelsAfternoon[i], temp_str);
-      sprintf(temp_str, "%d°", forecast.temperature_evening);
-      lv_label_set_text(tempLabelsEvening[i], temp_str);
+      set_temp_label(tempLabelsMorning[i],  forecast.temperature_morning);
+      set_temp_label(tempLabelsAfternoon[i], forecast.temperature_afternoon);
+      set_temp_label(tempLabelsEvening[i],   forecast.temperature_evening);
     }
   }
 }
