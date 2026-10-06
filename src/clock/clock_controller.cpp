@@ -98,12 +98,15 @@ bool Clock_controller::is_valid_time(const DateTime& dt)
  */
 void Clock_controller::update_view()
 {
+  static uint8_t bad_reads = 0;
   DateTime now = rtc.now();
   if (!is_valid_time(now))
   {
-    Logger::warn("RTC", "Invalid time read, skipping display update");
+    if (++bad_reads >= 3)
+      Logger::error("RTC", "3 consecutive invalid time reads (h=" + String(now.hour()) + " m=" + String(now.minute()) + " y=" + String(now.year()) + ")");
     return;
   }
+  bad_reads = 0;
   view->show_time(now);
   if (last_day != now.day())
   {

@@ -6,18 +6,20 @@
 #include "weather_view.h"
 
 #include "weather_icon.h"
+#include "../logger.h"
 
 static bool is_valid_temp(int8_t t)   { return t > -60 && t < 60; }
 static bool is_valid_cloud(uint8_t c) { return c <= 100; }
 static bool is_valid_precip(uint8_t p){ return p <= 200; }
 
-static void set_temp_label(lv_obj_t* label, int8_t temp)
+static bool set_temp_label(lv_obj_t* label, int8_t temp)
 {
   if (!label || !is_valid_temp(temp))
-    return;
+    return false;
   char buf[8];
   sprintf(buf, "%d°", temp);
   lv_label_set_text(label, buf);
+  return true;
 }
 
 /**
@@ -38,8 +40,10 @@ void Weather_view::show(const Weather_model& data)
   static lv_obj_t* tempLabelsAfternoon[] = {nullptr, ui_labTempAfternoonDay1, ui_labTempAfternoonDay2, ui_labTempAfternoonDay3};
   static lv_obj_t* tempLabelsEvening[] = {nullptr, ui_labTempEveningDay1, ui_labTempEveningDay2, ui_labTempEveningDay3};
   static lv_obj_t* weatherIcons[] = {ui_labWeatherIcon, ui_labWeatherIconDay1, ui_labWeatherIconDay2, ui_labWeatherIconDay3};
+  static uint8_t bad_weather = 0;
 
   static const uint8_t forecast_index[] = {0, 0, 1, 2};
+  bool had_garbage = false;
   Simple_weather forecast;
   for (size_t i = 0; i < 4; ++i)
   {
@@ -47,6 +51,9 @@ void Weather_view::show(const Weather_model& data)
     bool is_night = (i == 0) && (data.get_day_part() == Day_part::night || data.get_day_part() == Day_part::night_next_day);
     if (is_valid_cloud(forecast.cloud_cover) && is_valid_precip(forecast.precipitation))
       lv_label_set_text(weatherIcons[i], weather_icon(forecast.cloud_cover, forecast.precipitation, is_night));
+    else
+      had_garbage = true;
+
     if (i == 0)
     {
       Day_part part = data.get_day_part();
@@ -66,14 +73,25 @@ void Weather_view::show(const Weather_model& data)
         }
         default: temp_val = forecast.temperature_afternoon; break;
       }
-      set_temp_label(ui_labTempMorning, temp_val);
+      if (!set_temp_label(ui_labTempMorning, temp_val))
+        had_garbage = true;
     }
     else
     {
-      set_temp_label(tempLabelsMorning[i],  forecast.temperature_morning);
-      set_temp_label(tempLabelsAfternoon[i], forecast.temperature_afternoon);
-      set_temp_label(tempLabelsEvening[i],   forecast.temperature_evening);
+      if (!set_temp_label(tempLabelsMorning[i],   forecast.temperature_morning))   had_garbage = true;
+      if (!set_temp_label(tempLabelsAfternoon[i], forecast.temperature_afternoon)) had_garbage = true;
+      if (!set_temp_label(tempLabelsEvening[i],   forecast.temperature_evening))   had_garbage = true;
     }
+  }
+
+  if (had_garbage)
+  {
+    if (++bad_weather >= 3)
+      Logger::error("WEATHER", "3 consecutive invalid weather data updates");
+  }
+  else
+  {
+    bad_weather = 0;
   }
 }
 
