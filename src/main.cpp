@@ -791,8 +791,18 @@ void loop()
 
   if (clock_controller.is_it_now(screen_reffresh_time))
   {
-    screen.full_clear();
-    clock_controller.sync_ntp_to_rtc();
+    // The 03:00 minute lasts 60 s and loop() runs many times in it: run the nightly tasks once per day,
+    // whether or not the NTP sync succeeds (a failure is logged and retried the next night).
+    static uint32_t last_nightly_date = 0;
+    DateTime today;
+    clock_controller.get_time(today);
+    const uint32_t today_key = today.year() * 10000UL + today.month() * 100UL + today.day();
+    if (today_key != last_nightly_date)
+    {
+      last_nightly_date = today_key;
+      screen.full_clear();
+      clock_controller.sync_ntp_to_rtc();
+    }
   }
   server.handleClient();
 }
